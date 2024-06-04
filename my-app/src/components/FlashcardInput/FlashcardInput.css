@@ -1,0 +1,10 @@
+/* src/components/FlashcardInput/FlashcardInput.css */
+.flashcard-input {
+  margin: 20px;
+}
+.flashcard-input form div {
+  margin-bottom: 10px;
+}
+.flashcard-input button {
+  margin-right: 10px;
+}
