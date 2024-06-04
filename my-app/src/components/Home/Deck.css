@@ -1,16 +1,53 @@
-/* src/components/Deck/Deck.css */
+/* src/App.css */
+
 .deck-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
 }
+
 .deck {
-  border: 1px solid #ccc;
-  margin: 10px;
   padding: 10px;
-  width: 200px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
 }
+
+.deck:hover {
+  background-color: #f0f0f0;
+}
+
+.current-deck {
+  margin-top: 20px;
+}
+
 .flashcard {
-  border: 1px solid #eee;
-  margin-top: 5px;
-  padding: 5px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+form {
+  margin-top: 20px;
+}
+
+form input {
+  padding: 10px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+form button {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+form button:hover {
+  background-color: #0056b3;
 }
