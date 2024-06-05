@@ -1,40 +1,28 @@
-// src/components/Home/Deck.js
-import React, { useState } from 'react';
-import FlashcardInput from '../FlashcardInput/FlashcardInput';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './Deck.css';
 
 function Deck() {
   const [decks, setDecks] = useState({});
-  const [currentDeck, setCurrentDeck] = useState(null);
-  const [newDeckName, setNewDeckName] = useState('');
 
-  const addFlashcard = ({ deckName, question, answer }) => {
-    setDecks((prevDecks) => {
-      const newDecks = { ...prevDecks };
-      if (!newDecks[deckName]) {
-        newDecks[deckName] = [];
-      }
-      newDecks[deckName].push({ question, answer });
-      return newDecks;
-    });
-  };
+  // Retrieve decks from localStorage on component mount
+  useEffect(() => {
+    const storedDecks = JSON.parse(localStorage.getItem('decks')) || {};
+    setDecks(storedDecks);
+  }, []);
 
   const saveDeck = (deckName) => {
     if (!decks[deckName]) {
-      setDecks((prevDecks) => ({ ...prevDecks, [deckName]: [] }));
+      const newDecks = { ...decks, [deckName]: [] };
+      setDecks(newDecks);
+      localStorage.setItem('decks', JSON.stringify(newDecks));
     }
-    setCurrentDeck(deckName);
   };
 
-  const handleDeckClick = (deckName) => {
-    setCurrentDeck(deckName);
-  };
-
-  const handleNewDeckSubmit = (e) => {
-    e.preventDefault();
+  const handleCreateNewDeck = () => {
+    const newDeckName = prompt("Enter the name for the new deck:");
     if (newDeckName) {
       saveDeck(newDeckName);
-      setNewDeckName('');
     }
   };
 
@@ -43,33 +31,12 @@ function Deck() {
       <h2>Deck Catalog</h2>
       <div className="deck-list">
         {Object.keys(decks).map((deckName) => (
-          <div key={deckName} className="deck" onClick={() => handleDeckClick(deckName)}>
+          <Link to={`/deck/${deckName}`} key={deckName} className="deck">
             <h3>{deckName}</h3>
-          </div>
+          </Link>
         ))}
       </div>
-      <form onSubmit={handleNewDeckSubmit}>
-        <input
-          type="text"
-          value={newDeckName}
-          onChange={(e) => setNewDeckName(e.target.value)}
-          placeholder="New Deck Name"
-          required
-        />
-        <button type="submit">Create New Deck</button>
-      </form>
-      {currentDeck && (
-        <div className="current-deck">
-          <h3>Current Deck: {currentDeck}</h3>
-          <FlashcardInput addFlashcard={addFlashcard} currentDeck={currentDeck} />
-          {decks[currentDeck].map((flashcard, index) => (
-            <div key={index} className="flashcard">
-              <p><strong>Q:</strong> {flashcard.question}</p>
-              <p><strong>A:</strong> {flashcard.answer}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      <button onClick={handleCreateNewDeck}>Create New Deck</button>
     </div>
   );
 }
