@@ -1,42 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import './FlashcardInput.css';
 
 function FlashcardInput() {
   const { deckName } = useParams();
   const [flashcards, setFlashcards] = useState([]);
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
   const [editIndex, setEditIndex] = useState(null);
+  const [newDeckName, setNewDeckName] = useState(deckName);
+  const [isEditingDeck, setIsEditingDeck] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Logic to fetch existing flashcards if necessary
     const savedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
     setFlashcards(savedFlashcards);
   }, [deckName]);
 
   const saveFlashcardsToLocalStorage = (cards) => {
     localStorage.setItem(deckName, JSON.stringify(cards));
+    updateDeckTermsCount(deckName, cards.length);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const newFlashcards = [...flashcards];
-    if (editIndex !== null) {
-      newFlashcards[editIndex] = { question, answer };
-      setEditIndex(null);
-    } else {
-      newFlashcards.push({ question, answer });
-    }
-    setFlashcards(newFlashcards);
-    saveFlashcardsToLocalStorage(newFlashcards);
-    setQuestion('');
-    setAnswer('');
+  const updateDeckTermsCount = (deckName, count) => {
+    const decks = JSON.parse(localStorage.getItem('decks')) || {};
+    decks[deckName] = decks[deckName] || [];
+    decks[deckName].length = count;
+    localStorage.setItem('decks', JSON.stringify(decks));
+  };
+
+  const handleSave = () => {
+    setEditIndex(null);
+    saveFlashcardsToLocalStorage(flashcards);
   };
 
   const handleEdit = (index) => {
-    setQuestion(flashcards[index].question);
-    setAnswer(flashcards[index].answer);
     setEditIndex(index);
   };
 
@@ -46,37 +42,107 @@ function FlashcardInput() {
     saveFlashcardsToLocalStorage(newFlashcards);
   };
 
+  const handleRenameDeck = () => {
+    if (newDeckName && newDeckName !== deckName) {
+      const decks = JSON.parse(localStorage.getItem('decks')) || {};
+      decks[newDeckName] = decks[deckName];
+      delete decks[deckName];
+      localStorage.setItem('decks', JSON.stringify(decks));
+      localStorage.setItem(newDeckName, localStorage.getItem(deckName));
+      localStorage.removeItem(deckName);
+      setIsEditingDeck(false);
+      navigate(`/deck/${newDeckName}`);
+    }
+  };
+
+  const handleDeleteDeck = () => {
+    if (window.confirm('Are you sure you want to delete this deck? This action cannot be undone.')) {
+      const decks = JSON.parse(localStorage.getItem('decks')) || {};
+      delete decks[deckName];
+      localStorage.setItem('decks', JSON.stringify(decks));
+      localStorage.removeItem(deckName);
+      navigate('/');
+    }
+  };
+
+  const handleAddFlashcard = () => {
+    setFlashcards([...flashcards, { question: '', answer: '' }]);
+    setEditIndex(flashcards.length);
+  };
+
+  const handleInputChange = (index, field, value) => {
+    const newFlashcards = [...flashcards];
+    newFlashcards[index][field] = value;
+    setFlashcards(newFlashcards);
+  };
+
   return (
     <div className="flashcard-input">
-      <h3>Deck: {deckName}</h3>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Question</label>
+      <h3>
+        {isEditingDeck ? (
           <input
             type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            required
+            value={newDeckName}
+            onChange={(e) => setNewDeckName(e.target.value)}
           />
-        </div>
-        <div>
-          <label>Answer</label>
-          <input
-            type="text"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">{editIndex !== null ? 'Update Flashcard' : 'Save Flashcard'}</button>
-      </form>
+        ) : (
+          newDeckName
+        )}
+      </h3>
+      <div className="deck-actions">
+        <button onClick={isEditingDeck ? handleRenameDeck : () => setIsEditingDeck(true)}>
+          {isEditingDeck ? 'Save' : 'Edit Deck'}
+        </button>
+        {isEditingDeck && (
+          <>
+            <button onClick={handleDeleteDeck}>Delete Deck</button>
+            <button onClick={() => setIsEditingDeck(false)}>Cancel</button>
+          </>
+        )}
+      </div>
+      <button className="add-button" onClick={handleAddFlashcard}>+ Add Flashcard</button>
       <div className="flashcard-list">
         {flashcards.map((flashcard, index) => (
           <div key={index} className="flashcard">
-            <p><strong>Q:</strong> {flashcard.question}</p>
-            <p><strong>A:</strong> {flashcard.answer}</p>
-            <button onClick={() => handleEdit(index)}>Edit</button>
-            <button onClick={() => handleDelete(index)}>Delete</button>
+            <div className="flashcard-content">
+              <div className="flashcard-question">
+                {editIndex === index ? (
+                  <input
+                    type="text"
+                    value={flashcard.question}
+                    onChange={(e) => handleInputChange(index, 'question', e.target.value)}
+                  />
+                ) : (
+                  <p>{flashcard.question}</p>
+                )}
+              </div>
+              <div className="flashcard-answer">
+                {editIndex === index ? (
+                  <input
+                    type="text"
+                    value={flashcard.answer}
+                    onChange={(e) => handleInputChange(index, 'answer', e.target.value)}
+                  />
+                ) : (
+                  <p>{flashcard.answer}</p>
+                )}
+              </div>
+              <button
+                className="edit-button"
+                onClick={() => {
+                  if (editIndex === index) {
+                    handleSave();
+                  } else {
+                    handleEdit(index);
+                  }
+                }}
+              >
+                {editIndex === index ? 'Save' : 'Edit'}
+              </button>
+              {editIndex === index && (
+                <button className="delete-button" onClick={() => handleDelete(index)}>Delete Flashcard</button>
+              )}
+            </div>
           </div>
         ))}
       </div>

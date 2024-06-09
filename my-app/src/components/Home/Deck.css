@@ -1,53 +1,73 @@
-/* src/App.css */
-
-.deck-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* General styles for the deck container */
+.deck-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  text-align: center;
 }
 
+/* Styles for the deck list */
+.deck-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: flex-start;
+  margin-top: 20px;
+}
+
+/* Styles for each deck */
 .deck {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
+  width: 280px;
+  padding: 15px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .deck:hover {
-  background-color: #f0f0f0;
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.current-deck {
+/* Styles for deck title */
+.deck h3 {
+  font-size: 1.5em;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+/* Styles for deck details */
+.deck-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.deck-details span {
+  background-color: #eef2ff;
+  padding: 5px 10px;
+  border-radius: 20px;
+}
+
+/* Styles for the create deck button */
+.create-deck-button {
   margin-top: 20px;
-}
-
-.flashcard {
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-form {
-  margin-top: 20px;
-}
-
-form input {
-  padding: 10px;
-  margin-right: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-form button {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
   background-color: #007bff;
   color: white;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-form button:hover {
+.create-deck-button:hover {
   background-color: #0056b3;
 }

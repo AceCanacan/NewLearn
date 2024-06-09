@@ -1,10 +1,195 @@
-/* src/components/FlashcardInput/FlashcardInput.css */
+/* Container for the flashcard input section */
 .flashcard-input {
-  margin: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
-.flashcard-input form div {
+
+.flashcard-input h3 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Editable deck name input */
+.flashcard-input h3 input {
+  width: 100%;
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+/* Actions for deck management */
+.deck-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.deck-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.deck-actions button:hover {
+  background-color: #0056b3;
+}
+
+/* Add new flashcard button */
+.add-button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background-color: #28a745;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-bottom: 20px;
+}
+
+.add-button:hover {
+  background-color: #218838;
+}
+
+/* Container for the list of flashcards */
+.flashcard-list {
+  margin-bottom: 20px;
+}
+
+/* Individual flashcard styling */
+.flashcard {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+/* Content area for each flashcard */
+.flashcard-content {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flashcard-question, .flashcard-answer {
+  flex: 1;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* Vertical line separator between question and answer */
+.vertical-line {
+  width: 1px;
+  background-color: #ccc;
+  height: 100%;
+  margin: 0 20px;
+}
+
+.flashcard p {
+  margin: 0;
+}
+
+/* Edit button for each flashcard */
+.edit-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.edit-button:hover {
+  background-color: #0056b3;
+}
+
+/* Form styling for creating/updating flashcards */
+form {
+  margin-top: 20px;
+}
+
+form div {
   margin-bottom: 10px;
 }
-.flashcard-input button {
-  margin-right: 10px;
+
+form label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+form input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+/* Buttons for form actions */
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+form button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 10px;
+}
+
+form button:hover {
+  background-color: #0056b3;
+}
+
+form button[type="button"] {
+  background-color: #dc3545;
+}
+
+form button[type="button"]:hover {
+  background-color: #c82333;
+}
+
+/* Link to the test page */
+.test-link {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.test-link button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: #28a745;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.test-link button:hover {
+  background-color: #218838;
 }

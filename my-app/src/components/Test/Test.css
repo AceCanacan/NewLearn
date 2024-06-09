@@ -1,0 +1,114 @@
+.test-yourself {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .test-yourself h3 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .flashcard {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .flashcard p {
+    margin: 0;
+    padding: 10px 0;
+  }
+  
+  .flashcard-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  
+  .flashcard button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .flashcard button:hover {
+    background-color: #0056b3;
+  }
+  
+  .flashcard button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  .recording-controls {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  
+  .recording-controls button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .recording-controls button:hover {
+    background-color: #0056b3;
+  }
+  
+  .recording-controls button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  .comparison-result {
+    margin-top: 20px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  
+  .comparison-result p {
+    margin: 0;
+    padding: 10px 0;
+  }
+  
+  .comparison-result button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #ffc107;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .comparison-result button:hover {
+    background-color: #e0a800;
+  }
+  
+  .comparison-result button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  

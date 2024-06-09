@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import './Test.css';
 
 function Test() {
   const { deckName } = useParams();
@@ -7,24 +8,25 @@ function Test() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
-  const [transcribedText, setTranscribedText] = useState('');
-  const [comparisonResult, setComparisonResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [comparisonResult, setComparisonResult] = useState('');
+  const [hint, setHint] = useState('');
   const [mediaRecorder, setMediaRecorder] = useState(null);
 
   useEffect(() => {
-    // Retrieve flashcards from localStorage for the specific deck
     const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
     setFlashcards(storedFlashcards);
   }, [deckName]);
 
   const handleNextCard = () => {
     setShowAnswer(false);
+    setComparisonResult('');
+    setHint('');
     setCurrentCardIndex((prevIndex) => (prevIndex + 1) % flashcards.length);
   };
 
   const handleShowAnswer = () => {
-    setShowAnswer(true);
+    setShowAnswer(!showAnswer);
   };
 
   const startRecording = async () => {
@@ -34,18 +36,20 @@ function Test() {
     setMediaRecorder(recorder);
 
     recorder.ondataavailable = (event) => {
-      setAudioBlob(event.data);
+      const audioBlob = event.data;
+      processRecording(audioBlob);
     };
 
     recorder.start();
   };
 
-  const stopRecording = () => {
+  const finishRecording = () => {
     setIsRecording(false);
+    setIsLoading(true);
     mediaRecorder.stop();
   };
 
-  const transcribeAudio = async () => {
+  const processRecording = async (audioBlob) => {
     const formData = new FormData();
     formData.append('model', 'whisper-1');
     formData.append('file', new Blob([audioBlob], { type: 'audio/mp3' }), 'audio.mp3');
@@ -65,27 +69,72 @@ function Test() {
       }
 
       const data = await response.json();
-      console.log('Transcription response:', data); // Debugging log
-      setTranscribedText(data.text);
       compareQuestion(data.text);
     } catch (error) {
-      console.error('Error transcribing audio:', error);
-      setComparisonResult(`Error transcribing audio: ${error.message}`);
+      console.error('Error processing audio:', error);
+      setComparisonResult(`Error: ${error.message}`);
+      setIsLoading(false);
     }
   };
 
   const compareQuestion = async (userQuestion) => {
     const originalQuestion = flashcards[currentCardIndex].question;
     const originalAnswer = flashcards[currentCardIndex].answer;
-  
+
+    const messages = [
+      { role: 'system', content: 'You are a helpful assistant. Answer strictly yes or no.' },
+      { role: 'user', content: `Original Question: ${originalQuestion}` },
+      { role: 'user', content: `Original Answer: ${originalAnswer}` },
+      { role: 'user', content: `User Question: ${userQuestion}` },
+      { role: 'user', content: 'Does the user question match the context of the original answer? Answer strictly yes or no.' }
+    ];
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: messages,
+          max_tokens: 10
+        })
+      });
+
+      if (!response.ok) {
+        const errorDetail = await response.json();
+        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+      }
+
+      const data = await response.json();
+      if (data.choices && data.choices.length > 0) {
+        const result = data.choices[0].message.content.trim().toLowerCase();
+        setComparisonResult(result === 'yes' ? 'Correct' : 'Incorrect');
+      } else {
+        setComparisonResult('Error: No response from model');
+      }
+    } catch (error) {
+      console.error('Error comparing question:', error);
+      setComparisonResult(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getHint = async () => {
+    setIsLoading(true);
+    const originalQuestion = flashcards[currentCardIndex].question;
+    const originalAnswer = flashcards[currentCardIndex].answer;
+
     const messages = [
       { role: 'system', content: 'You are a helpful assistant.' },
       { role: 'user', content: `Original Question: ${originalQuestion}` },
       { role: 'user', content: `Original Answer: ${originalAnswer}` },
-      { role: 'user', content: `User Question: ${userQuestion}` },
-      { role: 'user', content: 'Does the user question match the context of the original answer? Answer yes or no.' }
+      { role: 'user', content: `The user's question was incorrect. Provide a hint that will help the user get closer to the answer but does not directly reveal it.` }
     ];
-  
+
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -99,27 +148,25 @@ function Test() {
           max_tokens: 50
         })
       });
-  
+
       if (!response.ok) {
         const errorDetail = await response.json();
         throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
       }
-  
+
       const data = await response.json();
-      console.log('Comparison response:', data); // Debugging log
       if (data.choices && data.choices.length > 0) {
-        setComparisonResult(data.choices[0].message.content.trim());
+        setHint(data.choices[0].message.content.trim());
       } else {
-        console.error('No choices in response:', data);
-        setComparisonResult('Error: No response from model');
+        setHint('Error: No response from model');
       }
     } catch (error) {
-      console.error('Error comparing question:', error);
-      setComparisonResult(`Error: Unable to compare question. Details: ${error.message}`);
+      console.error('Error getting hint:', error);
+      setHint(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  
 
   return (
     <div className="test-yourself">
@@ -130,22 +177,28 @@ function Test() {
           {showAnswer && (
             <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
           )}
-          {!showAnswer && (
-            <button onClick={handleShowAnswer}>Show Answer</button>
-          )}
-          <button onClick={handleNextCard}>Next</button>
+          <div className="flashcard-buttons">
+            <button onClick={handleShowAnswer}>
+              {showAnswer ? 'Hide Answer' : 'Show Answer'}
+            </button>
+            <button onClick={handleNextCard}>Next</button>
+          </div>
         </div>
       ) : (
         <p>No flashcards available in this deck.</p>
       )}
-      <div>
-        <button onClick={startRecording} disabled={isRecording}>Start Recording</button>
-        <button onClick={stopRecording} disabled={!isRecording}>Stop Recording</button>
-        <button onClick={transcribeAudio} disabled={!audioBlob}>Transcribe Audio</button>
+      <div className="recording-controls">
+        <button onClick={isRecording ? finishRecording : startRecording} disabled={isLoading}>
+          {isRecording ? 'Finish' : 'Start'}
+        </button>
       </div>
-      <div>
-        <p><strong>Transcribed Question:</strong> {transcribedText}</p>
-        <p><strong>Comparison Result:</strong> {comparisonResult}</p>
+      {isLoading && <p>Loading...</p>}
+      <div className="comparison-result">
+        <p><strong>Result:</strong> {comparisonResult}</p>
+        {comparisonResult === 'Incorrect' && (
+          <button onClick={getHint} disabled={isLoading}>Get Hint</button>
+        )}
+        {hint && <p><strong>Hint:</strong> {hint}</p>}
       </div>
     </div>
   );
