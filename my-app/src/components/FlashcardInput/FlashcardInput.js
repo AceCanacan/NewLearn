@@ -102,7 +102,9 @@ function FlashcardInput() {
           </>
         )}
       </div>
-      <button className="add-button" onClick={handleAddFlashcard}>+ Add Flashcard</button>
+      <Link to={`/test/${deckName}`} className="test-link">
+        <button>Test Yourself</button>
+      </Link>
       <div className="flashcard-list">
         {flashcards.map((flashcard, index) => (
           <div key={index} className="flashcard">
@@ -153,9 +155,7 @@ function FlashcardInput() {
           </div>
         ))}
       </div>
-      <Link to={`/test/${deckName}`} className="test-link">
-        <button>Test Yourself</button>
-      </Link>
+      <button className="add-button" onClick={handleAddFlashcard}>+ Add Flashcard</button>
     </div>
   );
 }

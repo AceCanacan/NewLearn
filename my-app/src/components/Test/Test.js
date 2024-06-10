@@ -103,7 +103,7 @@ function Test() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'gpt-4o',
           messages: messages,
           max_tokens: 10
         })
@@ -138,7 +138,7 @@ function Test() {
       { role: 'system', content: 'You are a helpful assistant.' },
       { role: 'user', content: `Original Question: ${originalQuestion}` },
       { role: 'user', content: `Original Answer: ${originalAnswer}` },
-      { role: 'user', content: `The user's question was incorrect. Provide a hint that will help the user get closer to the answer but does not directly reveal it.` }
+      { role: 'user', content: `The user's question was incorrect. Provide a hint that will help the user get closer to the answer but does not directly reveal it. ` }
     ];
 
     try {
@@ -149,7 +149,7 @@ function Test() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'gpt-4o',
           messages: messages,
           max_tokens: 50
         })
@@ -190,20 +190,18 @@ function Test() {
             {isRecording && (
               <button onClick={finishRecording}>Finish</button>
             )}
-            {showAnswer && !isRecording && !isLoading && comparisonResult === 'Correct' && (
+            {comparisonResult === 'Correct' && (
               <button onClick={handleNextCard}>Next</button>
             )}
-            {showAnswer && !isRecording && !isLoading && comparisonResult === 'Incorrect' && (
+            {comparisonResult === 'Incorrect' && (
               <button onClick={getHint}>Get Hint</button>
             )}
-            {comparisonResult === 'Incorrect' && (
-              <button onClick={handleNextCard}>Skip</button>
-            )}
-            {showAnswer && !isRecording && !isLoading && (
-              <button onClick={handleShowAnswer}>
-                {showAnswer ? 'Hide Answer' : 'Show Answer'}
-              </button>
-            )}
+          </div>
+          <div className="flashcard-secondary-buttons">
+            <button onClick={handleNextCard} className="secondary-button">Skip</button>
+            <button onClick={handleShowAnswer} className="secondary-button">
+              {showAnswer ? 'Hide Answer' : 'Show Answer'}
+            </button>
           </div>
         </div>
       ) : (
@@ -212,7 +210,9 @@ function Test() {
       {isLoading && <p>Loading...</p>}
       <div className="comparison-result">
         <p><strong>Result:</strong> {comparisonResult}</p>
-        {hint && <p><strong>Hint:</strong> {hint}</p>}
+        {comparisonResult === 'Incorrect' && hint && (
+          <p><strong>Hint:</strong> {hint}</p>
+        )}
       </div>
     </div>
   );
