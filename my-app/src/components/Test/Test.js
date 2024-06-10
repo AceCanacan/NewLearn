@@ -88,46 +88,54 @@ function Test() {
     const originalAnswer = flashcards[currentCardIndex].answer;
 
     const messages = [
-      { role: 'system', content: 'You are a helpful assistant. Answer strictly yes or no.' },
-      { role: 'user', content: `Original Question: ${originalQuestion}` },
-      { role: 'user', content: `Original Answer: ${originalAnswer}` },
-      { role: 'user', content: `User Question: ${userQuestion}` },
-      { role: 'user', content: 'Does the user question match the context of the original answer? Answer strictly yes or no.' }
+        { role: 'system', content: 'You are a helpful assistant. Answer strictly yes or no.' },
+        { role: 'user', content: `Original Question: ${originalQuestion}` },
+        { role: 'user', content: `Original Answer: ${originalAnswer}` },
+        { role: 'user', content: `User Question: ${userQuestion}` },
+        { role: 'user', content: 'Do the user answer and the original answer convey similar meanings or support the same idea? Answer strictly yes or no.' }
     ];
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: messages,
-          max_tokens: 10
-        })
-      });
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o',
+                messages: messages,
+                max_tokens: 10
+            })
+        });
 
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-      }
+        if (!response.ok) {
+            const errorDetail = await response.json();
+            throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+        }
 
-      const data = await response.json();
-      if (data.choices && data.choices.length > 0) {
-        const result = data.choices[0].message.content.trim().toLowerCase();
-        setComparisonResult(result === 'yes' ? 'Correct' : 'Incorrect');
-      } else {
-        setComparisonResult('Error: No response from model');
-      }
+        const data = await response.json();
+
+        // Debugging statement: uncomment to see the entire response
+        console.log("API Response:", data);
+
+        if (data.choices && data.choices.length > 0) {
+            const result = data.choices[0].message.content.trim().toLowerCase();
+
+            // Debugging statement: uncomment to see the extracted result
+            console.log("Extracted Result:", result);
+
+            setComparisonResult(result === 'yes' ? 'Correct' : 'Incorrect');
+        } else {
+            setComparisonResult('Error: No response from model');
+        }
     } catch (error) {
-      console.error('Error comparing question:', error);
-      setComparisonResult(`Error: ${error.message}`);
+        console.error('Error comparing question:', error);
+        setComparisonResult(`Error: ${error.message}`);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
+};
 
   const getHint = async () => {
     setIsLoading(true);
