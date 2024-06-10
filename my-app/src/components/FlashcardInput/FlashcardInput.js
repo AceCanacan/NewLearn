@@ -37,9 +37,11 @@ function FlashcardInput() {
   };
 
   const handleDelete = (index) => {
-    const newFlashcards = flashcards.filter((_, i) => i !== index);
-    setFlashcards(newFlashcards);
-    saveFlashcardsToLocalStorage(newFlashcards);
+    if (window.confirm('Are you sure you want to delete this flashcard? This action cannot be undone.')) {
+      const newFlashcards = flashcards.filter((_, i) => i !== index);
+      setFlashcards(newFlashcards);
+      saveFlashcardsToLocalStorage(newFlashcards);
+    }
   };
 
   const handleRenameDeck = () => {
@@ -106,6 +108,7 @@ function FlashcardInput() {
           <div key={index} className="flashcard">
             <div className="flashcard-content">
               <div className="flashcard-question">
+                <label>Question</label>
                 {editIndex === index ? (
                   <input
                     type="text"
@@ -116,7 +119,9 @@ function FlashcardInput() {
                   <p>{flashcard.question}</p>
                 )}
               </div>
+              <div className="vertical-line"></div>
               <div className="flashcard-answer">
+                <label>Answer</label>
                 {editIndex === index ? (
                   <input
                     type="text"
@@ -127,21 +132,23 @@ function FlashcardInput() {
                   <p>{flashcard.answer}</p>
                 )}
               </div>
-              <button
-                className="edit-button"
-                onClick={() => {
-                  if (editIndex === index) {
-                    handleSave();
-                  } else {
-                    handleEdit(index);
-                  }
-                }}
-              >
-                {editIndex === index ? 'Save' : 'Edit'}
-              </button>
-              {editIndex === index && (
-                <button className="delete-button" onClick={() => handleDelete(index)}>Delete Flashcard</button>
-              )}
+              <div className="flashcard-buttons">
+                <button
+                  className="edit-button"
+                  onClick={() => {
+                    if (editIndex === index) {
+                      handleSave();
+                    } else {
+                      handleEdit(index);
+                    }
+                  }}
+                >
+                  {editIndex === index ? 'Save' : 'Edit'}
+                </button>
+                {editIndex === index && (
+                  <button className="delete-button" onClick={() => handleDelete(index)}>Delete</button>
+                )}
+              </div>
             </div>
           </div>
         ))}

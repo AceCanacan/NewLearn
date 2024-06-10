@@ -1,3 +1,4 @@
+/* Container for the test component */
 .test-yourself {
     max-width: 800px;
     margin: 0 auto;
@@ -5,16 +6,15 @@
     background-color: #f9f9f9;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
   }
   
   .test-yourself h3 {
-    text-align: center;
     margin-bottom: 20px;
   }
   
+  /* Flashcard styling */
   .flashcard {
-    display: flex;
-    flex-direction: column;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 8px;
@@ -28,10 +28,12 @@
     padding: 10px 0;
   }
   
+  /* Flashcard buttons styling */
   .flashcard-buttons {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     margin-top: 10px;
+    gap: 10px;
   }
   
   .flashcard button {
@@ -53,6 +55,7 @@
     cursor: not-allowed;
   }
   
+  /* Recording controls styling */
   .recording-controls {
     display: flex;
     justify-content: center;
@@ -78,6 +81,7 @@
     cursor: not-allowed;
   }
   
+  /* Comparison result styling */
   .comparison-result {
     margin-top: 20px;
     background-color: #fff;

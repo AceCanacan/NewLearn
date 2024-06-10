@@ -69,47 +69,60 @@
 /* Individual flashcard styling */
 .flashcard {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 8px;
   margin-bottom: 10px;
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
 }
 
 /* Content area for each flashcard */
 .flashcard-content {
   display: flex;
   width: 100%;
-  justify-content: space-between;
   align-items: center;
 }
 
 .flashcard-question, .flashcard-answer {
   flex: 1;
-  padding: 10px;
+  margin-right: 10px;
+}
+
+.flashcard-question label, .flashcard-answer label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.flashcard-question input, .flashcard-answer input {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   box-sizing: border-box;
 }
 
-/* Vertical line separator between question and answer */
-.vertical-line {
-  width: 1px;
-  background-color: #ccc;
-  height: 100%;
-  margin: 0 20px;
-}
-
-.flashcard p {
+.flashcard-question p, .flashcard-answer p {
   margin: 0;
 }
 
-/* Edit button for each flashcard */
-.edit-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+.vertical-line {
+  width: 1px;
+  background-color: #ccc;
+  height: 50px;
+  margin: 0 10px;
+}
+
+.flashcard-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.edit-button, .delete-button {
   padding: 5px 10px;
   border: none;
   border-radius: 4px;
@@ -117,60 +130,18 @@
   color: white;
   cursor: pointer;
   transition: background-color 0.2s;
+  margin-bottom: 5px;
+}
+
+.delete-button {
+  background-color: #dc3545;
 }
 
 .edit-button:hover {
   background-color: #0056b3;
 }
 
-/* Form styling for creating/updating flashcards */
-form {
-  margin-top: 20px;
-}
-
-form div {
-  margin-bottom: 10px;
-}
-
-form label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-form input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
-/* Buttons for form actions */
-.form-buttons {
-  display: flex;
-  justify-content: space-between;
-}
-
-form button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 10px;
-}
-
-form button:hover {
-  background-color: #0056b3;
-}
-
-form button[type="button"] {
-  background-color: #dc3545;
-}
-
-form button[type="button"]:hover {
+.delete-button:hover {
   background-color: #c82333;
 }
 

@@ -44,9 +44,15 @@ function Test() {
   };
 
   const finishRecording = () => {
-    setIsRecording(false);
-    setIsLoading(true);
-    mediaRecorder.stop();
+    if (mediaRecorder) {
+      mediaRecorder.onstop = () => {
+        const tracks = mediaRecorder.stream.getTracks();
+        tracks.forEach(track => track.stop());
+        setIsRecording(false);
+        setIsLoading(true);
+      };
+      mediaRecorder.stop();
+    }
   };
 
   const processRecording = async (audioBlob) => {
@@ -178,26 +184,34 @@ function Test() {
             <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
           )}
           <div className="flashcard-buttons">
-            <button onClick={handleShowAnswer}>
-              {showAnswer ? 'Hide Answer' : 'Show Answer'}
-            </button>
-            <button onClick={handleNextCard}>Next</button>
+            {!isRecording && !isLoading && (
+              <button onClick={startRecording}>Start</button>
+            )}
+            {isRecording && (
+              <button onClick={finishRecording}>Finish</button>
+            )}
+            {showAnswer && !isRecording && !isLoading && comparisonResult === 'Correct' && (
+              <button onClick={handleNextCard}>Next</button>
+            )}
+            {showAnswer && !isRecording && !isLoading && comparisonResult === 'Incorrect' && (
+              <button onClick={getHint}>Get Hint</button>
+            )}
+            {comparisonResult === 'Incorrect' && (
+              <button onClick={handleNextCard}>Skip</button>
+            )}
+            {showAnswer && !isRecording && !isLoading && (
+              <button onClick={handleShowAnswer}>
+                {showAnswer ? 'Hide Answer' : 'Show Answer'}
+              </button>
+            )}
           </div>
         </div>
       ) : (
         <p>No flashcards available in this deck.</p>
       )}
-      <div className="recording-controls">
-        <button onClick={isRecording ? finishRecording : startRecording} disabled={isLoading}>
-          {isRecording ? 'Finish' : 'Start'}
-        </button>
-      </div>
       {isLoading && <p>Loading...</p>}
       <div className="comparison-result">
         <p><strong>Result:</strong> {comparisonResult}</p>
-        {comparisonResult === 'Incorrect' && (
-          <button onClick={getHint} disabled={isLoading}>Get Hint</button>
-        )}
         {hint && <p><strong>Hint:</strong> {hint}</p>}
       </div>
     </div>
