@@ -63,7 +63,7 @@ function Test() {
   const processRecording = async (audioBlob) => {
     const formData = new FormData();
     formData.append('model', 'whisper-1');
-    formData.append('file', new Blob([audioBlob], { type: 'audio/mp3' }), 'audio.mp3');
+    formData.append('file', new Blob([audioBlob], { type: 'audio/mp3' }), 'audio/mp3');
 
     try {
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -192,73 +192,92 @@ function Test() {
     }
   };
 
+  const retakeTest = () => {
+    setCorrectAnswers(0);
+    setCurrentCardIndex(0);
+    setComparisonResult('');
+    setHint('');
+    setShowAnswer(false);
+    setTypedAnswer('');
+    setTypingMode(false);
+  };
+
   return (
     <div className="test-yourself">
-      <h3>Test Yourself: {deckName}</h3>
+      <h3>{deckName}</h3>
       {flashcards.length > 0 ? (
-        <div className="flashcard">
-          <p><strong>Q:</strong> {flashcards[currentCardIndex].question}</p>
-          {showAnswer && (
-            <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
-          )}
-          <div className="flashcard-buttons">
-            <button onClick={() => setTypingMode(!typingMode)}>
-              {typingMode ? 'Switch to Recording' : 'Switch to Typing'}
-            </button>
-            {!typingMode && !isRecording && !isLoading && (
-              <button onClick={startRecording}>Start</button>
-            )}
-            {typingMode && (
-              <>
-                <input
-                  type="text"
-                  value={typedAnswer}
-                  onChange={(e) => setTypedAnswer(e.target.value)}
-                  placeholder="Type your answer here"
-                />
-                <button
-                  onClick={() => compareQuestion(typedAnswer)}
-                  disabled={!typedAnswer.trim()}
-                >
-                  Send
+        correctAnswers === totalCards ? (
+          <div className="completion-message">
+            <h2>Way to go! You've reviewed all the cards.</h2>
+            <button onClick={retakeTest}>Retake the Test</button>
+          </div>
+        ) : (
+          <>
+            <div className="flashcard">
+              <p><strong>Q:</strong> {flashcards[currentCardIndex].question}</p>
+              {showAnswer && (
+                <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
+              )}
+              <div className="flashcard-buttons">
+                <button onClick={() => setTypingMode(!typingMode)}>
+                  {typingMode ? 'Switch to Recording' : 'Switch to Typing'}
                 </button>
-              </>
-            )}
-            {!typingMode && isRecording && (
-              <button onClick={finishRecording}>Finish</button>
-            )}
-            {comparisonResult === 'Correct' && (
-              <button onClick={handleNextCard}>Next</button>
-            )}
-            {comparisonResult === 'Incorrect' && (
-              <button onClick={getHint}>Get Hint</button>
-            )}
-          </div>
-          <div className="flashcard-secondary-buttons">
-            <button onClick={handleNextCard} className="secondary-button">Skip</button>
-            <button onClick={handleShowAnswer} className="secondary-button">
-              {showAnswer ? 'Hide Answer' : 'Show Answer'}
-            </button>
-          </div>
-        </div>
+                {!typingMode && !isRecording && !isLoading && (
+                  <button onClick={startRecording}>Start</button>
+                )}
+                {typingMode && (
+                  <>
+                    <input
+                      type="text"
+                      value={typedAnswer}
+                      onChange={(e) => setTypedAnswer(e.target.value)}
+                      placeholder="Type your answer here"
+                    />
+                    <button
+                      onClick={() => compareQuestion(typedAnswer)}
+                      disabled={!typedAnswer.trim()}
+                    >
+                      Send
+                    </button>
+                  </>
+                )}
+                {!typingMode && isRecording && (
+                  <button onClick={finishRecording}>Finish</button>
+                )}
+                {comparisonResult === 'Correct' && (
+                  <button onClick={handleNextCard}>Next</button>
+                )}
+                {comparisonResult === 'Incorrect' && (
+                  <button onClick={getHint}>Get Hint</button>
+                )}
+              </div>
+              <div className="flashcard-secondary-buttons">
+                <button onClick={handleNextCard} className="secondary-button">Skip</button>
+                <button onClick={handleShowAnswer} className="secondary-button">
+                  {showAnswer ? 'Hide Answer' : 'Show Answer'}
+                </button>
+              </div>
+            </div>
+            {isLoading && <p>Loading...</p>}
+            <div className="comparison-result">
+              <p><strong>Result:</strong> {comparisonResult}</p>
+              {comparisonResult === 'Incorrect' && hint && (
+                <p><strong>Hint:</strong> {hint}</p>
+              )}
+            </div>
+            <div className="progress-tracker">
+              <div className="progress-bar-container">
+                <div className="progress-bar" style={{ width: `${(correctAnswers / totalCards) * 100}%` }}></div>
+              </div>
+              <p>{correctAnswers} out of {totalCards} completed</p>
+            </div>
+          </>
+        )
       ) : (
         <p>No flashcards available in this deck.</p>
       )}
-      {isLoading && <p>Loading...</p>}
-      <div className="comparison-result">
-        <p><strong>Result:</strong> {comparisonResult}</p>
-        {comparisonResult === 'Incorrect' && hint && (
-          <p><strong>Hint:</strong> {hint}</p>
-        )}
-      </div>
-      <div className="progress-tracker">
-        <div className="progress-bar-container">
-          <div className="progress-bar" style={{ width: `${(correctAnswers / totalCards) * 100}%` }}></div>
-        </div>
-        <p>{currentCardIndex + 1} out of {totalCards} completed</p>
-      </div>
     </div>
   );
-            }  
+}
 
 export default Test;
