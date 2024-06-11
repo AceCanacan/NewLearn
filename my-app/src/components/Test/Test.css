@@ -36,6 +36,37 @@
   gap: 10px;
 }
 
+.flashcard-buttons button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.flashcard-buttons button:hover {
+  background-color: #0056b3;
+}
+
+.flashcard-buttons button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.flashcard-buttons input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 60%;
+}
+
+.flashcard-buttons input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
 .flashcard-secondary-buttons {
   display: flex;
   justify-content: center;
@@ -43,58 +74,21 @@
   gap: 10px;
 }
 
-.flashcard button,
 .flashcard-secondary-buttons .secondary-button {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  background-color: #007bff;
+  background-color: #6c757d;
   color: white;
   cursor: pointer;
   transition: background-color 0.2s;
-}
-
-.flashcard button:hover,
-.flashcard-secondary-buttons .secondary-button:hover {
-  background-color: #0056b3;
-}
-
-.flashcard button:disabled,
-.flashcard-secondary-buttons .secondary-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.flashcard-secondary-buttons .secondary-button {
-  background-color: #6c757d;
 }
 
 .flashcard-secondary-buttons .secondary-button:hover {
   background-color: #5a6268;
 }
 
-/* Recording controls styling */
-.recording-controls {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.recording-controls button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.recording-controls button:hover {
-  background-color: #0056b3;
-}
-
-.recording-controls button:disabled {
+.flashcard-secondary-buttons .secondary-button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
 }
@@ -132,4 +126,25 @@
 .comparison-result button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+/* Progress tracker styling */
+.progress-tracker {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.progress-bar-container {
+  width: 100%;
+  background-color: #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 20px;
+  margin-top: 10px;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #007bff;
+  transition: width 0.3s ease-in-out;
 }

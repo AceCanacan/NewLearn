@@ -12,11 +12,16 @@ function Test() {
   const [comparisonResult, setComparisonResult] = useState('');
   const [hint, setHint] = useState('');
   const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [typingMode, setTypingMode] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState('');
+  const [correctAnswers, setCorrectAnswers] = useState(0);
 
   useEffect(() => {
     const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
     setFlashcards(storedFlashcards);
   }, [deckName]);
+
+  const totalCards = flashcards.length;
 
   const handleNextCard = () => {
     setShowAnswer(false);
@@ -75,6 +80,7 @@ function Test() {
       }
 
       const data = await response.json();
+      console.log("Transcription Data:", data);
       compareQuestion(data.text);
     } catch (error) {
       console.error('Error processing audio:', error);
@@ -86,56 +92,58 @@ function Test() {
   const compareQuestion = async (userQuestion) => {
     const originalQuestion = flashcards[currentCardIndex].question;
     const originalAnswer = flashcards[currentCardIndex].answer;
+    
+    const userAnswer = typingMode ? typedAnswer : userQuestion;
 
     const messages = [
-        { role: 'system', content: 'You are a helpful assistant. Answer strictly yes or no.' },
-        { role: 'user', content: `Original Question: ${originalQuestion}` },
-        { role: 'user', content: `Original Answer: ${originalAnswer}` },
-        { role: 'user', content: `User Question: ${userQuestion}` },
-        { role: 'user', content: 'Do the user answer and the original answer convey similar meanings or support the same idea? Answer strictly yes or no.' }
+      { role: 'system', content: 'You are a helpful assistant. Answer strictly yes or no.' },
+      { role: 'user', content: `Original Question: ${originalQuestion}` },
+      { role: 'user', content: `Original Answer: ${originalAnswer}` },
+      { role: 'user', content: `User Answer: ${userAnswer}` },
+      { role: 'user', content: 'Do the user answer and the original answer convey similar meanings or support the same idea? Answer strictly yes or no.' }
     ];
 
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: 'gpt-4o',
-                messages: messages,
-                max_tokens: 10
-            })
-        });
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: messages,
+          max_tokens: 10
+        })
+      });
 
-        if (!response.ok) {
-            const errorDetail = await response.json();
-            throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-        }
+      if (!response.ok) {
+        const errorDetail = await response.json();
+        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+      }
 
-        const data = await response.json();
+      const data = await response.json();
+      console.log("Comparison API Response:", data);
 
-        // Debugging statement: uncomment to see the entire response
-        console.log("API Response:", data);
-
-        if (data.choices && data.choices.length > 0) {
-            const result = data.choices[0].message.content.trim().toLowerCase();
-
-            // Debugging statement: uncomment to see the extracted result
-            console.log("Extracted Result:", result);
-
-            setComparisonResult(result === 'yes' ? 'Correct' : 'Incorrect');
+      if (data.choices && data.choices.length > 0) {
+        const result = data.choices[0].message.content.trim().replace('.', '').toLowerCase();
+        console.log("Extracted Result:", result);
+        if (result === 'yes') {
+          setCorrectAnswers(prev => prev + 1);
+          setComparisonResult('Correct');
         } else {
-            setComparisonResult('Error: No response from model');
+          setComparisonResult('Incorrect');
         }
+      } else {
+        setComparisonResult('Error: No response from model');
+      }
     } catch (error) {
-        console.error('Error comparing question:', error);
-        setComparisonResult(`Error: ${error.message}`);
+      console.error('Error comparing question:', error);
+      setComparisonResult(`Error: ${error.message}`);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
+  };
 
   const getHint = async () => {
     setIsLoading(true);
@@ -169,6 +177,8 @@ function Test() {
       }
 
       const data = await response.json();
+      console.log("Hint API Response:", data);
+
       if (data.choices && data.choices.length > 0) {
         setHint(data.choices[0].message.content.trim());
       } else {
@@ -192,10 +202,29 @@ function Test() {
             <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
           )}
           <div className="flashcard-buttons">
-            {!isRecording && !isLoading && (
+            <button onClick={() => setTypingMode(!typingMode)}>
+              {typingMode ? 'Switch to Recording' : 'Switch to Typing'}
+            </button>
+            {!typingMode && !isRecording && !isLoading && (
               <button onClick={startRecording}>Start</button>
             )}
-            {isRecording && (
+            {typingMode && (
+              <>
+                <input
+                  type="text"
+                  value={typedAnswer}
+                  onChange={(e) => setTypedAnswer(e.target.value)}
+                  placeholder="Type your answer here"
+                />
+                <button
+                  onClick={() => compareQuestion(typedAnswer)}
+                  disabled={!typedAnswer.trim()}
+                >
+                  Send
+                </button>
+              </>
+            )}
+            {!typingMode && isRecording && (
               <button onClick={finishRecording}>Finish</button>
             )}
             {comparisonResult === 'Correct' && (
@@ -222,8 +251,14 @@ function Test() {
           <p><strong>Hint:</strong> {hint}</p>
         )}
       </div>
+      <div className="progress-tracker">
+        <div className="progress-bar-container">
+          <div className="progress-bar" style={{ width: `${(correctAnswers / totalCards) * 100}%` }}></div>
+        </div>
+        <p>{currentCardIndex + 1} out of {totalCards} completed</p>
+      </div>
     </div>
   );
-}
+            }  
 
 export default Test;
