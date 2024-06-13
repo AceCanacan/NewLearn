@@ -15,6 +15,16 @@ function Test() {
   const [typingMode, setTypingMode] = useState(false);
   const [typedAnswer, setTypedAnswer] = useState('');
   const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+  const [hasFeedbackBeenProvided, setHasFeedbackBeenProvided] = useState(false);
+  const [newAnswerProvided, setNewAnswerProvided] = useState(false);
+  const [correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions] = useState(new Set());
+  const [finished, setFinished] = useState(false);
+  const [wasCorrect, setWasCorrect] = useState(false);
+  const [lastCorrectAnswer, setLastCorrectAnswer] = useState('');
+
 
   useEffect(() => {
     const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
@@ -24,12 +34,23 @@ function Test() {
   const totalCards = flashcards.length;
 
   const handleNextCard = () => {
+    if (currentCardIndex < flashcards.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1);
+    }
     setShowAnswer(false);
     setComparisonResult('');
     setHint('');
-    setCurrentCardIndex((prevIndex) => (prevIndex + 1) % flashcards.length);
+    setShowFeedback(false);
+    setHasFeedbackBeenProvided(false);
+    setWasCorrect(false);
   };
+  
 
+  const handleFinish = () => {
+    setFinished(true);
+  };
+  
+  
   const handleShowAnswer = () => {
     setShowAnswer(!showAnswer);
   };
@@ -92,9 +113,9 @@ function Test() {
   const compareQuestion = async (userQuestion) => {
     const originalQuestion = flashcards[currentCardIndex].question;
     const originalAnswer = flashcards[currentCardIndex].answer;
-    
+  
     const userAnswer = typingMode ? typedAnswer : userQuestion;
-
+  
     const messages = [
       { role: 'system', content: 'You are a helpful assistant. Answer strictly yes or no.' },
       { role: 'user', content: `Original Question: ${originalQuestion}` },
@@ -102,7 +123,7 @@ function Test() {
       { role: 'user', content: `User Answer: ${userAnswer}` },
       { role: 'user', content: 'Do the user answer and the original answer convey similar meanings or support the same idea? Answer strictly yes or no.' }
     ];
-
+  
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -111,26 +132,32 @@ function Test() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4',
           messages: messages,
           max_tokens: 10
         })
       });
-
+  
       if (!response.ok) {
         const errorDetail = await response.json();
         throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
       }
-
+  
       const data = await response.json();
       console.log("Comparison API Response:", data);
-
+  
       if (data.choices && data.choices.length > 0) {
         const result = data.choices[0].message.content.trim().replace('.', '').toLowerCase();
         console.log("Extracted Result:", result);
         if (result === 'yes') {
-          setCorrectAnswers(prev => prev + 1);
+          if (!correctlyAnsweredQuestions.has(currentCardIndex)) {
+            setCorrectAnswers(prev => prev + 1);
+            setCorrectlyAnsweredQuestions(prev => new Set(prev).add(currentCardIndex));
+          }
           setComparisonResult('Correct');
+          setNewAnswerProvided(true); // Mark new answer as provided
+          setWasCorrect(true); // Set the state to true
+          setLastCorrectAnswer(userAnswer); // Set the last correct answer
         } else {
           setComparisonResult('Incorrect');
         }
@@ -144,19 +171,26 @@ function Test() {
       setIsLoading(false);
     }
   };
-
+  
+  
+  
+  
+  
+  
+  
   const getHint = async () => {
     setIsLoading(true);
+    setHint(''); // Clear previous hint
     const originalQuestion = flashcards[currentCardIndex].question;
     const originalAnswer = flashcards[currentCardIndex].answer;
-
+  
     const messages = [
       { role: 'system', content: 'You are a helpful assistant.' },
       { role: 'user', content: `Original Question: ${originalQuestion}` },
       { role: 'user', content: `Original Answer: ${originalAnswer}` },
-      { role: 'user', content: `The user's question was incorrect. Provide a hint that will help the user get closer to the answer but does not directly reveal it. ` }
+      { role: 'user', content: 'The user\'s answer was incorrect. Provide a hint that will help the user get closer to the answer but does not directly reveal it.' }
     ];
-
+  
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -170,15 +204,15 @@ function Test() {
           max_tokens: 50
         })
       });
-
+  
       if (!response.ok) {
         const errorDetail = await response.json();
         throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
       }
-
+  
       const data = await response.json();
       console.log("Hint API Response:", data);
-
+  
       if (data.choices && data.choices.length > 0) {
         setHint(data.choices[0].message.content.trim());
       } else {
@@ -191,6 +225,9 @@ function Test() {
       setIsLoading(false);
     }
   };
+  
+  
+  
 
   const retakeTest = () => {
     setCorrectAnswers(0);
@@ -200,84 +237,167 @@ function Test() {
     setShowAnswer(false);
     setTypedAnswer('');
     setTypingMode(false);
+    setCorrectlyAnsweredQuestions(new Set()); // Reset correctly answered questions
   };
 
+
+  const provideFeedback = async () => {
+    if (hasFeedbackBeenProvided && !newAnswerProvided) return; // Prevent multiple feedback requests
+    
+    setFeedback(''); // Clear previous feedback
+    setIsFeedbackLoading(true);
+    
+    const messages = [
+      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'user', content: `Original Question: ${flashcards[currentCardIndex].question}` },
+      { role: 'user', content: `Original Answer: ${flashcards[currentCardIndex].answer}` },
+      { role: 'user', content: `The user's answer was correct. Provide praise and suggestions for improvement. Just one line` },
+      { role: 'user', content: `User's Correct Answer: ${lastCorrectAnswer}` }
+    ];
+    
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: messages,
+          max_tokens: 50
+        })
+      });
+    
+      if (!response.ok) {
+        const errorDetail = await response.json();
+        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+      }
+    
+      const data = await response.json();
+      console.log("Feedback API Response:", data);
+    
+      if (data.choices && data.choices.length > 0) {
+        setFeedback(data.choices[0].message.content.trim());
+        setHasFeedbackBeenProvided(true); // Set feedback provided flag
+        setNewAnswerProvided(false); // Reset new answer state
+      } else {
+        setFeedback('Error: No response from model');
+      }
+    } catch (error) {
+      console.error('Error providing feedback:', error);
+      setFeedback(`Error: ${error.message}`);
+    } finally {
+      setIsFeedbackLoading(false);
+    }
+  };
+  
+  
+  
   return (
-    <div className="test-yourself">
-      <h3>{deckName}</h3>
-      {flashcards.length > 0 ? (
-        correctAnswers === totalCards ? (
-          <div className="completion-message">
-            <h2>Way to go! You've reviewed all the cards.</h2>
-            <button onClick={retakeTest}>Retake the Test</button>
-          </div>
-        ) : (
-          <>
-            <div className="flashcard">
-              <p><strong>Q:</strong> {flashcards[currentCardIndex].question}</p>
-              {showAnswer && (
-                <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
-              )}
-              <div className="flashcard-buttons">
-                <button onClick={() => setTypingMode(!typingMode)}>
-                  {typingMode ? 'Switch to Recording' : 'Switch to Typing'}
-                </button>
-                {!typingMode && !isRecording && !isLoading && (
-                  <button onClick={startRecording}>Start</button>
-                )}
-                {typingMode && (
-                  <>
-                    <input
-                      type="text"
-                      value={typedAnswer}
-                      onChange={(e) => setTypedAnswer(e.target.value)}
-                      placeholder="Type your answer here"
-                    />
-                    <button
-                      onClick={() => compareQuestion(typedAnswer)}
-                      disabled={!typedAnswer.trim()}
-                    >
-                      Send
-                    </button>
-                  </>
-                )}
-                {!typingMode && isRecording && (
-                  <button onClick={finishRecording}>Finish</button>
-                )}
-                {comparisonResult === 'Correct' && (
-                  <button onClick={handleNextCard}>Next</button>
-                )}
-                {comparisonResult === 'Incorrect' && (
-                  <button onClick={getHint}>Get Hint</button>
-                )}
-              </div>
-              <div className="flashcard-secondary-buttons">
-                <button onClick={handleNextCard} className="secondary-button">Skip</button>
-                <button onClick={handleShowAnswer} className="secondary-button">
-                  {showAnswer ? 'Hide Answer' : 'Show Answer'}
-                </button>
-              </div>
-            </div>
-            {isLoading && <p>Loading...</p>}
-            <div className="comparison-result">
-              <p><strong>Result:</strong> {comparisonResult}</p>
-              {comparisonResult === 'Incorrect' && hint && (
-                <p><strong>Hint:</strong> {hint}</p>
-              )}
-            </div>
-            <div className="progress-tracker">
-              <div className="progress-bar-container">
-                <div className="progress-bar" style={{ width: `${(correctAnswers / totalCards) * 100}%` }}></div>
-              </div>
-              <p>{correctAnswers} out of {totalCards} completed</p>
-            </div>
-          </>
-        )
+  <div className="test-yourself">
+    <h3>{deckName}</h3>
+    {flashcards.length > 0 ? (
+      finished ? (
+        <div className="completion-message">
+          <h2>Way to go! You've reviewed all the cards.</h2>
+          <button onClick={retakeTest}>Retake the Test</button>
+        </div>
       ) : (
-        <p>No flashcards available in this deck.</p>
+        <>
+<div className="flashcard">
+  <p><strong>Q:</strong> {flashcards[currentCardIndex].question}</p>
+  {showAnswer && (
+    <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
+  )}
+  <div className="flashcard-buttons">
+    <button onClick={() => setTypingMode(!typingMode)}>
+      {typingMode ? 'Voice Mode' : 'Type Mode'}
+    </button>
+    {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
+      <button onClick={startRecording}>Start</button>
+    )}
+    {typingMode && (
+      <>
+        <input
+          type="text"
+          value={typedAnswer}
+          onChange={(e) => setTypedAnswer(e.target.value)}
+          placeholder="Type your answer here"
+        />
+        <button
+          onClick={() => compareQuestion(typedAnswer)}
+          disabled={!typedAnswer.trim()}
+        >
+          Send
+        </button>
+      </>
+    )}
+    {!typingMode && isRecording && (
+      <button onClick={finishRecording}>Finish</button>
+    )}
+    {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
+      <button onClick={startRecording}>Try Again</button>
+    )}
+    {comparisonResult === 'Incorrect' && (
+      <>
+        <button onClick={getHint}>Get Hint</button>
+        {hint && <p><strong>Hint:</strong> {hint}</p>}
+      </>
+    )}
+  </div>
+  <div className="flashcard-secondary-buttons">
+    <button onClick={handleNextCard} className="secondary-button">Skip</button>
+    <button onClick={handleShowAnswer} className="secondary-button">
+      {showAnswer ? 'Hide Answer' : 'Show Answer'}
+    </button>
+  </div>
+</div>
+
+          {isLoading && <p>Loading...</p>}
+          <div className="comparison-result">
+  <p><strong>Result:</strong> {comparisonResult}</p>
+  {wasCorrect || comparisonResult === 'Correct' ? (
+    <>
+      {correctAnswers === totalCards && currentCardIndex === flashcards.length - 1 ? (
+        <button onClick={handleFinish}>Finish</button>
+      ) : (
+        <button onClick={handleNextCard}>Next</button>
       )}
-    </div>
-  );
-}
+      <button 
+        onClick={() => { setShowFeedback(true); provideFeedback(); }} 
+        disabled={isFeedbackLoading || (hasFeedbackBeenProvided && !newAnswerProvided)}
+      >
+        {isFeedbackLoading ? 'Loading...' : hasFeedbackBeenProvided && !newAnswerProvided ? 'Feedback' : 'Get Feedback'}
+      </button>
+      {showFeedback && feedback && (
+        <div className="feedback-modal">
+          <p>{feedback}</p>
+          <button onClick={() => setShowFeedback(false)}>Close</button>
+        </div>
+      )}
+    </>
+  ) : null}
+</div>
+
+
+
+
+
+
+          <div className="progress-tracker">
+            <div className="progress-bar-container">
+              <div className="progress-bar" style={{ width: `${(correctAnswers / totalCards) * 100}%` }}></div>
+            </div>
+            <p>{correctAnswers} out of {totalCards} completed</p>
+          </div>
+        </>
+      )
+    ) : (
+      <p>No flashcards available in this deck.</p>
+    )}
+  </div>
+);
+    }
 
 export default Test;
