@@ -34,16 +34,28 @@ function Test() {
   const totalCards = flashcards.length;
 
   const handleNextCard = () => {
-    if (currentCardIndex < flashcards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1);
+    let nextIndex = currentCardIndex;
+    do {
+      nextIndex = (nextIndex + 1) % flashcards.length;
+    } while (correctlyAnsweredQuestions.has(nextIndex) && nextIndex !== currentCardIndex);
+  
+    if (nextIndex === currentCardIndex) {
+      // All questions have been answered correctly
+      setFinished(true);
+    } else {
+      setCurrentCardIndex(nextIndex);
     }
+  
     setShowAnswer(false);
     setComparisonResult('');
     setHint('');
     setShowFeedback(false);
     setHasFeedbackBeenProvided(false);
     setWasCorrect(false);
+    setTypedAnswer(''); // Reset typedAnswer when moving to next card
   };
+  
+  
   
 
   const handleFinish = () => {
@@ -238,7 +250,9 @@ function Test() {
     setTypedAnswer('');
     setTypingMode(false);
     setCorrectlyAnsweredQuestions(new Set()); // Reset correctly answered questions
+    setFinished(false); // Reset finished state
   };
+  
 
 
   const provideFeedback = async () => {
@@ -300,90 +314,88 @@ function Test() {
     {flashcards.length > 0 ? (
       finished ? (
         <div className="completion-message">
-          <h2>Way to go! You've reviewed all the cards.</h2>
-          <button onClick={retakeTest}>Retake the Test</button>
+          <h2>Way to go! You've reviewed all {totalCards} cards.</h2>
+          <button onClick={retakeTest}>Retry</button>
+          <button onClick={() => window.location.href = `http://localhost:3000/deck/${deckName}`}>Go Home</button>
         </div>
       ) : (
         <>
-<div className="flashcard">
-  <p><strong>Q:</strong> {flashcards[currentCardIndex].question}</p>
-  {showAnswer && (
-    <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
-  )}
-  <div className="flashcard-buttons">
-    <button onClick={() => setTypingMode(!typingMode)}>
-      {typingMode ? 'Voice Mode' : 'Type Mode'}
-    </button>
-    {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
-      <button onClick={startRecording}>Start</button>
-    )}
-    {typingMode && (
-      <>
-        <input
-          type="text"
-          value={typedAnswer}
-          onChange={(e) => setTypedAnswer(e.target.value)}
-          placeholder="Type your answer here"
-        />
-        <button
-          onClick={() => compareQuestion(typedAnswer)}
-          disabled={!typedAnswer.trim()}
-        >
-          Send
-        </button>
-      </>
-    )}
-    {!typingMode && isRecording && (
-      <button onClick={finishRecording}>Finish</button>
-    )}
-    {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
-      <button onClick={startRecording}>Try Again</button>
-    )}
-    {comparisonResult === 'Incorrect' && (
-      <>
-        <button onClick={getHint}>Get Hint</button>
-        {hint && <p><strong>Hint:</strong> {hint}</p>}
-      </>
-    )}
-  </div>
-  <div className="flashcard-secondary-buttons">
-    <button onClick={handleNextCard} className="secondary-button">Skip</button>
-    <button onClick={handleShowAnswer} className="secondary-button">
-      {showAnswer ? 'Hide Answer' : 'Show Answer'}
-    </button>
-  </div>
-</div>
+          <div className="flashcard">
+            <p><strong>Q:</strong> {flashcards[currentCardIndex].question}</p>
+            {showAnswer && (
+              <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
+            )}
+            <div className="flashcard-buttons">
+              <button onClick={() => setTypingMode(!typingMode)}>
+                {typingMode ? 'Voice Mode' : 'Type Mode'}
+              </button>
+              {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
+                <button onClick={startRecording}>Start</button>
+              )}
+              {typingMode && (
+                <>
+                  <input
+                    type="text"
+                    value={typedAnswer}
+                    onChange={(e) => setTypedAnswer(e.target.value)}
+                    placeholder="Type your answer here"
+                  />
+                  <button
+                    onClick={() => compareQuestion(typedAnswer)}
+                    disabled={!typedAnswer.trim()}
+                  >
+                    Send
+                  </button>
+                </>
+              )}
+              {!typingMode && isRecording && (
+                <button onClick={finishRecording}>Finish</button>
+              )}
+              {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
+                <button onClick={startRecording}>Try Again</button>
+              )}
+              {comparisonResult === 'Incorrect' && (
+                <>
+                  <button onClick={getHint}>Get Hint</button>
+                  {hint && <p><strong>Hint:</strong> {hint}</p>}
+                </>
+              )}
+            </div>
+            <div className="flashcard-secondary-buttons">
+              {!wasCorrect && (
+                <button onClick={handleNextCard} className="secondary-button">Skip</button>
+              )}
+              <button onClick={handleShowAnswer} className="secondary-button">
+                {showAnswer ? 'Hide Answer' : 'Show Answer'}
+              </button>
+            </div>
+          </div>
 
           {isLoading && <p>Loading...</p>}
           <div className="comparison-result">
-  <p><strong>Result:</strong> {comparisonResult}</p>
-  {wasCorrect || comparisonResult === 'Correct' ? (
-    <>
-      {correctAnswers === totalCards && currentCardIndex === flashcards.length - 1 ? (
-        <button onClick={handleFinish}>Finish</button>
-      ) : (
-        <button onClick={handleNextCard}>Next</button>
-      )}
-      <button 
-        onClick={() => { setShowFeedback(true); provideFeedback(); }} 
-        disabled={isFeedbackLoading || (hasFeedbackBeenProvided && !newAnswerProvided)}
-      >
-        {isFeedbackLoading ? 'Loading...' : hasFeedbackBeenProvided && !newAnswerProvided ? 'Feedback' : 'Get Feedback'}
-      </button>
-      {showFeedback && feedback && (
-        <div className="feedback-modal">
-          <p>{feedback}</p>
-          <button onClick={() => setShowFeedback(false)}>Close</button>
-        </div>
-      )}
-    </>
-  ) : null}
-</div>
-
-
-
-
-
+            <p><strong>Result:</strong> {comparisonResult}</p>
+            {wasCorrect || comparisonResult === 'Correct' ? (
+              <>
+                {correctAnswers === totalCards && currentCardIndex === flashcards.length - 1 ? (
+                  <button onClick={handleFinish}>Finish</button>
+                ) : (
+                  <button onClick={handleNextCard}>Next</button>
+                )}
+                <button 
+                  onClick={() => { setShowFeedback(true); provideFeedback(); }} 
+                  disabled={isFeedbackLoading || (hasFeedbackBeenProvided && !newAnswerProvided)}
+                >
+                  {isFeedbackLoading ? 'Loading...' : hasFeedbackBeenProvided && !newAnswerProvided ? 'Feedback' : 'Get Feedback'}
+                </button>
+                {showFeedback && feedback && (
+                  <div className="feedback-modal">
+                    <p>{feedback}</p>
+                    <button onClick={() => setShowFeedback(false)}>Close</button>
+                  </div>
+                )}
+              </>
+            ) : null}
+          </div>
 
           <div className="progress-tracker">
             <div className="progress-bar-container">
@@ -398,6 +410,6 @@ function Test() {
     )}
   </div>
 );
-    }
-
+  }
+  
 export default Test;
