@@ -1,0 +1,161 @@
+// review.js
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import './Test.css';
+import { startRecording, finishRecording, processRecording, compareQuestion } from './Test';
+
+const Review = () => {
+  const { deckName } = useParams();
+  const [flashcards, setFlashcards] = useState([]);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [comparisonResult, setComparisonResult] = useState('');
+  const [hint, setHint] = useState('');
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [typingMode, setTypingMode] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState('');
+  const [wasCorrect, setWasCorrect] = useState(false);
+
+  useEffect(() => {
+    const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
+    setFlashcards(storedFlashcards);
+  }, [deckName]);
+
+  const handleNextCard = () => {
+    setCurrentCardIndex((prevIndex) => (prevIndex + 1) % flashcards.length);
+    resetState();
+  };
+
+  const handlePreviousCard = () => {
+    setCurrentCardIndex((prevIndex) => (prevIndex - 1 + flashcards.length) % flashcards.length);
+    resetState();
+  };
+
+  const resetState = () => {
+    setShowAnswer(false);
+    setComparisonResult('');
+    setHint('');
+    setWasCorrect(false);
+    setTypedAnswer('');
+  };
+
+  const handleShowAnswer = () => {
+    setShowAnswer(!showAnswer);
+  };
+
+  const getHint = async () => {
+    setIsLoading(true);
+    setHint('');
+    const originalQuestion = flashcards[currentCardIndex].question;
+    const originalAnswer = flashcards[currentCardIndex].answer;
+
+    const messages = [
+      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'user', content: `Original Question: ${originalQuestion}` },
+      { role: 'user', content: `Original Answer: ${originalAnswer}` },
+      { role: 'user', content: 'The user\'s answer was incorrect. Provide a hint that will help the user get closer to the answer but does not directly reveal it.' }
+    ];
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: messages,
+          max_tokens: 50
+        })
+      });
+
+      if (!response.ok) {
+        const errorDetail = await response.json();
+        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+      }
+
+      const data = await response.json();
+
+      if (data.choices && data.choices.length > 0) {
+        setHint(data.choices[0].message.content.trim());
+      } else {
+        setHint('Error: No response from model');
+      }
+    } catch (error) {
+      setHint(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="test-yourself">
+      <h3>{deckName}</h3>
+      {flashcards.length > 0 ? (
+        <>
+          <div className="flashcard">
+            <p><strong>Q:</strong> {flashcards[currentCardIndex].question}</p>
+            {showAnswer && (
+              <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
+            )}
+            <div className="flashcard-buttons">
+              <button onClick={() => setTypingMode(!typingMode)}>
+                {typingMode ? 'Voice Mode' : 'Type Mode'}
+              </button>
+              {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
+                <button onClick={() => startRecording(setIsRecording, setMediaRecorder, (audioBlob) => processRecording(audioBlob, compareQuestion, setComparisonResult, setIsLoading))}>Start</button>
+              )}
+              {typingMode && (
+                <>
+                  <input
+                    type="text"
+                    value={typedAnswer}
+                    onChange={(e) => setTypedAnswer(e.target.value)}
+                    placeholder="Type your answer here"
+                  />
+                  <button
+                    onClick={() => compareQuestion(typedAnswer, flashcards, currentCardIndex, typingMode, typedAnswer, null, null, setComparisonResult, null, null, null, setIsLoading)}
+                    disabled={!typedAnswer.trim()}
+                  >
+                    Send
+                  </button>
+                </>
+              )}
+              {!typingMode && isRecording && (
+                <button onClick={() => finishRecording(mediaRecorder, setIsRecording, setIsLoading)}>Finish</button>
+              )}
+              {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
+                <button onClick={() => startRecording(setIsRecording, setMediaRecorder, (audioBlob) => processRecording(audioBlob, compareQuestion, setComparisonResult, setIsLoading))}>Try Again</button>
+              )}
+              {comparisonResult === 'Incorrect' && (
+                <>
+                  <button onClick={getHint}>Get Hint</button>
+                  {hint && <p><strong>Hint:</strong> {hint}</p>}
+                </>
+              )}
+            </div>
+            <div className="flashcard-secondary-buttons">
+              <button onClick={handlePreviousCard} className="secondary-button">Back</button>
+              <button onClick={handleNextCard} className="secondary-button">Next</button>
+              <button onClick={handleShowAnswer} className="secondary-button">
+                {showAnswer ? 'Hide Answer' : 'Show Answer'}
+              </button>
+            </div>
+          </div>
+
+          {isLoading && <p>Loading...</p>}
+          <div className="comparison-result">
+            <p><strong>Result:</strong> {comparisonResult}</p>
+          </div>
+        </>
+      ) : (
+        <p>No flashcards available in this deck.</p>
+      )}
+    </div>
+  );
+};
+
+export default Review;
