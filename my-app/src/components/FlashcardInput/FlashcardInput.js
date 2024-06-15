@@ -8,12 +8,36 @@ function FlashcardInput() {
   const [editIndex, setEditIndex] = useState(null);
   const [newDeckName, setNewDeckName] = useState(deckName);
   const [isEditingDeck, setIsEditingDeck] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const savedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
     setFlashcards(savedFlashcards);
   }, [deckName]);
+
+  const handleTestYourself = () => {
+    const storedShuffled = localStorage.getItem(`${deckName}-shuffled`);
+    const storedCurrentIndex = localStorage.getItem(`${deckName}-currentIndex`);
+    if (storedShuffled && storedCurrentIndex !== null) {
+      setShowDisclaimer(true);
+    } else {
+      navigate(`/test/${deckName}`);
+    }
+  };
+
+  const startOver = () => {
+    localStorage.removeItem(`${deckName}-shuffled`);
+    localStorage.removeItem(`${deckName}-currentIndex`);
+    localStorage.removeItem(`${deckName}-correctlyAnsweredQuestions`);
+    setShowDisclaimer(false);
+    navigate(`/test/${deckName}`);
+  };
+
+  const continueTest = () => {
+    setShowDisclaimer(false);
+    navigate(`/test/${deckName}`);
+  };
 
   const saveFlashcardsToLocalStorage = (cards) => {
     localStorage.setItem(deckName, JSON.stringify(cards));
@@ -102,9 +126,21 @@ function FlashcardInput() {
           </>
         )}
       </div>
-      <Link to={`/test/${deckName}`} className="test-link">
-        <button>Test Yourself</button>
-      </Link>
+      {showDisclaimer ? (
+        <div>
+          <button onClick={startOver}>Start Over</button>
+          <button onClick={continueTest}>Continue</button>
+        </div>
+      ) : (
+        <>
+          <Link to={`/test/${deckName}`} className="test-link">
+            <button onClick={handleTestYourself}>Test Yourself</button>
+          </Link>
+          <Link to={`/review/${deckName}`} className="test-link">
+            <button>Review</button>
+          </Link>
+        </>
+      )}
       <div className="flashcard-list">
         {flashcards.map((flashcard, index) => (
           <div key={index} className="flashcard">
