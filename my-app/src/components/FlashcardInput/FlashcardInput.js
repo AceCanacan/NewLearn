@@ -12,10 +12,19 @@ function FlashcardInput() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
-    setFlashcards(savedFlashcards);
+    const storedShuffled = localStorage.getItem(`${deckName}-shuffled`);
+    const storedCurrentIndex = localStorage.getItem(`${deckName}-currentIndex`);
+    const storedCorrectAnswers = localStorage.getItem(`${deckName}-correctAnswers`);
+    const storedCorrectlyAnsweredQuestions = localStorage.getItem(`${deckName}-correctlyAnsweredQuestions`);
+    
+    if (storedShuffled && storedCurrentIndex !== null && storedCorrectAnswers !== null && storedCorrectlyAnsweredQuestions) {
+      setShowDisclaimer(true);
+    }
+  
+    const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
+    setFlashcards(storedFlashcards);
   }, [deckName]);
-
+  
   const handleTestYourself = () => {
     const storedShuffled = localStorage.getItem(`${deckName}-shuffled`);
     const storedCurrentIndex = localStorage.getItem(`${deckName}-currentIndex`);
@@ -27,9 +36,16 @@ function FlashcardInput() {
   };
 
   const startOver = () => {
-    localStorage.removeItem(`${deckName}-shuffled`);
     localStorage.removeItem(`${deckName}-currentIndex`);
+    localStorage.removeItem(`${deckName}-correctAnswers`);
     localStorage.removeItem(`${deckName}-correctlyAnsweredQuestions`);
+    localStorage.removeItem(`${deckName}-shuffled`);
+    localStorage.removeItem(`${deckName}-hintUsed`);
+    localStorage.removeItem(`${deckName}-typedAnswer`);
+    localStorage.removeItem(`${deckName}-wasCorrect`);
+    localStorage.removeItem(`${deckName}-comparisonResult`);
+    localStorage.removeItem(`${deckName}-feedback`);
+    localStorage.removeItem(`${deckName}-showAnswer`);
     setShowDisclaimer(false);
     navigate(`/test/${deckName}`);
   };
@@ -41,7 +57,9 @@ function FlashcardInput() {
 
   const saveFlashcardsToLocalStorage = (cards) => {
     localStorage.setItem(deckName, JSON.stringify(cards));
-    updateDeckTermsCount(deckName, cards.length);
+    const decks = JSON.parse(localStorage.getItem('decks')) || {};
+    decks[deckName] = cards.length; // Save the count directly
+    localStorage.setItem('decks', JSON.stringify(decks));
   };
 
   const updateDeckTermsCount = (deckName, count) => {
@@ -52,8 +70,8 @@ function FlashcardInput() {
   };
 
   const handleSave = () => {
-    setEditIndex(null);
     saveFlashcardsToLocalStorage(flashcards);
+    setEditIndex(null);
   };
 
   const handleEdit = (index) => {
@@ -92,14 +110,17 @@ function FlashcardInput() {
   };
 
   const handleAddFlashcard = () => {
-    setFlashcards([...flashcards, { question: '', answer: '' }]);
-    setEditIndex(flashcards.length);
+    const newFlashcards = [...flashcards, { question: '', answer: '' }];
+    setFlashcards(newFlashcards);
+    setEditIndex(newFlashcards.length - 1);
+    saveFlashcardsToLocalStorage(newFlashcards);
   };
 
   const handleInputChange = (index, field, value) => {
     const newFlashcards = [...flashcards];
     newFlashcards[index][field] = value;
     setFlashcards(newFlashcards);
+    saveFlashcardsToLocalStorage(newFlashcards);
   };
 
   return (
@@ -127,7 +148,8 @@ function FlashcardInput() {
         )}
       </div>
       {showDisclaimer ? (
-        <div>
+        <div className="disclaimer-modal">
+          <p>You have a test in progress. Would you like to continue or start over?</p>
           <button onClick={startOver}>Start Over</button>
           <button onClick={continueTest}>Continue</button>
         </div>

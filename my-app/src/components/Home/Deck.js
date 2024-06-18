@@ -33,7 +33,7 @@ function Deck() {
           <Link to={`/deck/${deckName}`} key={deckName} className="deck">
             <h3>{deckName}</h3>
             <div className="deck-details">
-              <span>{decks[deckName].length} terms</span>
+              <span>{decks[deckName]} terms</span>
             </div>
           </Link>
         ))}
