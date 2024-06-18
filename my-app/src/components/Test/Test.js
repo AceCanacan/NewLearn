@@ -41,6 +41,14 @@ const Test = () => {
     const storedComparisonResult = localStorage.getItem(`${deckName}-comparisonResult`) || '';
     const storedFeedback = localStorage.getItem(`${deckName}-feedback`) || '';
     const storedShowAnswer = localStorage.getItem(`${deckName}-showAnswer`) === 'true';
+    const storedIsRecording = localStorage.getItem(`${deckName}-isRecording`) === 'true';
+    const storedLastCorrectAnswer = localStorage.getItem(`${deckName}-lastCorrectAnswer`) || '';
+    const storedShowFeedback = localStorage.getItem(`${deckName}-showFeedback`) === 'true';
+    const storedIsFeedbackLoading = localStorage.getItem(`${deckName}-isFeedbackLoading`) === 'true';
+    const storedHasFeedbackBeenProvided = localStorage.getItem(`${deckName}-hasFeedbackBeenProvided`) === 'true';
+    const storedNewAnswerProvided = localStorage.getItem(`${deckName}-newAnswerProvided`) === 'true';
+    const storedFinished = localStorage.getItem(`${deckName}-finished`) === 'true';
+    const storedTypingMode = localStorage.getItem(`${deckName}-typingMode`) === 'true';
 
     if (storedShuffled && storedCurrentIndex !== null && storedCorrectAnswers !== null && storedCorrectlyAnsweredQuestions.size > 0) {
       setShowDisclaimer(true);
@@ -57,6 +65,14 @@ const Test = () => {
     setComparisonResult(storedComparisonResult);
     setFeedback(storedFeedback);
     setShowAnswer(storedShowAnswer);
+    setIsRecording(storedIsRecording);
+    setLastCorrectAnswer(storedLastCorrectAnswer);
+    setShowFeedback(storedShowFeedback);
+    setIsFeedbackLoading(storedIsFeedbackLoading);
+    setHasFeedbackBeenProvided(storedHasFeedbackBeenProvided);
+    setNewAnswerProvided(storedNewAnswerProvided);
+    setFinished(storedFinished);
+    setTypingMode(storedTypingMode);
   }, [deckName]);
 
   const totalCards = flashcards.length;
@@ -74,8 +90,7 @@ const Test = () => {
     const shuffled = shuffleArray(flashcards);
     setShuffledFlashcards(shuffled);
     setCurrentCardIndex(0); // Reset to the first card
-    localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffled));
-    localStorage.setItem(`${deckName}-currentIndex`, 0);
+    saveProgress();
   };
 
   const startRecording = async () => {
@@ -99,6 +114,7 @@ const Test = () => {
         tracks.forEach(track => track.stop());
         setIsRecording(false);
         setIsLoading(true);
+        saveProgress();
       };
       mediaRecorder.stop();
     }
@@ -128,6 +144,7 @@ const Test = () => {
     } catch (error) {
       setComparisonResult(`Error: ${error.message}`);
       setIsLoading(false);
+      saveProgress();
     }
   };
 
@@ -188,6 +205,7 @@ const Test = () => {
       setComparisonResult(`Error: ${error.message}`);
     } finally {
       setIsLoading(false);
+      saveProgress();
     }
   };
 
@@ -255,6 +273,7 @@ const Test = () => {
 
   const handleShowAnswer = () => {
     setShowAnswer(!showAnswer);
+    saveProgress();
   };
 
   const getHint = async () => {
@@ -303,6 +322,7 @@ const Test = () => {
       setHint(`Error: ${error.message}`);
     } finally {
       setIsLoading(false);
+      saveProgress();
     }
   };
 
@@ -318,19 +338,28 @@ const Test = () => {
     setFinished(false);
     localStorage.removeItem(`${deckName}-shuffled`);
     localStorage.removeItem(`${deckName}-currentIndex`);
+    saveProgress();
   };
 
   const saveProgress = () => {
+    localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffledFlashcards));
     localStorage.setItem(`${deckName}-currentIndex`, currentCardIndex);
     localStorage.setItem(`${deckName}-correctAnswers`, correctAnswers);
     localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...correctlyAnsweredQuestions]));
-    localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffledFlashcards));
     localStorage.setItem(`${deckName}-hintUsed`, JSON.stringify(hintUsed));
     localStorage.setItem(`${deckName}-typedAnswer`, typedAnswer);
     localStorage.setItem(`${deckName}-wasCorrect`, wasCorrect);
     localStorage.setItem(`${deckName}-comparisonResult`, comparisonResult);
     localStorage.setItem(`${deckName}-feedback`, feedback);
     localStorage.setItem(`${deckName}-showAnswer`, showAnswer);
+    localStorage.setItem(`${deckName}-isRecording`, isRecording);
+    localStorage.setItem(`${deckName}-lastCorrectAnswer`, lastCorrectAnswer);
+    localStorage.setItem(`${deckName}-showFeedback`, showFeedback);
+    localStorage.setItem(`${deckName}-isFeedbackLoading`, isFeedbackLoading);
+    localStorage.setItem(`${deckName}-hasFeedbackBeenProvided`, hasFeedbackBeenProvided);
+    localStorage.setItem(`${deckName}-newAnswerProvided`, newAnswerProvided);
+    localStorage.setItem(`${deckName}-finished`, finished);
+    localStorage.setItem(`${deckName}-typingMode`, typingMode);
   };
 
   const provideFeedback = async () => {
@@ -379,6 +408,7 @@ const Test = () => {
       setFeedback(`Error: ${error.message}`);
     } finally {
       setIsFeedbackLoading(false);
+      saveProgress();
     }
   };
 
@@ -393,6 +423,14 @@ const Test = () => {
     localStorage.removeItem(`${deckName}-comparisonResult`);
     localStorage.removeItem(`${deckName}-feedback`);
     localStorage.removeItem(`${deckName}-showAnswer`);
+    localStorage.removeItem(`${deckName}-isRecording`);
+    localStorage.removeItem(`${deckName}-lastCorrectAnswer`);
+    localStorage.removeItem(`${deckName}-showFeedback`);
+    localStorage.removeItem(`${deckName}-isFeedbackLoading`);
+    localStorage.removeItem(`${deckName}-hasFeedbackBeenProvided`);
+    localStorage.removeItem(`${deckName}-newAnswerProvided`);
+    localStorage.removeItem(`${deckName}-finished`);
+    localStorage.removeItem(`${deckName}-typingMode`);
     setShowDisclaimer(false);
     navigate(`/test/${deckName}`);
   };
