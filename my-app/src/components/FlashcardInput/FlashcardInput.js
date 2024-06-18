@@ -28,12 +28,15 @@ function FlashcardInput() {
   const handleTestYourself = () => {
     const storedShuffled = localStorage.getItem(`${deckName}-shuffled`);
     const storedCurrentIndex = localStorage.getItem(`${deckName}-currentIndex`);
-    if (storedShuffled && storedCurrentIndex !== null) {
+    const storedFinished = JSON.parse(localStorage.getItem(`${deckName}-finished`));
+    
+    if (storedShuffled && storedCurrentIndex !== null && !storedFinished) {
       setShowDisclaimer(true);
     } else {
       navigate(`/test/${deckName}`);
     }
   };
+  
 
   const startOver = () => {
     localStorage.removeItem(`${deckName}-currentIndex`);
@@ -46,9 +49,11 @@ function FlashcardInput() {
     localStorage.removeItem(`${deckName}-comparisonResult`);
     localStorage.removeItem(`${deckName}-feedback`);
     localStorage.removeItem(`${deckName}-showAnswer`);
+    localStorage.removeItem(`${deckName}-finished`); // Clear the finished state
     setShowDisclaimer(false);
     navigate(`/test/${deckName}`);
   };
+  
 
   const continueTest = () => {
     setShowDisclaimer(false);
