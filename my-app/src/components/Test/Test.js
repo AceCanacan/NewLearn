@@ -1,80 +1,112 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate,useLocation } from 'react-router-dom';
 import './Test.css';
 
 const Test = () => {
-  const { deckName } = useParams();
-  const navigate = useNavigate();
-  const [flashcards, setFlashcards] = useState([]);
-  const [shuffledFlashcards, setShuffledFlashcards] = useState([]);
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [comparisonResult, setComparisonResult] = useState('');
-  const [hint, setHint] = useState('');
-  const [mediaRecorder, setMediaRecorder] = useState(null);
-  const [typingMode, setTypingMode] = useState(false);
-  const [typedAnswer, setTypedAnswer] = useState('');
-  const [correctAnswers, setCorrectAnswers] = useState(0);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [feedback, setFeedback] = useState('');
-  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
-  const [hasFeedbackBeenProvided, setHasFeedbackBeenProvided] = useState(false);
-  const [newAnswerProvided, setNewAnswerProvided] = useState(false);
-  const [correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions] = useState(new Set());
-  const [finished, setFinished] = useState(false);
-  const [wasCorrect, setWasCorrect] = useState(false);
-  const [lastCorrectAnswer, setLastCorrectAnswer] = useState('');
-  const [hintUsed, setHintUsed] = useState(false);
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
+    const { deckName } = useParams();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [flashcards, setFlashcards] = useState([]);
+    const [shuffledFlashcards, setShuffledFlashcards] = useState([]);
+    const [currentCardIndex, setCurrentCardIndex] = useState(0);
+    const [showAnswer, setShowAnswer] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [comparisonResult, setComparisonResult] = useState('');
+    const [hint, setHint] = useState('');
+    const [mediaRecorder, setMediaRecorder] = useState(null);
+    const [typingMode, setTypingMode] = useState(false);
+    const [typedAnswer, setTypedAnswer] = useState('');
+    const [correctAnswers, setCorrectAnswers] = useState(0);
+    const [showFeedback, setShowFeedback] = useState(false);
+    const [feedback, setFeedback] = useState('');
+    const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+    const [hasFeedbackBeenProvided, setHasFeedbackBeenProvided] = useState(false);
+    const [newAnswerProvided, setNewAnswerProvided] = useState(false);
+    const [correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions] = useState(new Set());
+    const [finished, setFinished] = useState(false);
+    const [wasCorrect, setWasCorrect] = useState(false);
+    const [lastCorrectAnswer, setLastCorrectAnswer] = useState('');
+    const [hintUsed, setHintUsed] = useState(false);
+    const [showDisclaimer, setShowDisclaimer] = useState(false);
+  
+    useEffect(() => {
+      const searchParams = new URLSearchParams(location.search);
+      const continueFlag = searchParams.get('continue');
+  
+      if (continueFlag) {
+        setShowDisclaimer(false);
+      } else {
+        const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
+        const storedShuffled = JSON.parse(localStorage.getItem(`${deckName}-shuffled`)) || storedFlashcards;
+        const storedCurrentIndex = parseInt(localStorage.getItem(`${deckName}-currentIndex`), 10);
+        const storedCorrectlyAnsweredQuestions = new Set(JSON.parse(localStorage.getItem(`${deckName}-correctlyAnsweredQuestions`)) || []);
+        const storedCorrectAnswers = JSON.parse(localStorage.getItem(`${deckName}-correctAnswers`)) || 0;
+        const storedHintUsed = JSON.parse(localStorage.getItem(`${deckName}-hintUsed`)) || false;
+        const storedTypedAnswer = localStorage.getItem(`${deckName}-typedAnswer`) || '';
+        const storedWasCorrect = JSON.parse(localStorage.getItem(`${deckName}-wasCorrect`));
+        const storedComparisonResult = localStorage.getItem(`${deckName}-comparisonResult`) || '';
+        const storedFeedback = localStorage.getItem(`${deckName}-feedback`) || '';
+        const storedShowAnswer = JSON.parse(localStorage.getItem(`${deckName}-showAnswer`));
+        const storedIsRecording = JSON.parse(localStorage.getItem(`${deckName}-isRecording`));
+        const storedLastCorrectAnswer = localStorage.getItem(`${deckName}-lastCorrectAnswer`) || '';
+        const storedShowFeedback = JSON.parse(localStorage.getItem(`${deckName}-showFeedback`));
+        const storedIsFeedbackLoading = JSON.parse(localStorage.getItem(`${deckName}-isFeedbackLoading`));
+        const storedHasFeedbackBeenProvided = JSON.parse(localStorage.getItem(`${deckName}-hasFeedbackBeenProvided`));
+        const storedNewAnswerProvided = JSON.parse(localStorage.getItem(`${deckName}-newAnswerProvided`));
+        const storedFinished = JSON.parse(localStorage.getItem(`${deckName}-finished`));
+        const storedTypingMode = JSON.parse(localStorage.getItem(`${deckName}-typingMode`));
+        
+        if (storedShuffled && storedCurrentIndex !== null && storedCorrectAnswers !== null && storedCorrectlyAnsweredQuestions.size > 0) {
+          setShowDisclaimer(true);
+        }
+  
+        setFlashcards(storedFlashcards);
+        setShuffledFlashcards(storedShuffled);
+        setCurrentCardIndex(storedCurrentIndex || 0);
+        setCorrectlyAnsweredQuestions(storedCorrectlyAnsweredQuestions);
+        setCorrectAnswers(storedCorrectAnswers);
+        setHintUsed(storedHintUsed);
+        setTypedAnswer(storedTypedAnswer);
+        setWasCorrect(storedWasCorrect);
+        setComparisonResult(storedComparisonResult);
+        setFeedback(storedFeedback);
+        setShowAnswer(storedShowAnswer);
+        setIsRecording(storedIsRecording);
+        setLastCorrectAnswer(storedLastCorrectAnswer);
+        setShowFeedback(storedShowFeedback);
+        setIsFeedbackLoading(storedIsFeedbackLoading);
+        setHasFeedbackBeenProvided(storedHasFeedbackBeenProvided);
+        setNewAnswerProvided(storedNewAnswerProvided);
+        setFinished(storedFinished);
+        setTypingMode(storedTypingMode);
+      }
+    }, [deckName, location.search]);
+  
+  
+    const handleDone = () => {
+        localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffledFlashcards));
+        localStorage.setItem(`${deckName}-currentIndex`, currentCardIndex);
+        localStorage.setItem(`${deckName}-correctAnswers`, JSON.stringify(correctAnswers));
+        localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...correctlyAnsweredQuestions]));
+        localStorage.setItem(`${deckName}-hintUsed`, JSON.stringify(hintUsed));
+        localStorage.setItem(`${deckName}-typedAnswer`, typedAnswer);
+        localStorage.setItem(`${deckName}-wasCorrect`, JSON.stringify(wasCorrect));
+        localStorage.setItem(`${deckName}-comparisonResult`, comparisonResult);
+        localStorage.setItem(`${deckName}-feedback`, feedback);
+        localStorage.setItem(`${deckName}-showAnswer`, JSON.stringify(showAnswer));
+        localStorage.setItem(`${deckName}-isRecording`, JSON.stringify(isRecording));
+        localStorage.setItem(`${deckName}-lastCorrectAnswer`, lastCorrectAnswer);
+        localStorage.setItem(`${deckName}-showFeedback`, JSON.stringify(showFeedback));
+        localStorage.setItem(`${deckName}-isFeedbackLoading`, JSON.stringify(isFeedbackLoading));
+        localStorage.setItem(`${deckName}-hasFeedbackBeenProvided`, JSON.stringify(hasFeedbackBeenProvided));
+        localStorage.setItem(`${deckName}-newAnswerProvided`, JSON.stringify(newAnswerProvided));
+        localStorage.setItem(`${deckName}-finished`, JSON.stringify(finished));
+        localStorage.setItem(`${deckName}-typingMode`, JSON.stringify(typingMode));
+        navigate(`/Deck/${deckName}`);
+    };
 
-  useEffect(() => {
-    const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
-    const storedShuffled = JSON.parse(localStorage.getItem(`${deckName}-shuffled`)) || storedFlashcards;
-    const storedCurrentIndex = parseInt(localStorage.getItem(`${deckName}-currentIndex`), 10);
-    const storedCorrectlyAnsweredQuestions = new Set(JSON.parse(localStorage.getItem(`${deckName}-correctlyAnsweredQuestions`)) || []);
-    const storedCorrectAnswers = parseInt(localStorage.getItem(`${deckName}-correctAnswers`), 10) || 0;
-    const storedHintUsed = JSON.parse(localStorage.getItem(`${deckName}-hintUsed`)) || false;
-    const storedTypedAnswer = localStorage.getItem(`${deckName}-typedAnswer`) || '';
-    const storedWasCorrect = localStorage.getItem(`${deckName}-wasCorrect`) === 'true';
-    const storedComparisonResult = localStorage.getItem(`${deckName}-comparisonResult`) || '';
-    const storedFeedback = localStorage.getItem(`${deckName}-feedback`) || '';
-    const storedShowAnswer = localStorage.getItem(`${deckName}-showAnswer`) === 'true';
-    const storedIsRecording = localStorage.getItem(`${deckName}-isRecording`) === 'true';
-    const storedLastCorrectAnswer = localStorage.getItem(`${deckName}-lastCorrectAnswer`) || '';
-    const storedShowFeedback = localStorage.getItem(`${deckName}-showFeedback`) === 'true';
-    const storedIsFeedbackLoading = localStorage.getItem(`${deckName}-isFeedbackLoading`) === 'true';
-    const storedHasFeedbackBeenProvided = localStorage.getItem(`${deckName}-hasFeedbackBeenProvided`) === 'true';
-    const storedNewAnswerProvided = localStorage.getItem(`${deckName}-newAnswerProvided`) === 'true';
-    const storedFinished = localStorage.getItem(`${deckName}-finished`) === 'true';
-    const storedTypingMode = localStorage.getItem(`${deckName}-typingMode`) === 'true';
-
-    if (storedShuffled && storedCurrentIndex !== null && storedCorrectAnswers !== null && storedCorrectlyAnsweredQuestions.size > 0) {
-      setShowDisclaimer(true);
-    }
-
-    setFlashcards(storedFlashcards);
-    setShuffledFlashcards(storedShuffled);
-    setCurrentCardIndex(storedCurrentIndex || 0);
-    setCorrectlyAnsweredQuestions(storedCorrectlyAnsweredQuestions);
-    setCorrectAnswers(storedCorrectAnswers);
-    setHintUsed(storedHintUsed);
-    setTypedAnswer(storedTypedAnswer);
-    setWasCorrect(storedWasCorrect);
-    setComparisonResult(storedComparisonResult);
-    setFeedback(storedFeedback);
-    setShowAnswer(storedShowAnswer);
-    setIsRecording(storedIsRecording);
-    setLastCorrectAnswer(storedLastCorrectAnswer);
-    setShowFeedback(storedShowFeedback);
-    setIsFeedbackLoading(storedIsFeedbackLoading);
-    setHasFeedbackBeenProvided(storedHasFeedbackBeenProvided);
-    setNewAnswerProvided(storedNewAnswerProvided);
-    setFinished(storedFinished);
-    setTypingMode(storedTypingMode);
-  }, [deckName]);
-
+  
   const totalCards = flashcards.length;
 
   const shuffleArray = (array) => {
@@ -154,73 +186,89 @@ const Test = () => {
     const userAnswer = typingMode ? typedAnswer : userQuestion;
 
     const messages = [
-      { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
-      { role: 'user', content: `Original Question: ${originalQuestion}` },
-      { role: 'user', content: `Original Answer: ${originalAnswer}` },
-      { role: 'user', content: `User Answer: ${userAnswer}` },
-      { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
+        { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
+        { role: 'user', content: `Original Question: ${originalQuestion}` },
+        { role: 'user', content: `Original Answer: ${originalAnswer}` },
+        { role: 'user', content: `User Answer: ${userAnswer}` },
+        { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
     ];
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: messages,
-          max_tokens: 10
-        })
-      });
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o',
+                messages: messages,
+                max_tokens: 10
+            })
+        });
 
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-      }
-
-      const data = await response.json();
-
-      if (data.choices && data.choices.length > 0) {
-        const choice = data.choices[0];
-        const result = choice.message.content.trim().replace('.', '').toLowerCase();
-
-        if (result === 'yes') {
-          if (!correctlyAnsweredQuestions.has(currentCardIndex)) {
-            setCorrectAnswers(prev => prev + 1);
-            const newCorrectlyAnsweredQuestions = new Set(correctlyAnsweredQuestions).add(currentCardIndex);
-            setCorrectlyAnsweredQuestions(newCorrectlyAnsweredQuestions);
-            localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...newCorrectlyAnsweredQuestions]));
-          }
-          setComparisonResult('Correct');
-          setWasCorrect(true);
-        } else {
-          setComparisonResult('Incorrect');
+        if (!response.ok) {
+            const errorDetail = await response.json();
+            throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
         }
-      } else {
-        setComparisonResult('Error: No response from model');
-      }
+
+        const data = await response.json();
+
+        if (data.choices && data.choices.length > 0) {
+            const choice = data.choices[0];
+            const result = choice.message.content.trim().replace('.', '').toLowerCase();
+
+            if (result === 'yes') {
+                if (!correctlyAnsweredQuestions.has(currentCardIndex)) {
+                    setCorrectlyAnsweredQuestions(prevQuestions => {
+                        const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
+                        localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
+                        return updatedQuestions;
+                    });
+
+                    setCorrectAnswers(prevCorrectAnswers => {
+                        const newCorrectAnswers = prevCorrectAnswers + 1;
+                        localStorage.setItem(`${deckName}-correctAnswers`, JSON.stringify(newCorrectAnswers));
+                        saveProgress(); // Save progress immediately after updating the state
+                        return newCorrectAnswers;
+                    });
+                }
+                setComparisonResult('Correct');
+                setWasCorrect(true);
+                saveProgress(); // Ensure progress is saved immediately after the correct answer is identified
+            } else {
+                setComparisonResult('Incorrect');
+            }
+        } else {
+            setComparisonResult('Error: No response from model');
+        }
     } catch (error) {
-      setComparisonResult(`Error: ${error.message}`);
+        setComparisonResult(`Error: ${error.message}`);
     } finally {
-      setIsLoading(false);
-      saveProgress();
+        setIsLoading(false);
+        saveProgress(); // Save progress immediately after comparison
     }
-  };
+};
+
+
+
+
+
+  
+  
 
   const handleNextCard = () => {
     let nextIndex = currentCardIndex;
     do {
       nextIndex = (nextIndex + 1) % shuffledFlashcards.length;
     } while (correctlyAnsweredQuestions.has(nextIndex) && nextIndex !== currentCardIndex);
-
+  
     if (nextIndex === currentCardIndex) {
       setFinished(true);
     } else {
       setCurrentCardIndex(nextIndex);
     }
-
+  
     setShowAnswer(false);
     setComparisonResult('');
     setHint('');
@@ -229,8 +277,8 @@ const Test = () => {
     setHasFeedbackBeenProvided(false);
     setWasCorrect(false);
     setTypedAnswer('');
-
-    saveProgress();
+  
+    saveProgress(); // Save progress after state updates
   };
 
   const handlePreviousCard = () => {
@@ -238,13 +286,13 @@ const Test = () => {
     do {
       prevIndex = (prevIndex - 1 + shuffledFlashcards.length) % shuffledFlashcards.length;
     } while (correctlyAnsweredQuestions.has(prevIndex) && prevIndex !== currentCardIndex);
-
+  
     if (prevIndex === currentCardIndex) {
       setFinished(true);
     } else {
       setCurrentCardIndex(prevIndex);
     }
-
+  
     setShowAnswer(false);
     setComparisonResult('');
     setHint('');
@@ -253,10 +301,10 @@ const Test = () => {
     setHasFeedbackBeenProvided(false);
     setWasCorrect(false);
     setTypedAnswer('');
-
-    saveProgress();
+  
+    saveProgress(); // Save progress after state updates
   };
-
+  
   const handleFinish = () => {
     setFinished(true);
     localStorage.removeItem(`${deckName}-shuffled`);
@@ -344,23 +392,26 @@ const Test = () => {
   const saveProgress = () => {
     localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffledFlashcards));
     localStorage.setItem(`${deckName}-currentIndex`, currentCardIndex);
-    localStorage.setItem(`${deckName}-correctAnswers`, correctAnswers);
+    localStorage.setItem(`${deckName}-correctAnswers`, JSON.stringify(correctAnswers));
     localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...correctlyAnsweredQuestions]));
     localStorage.setItem(`${deckName}-hintUsed`, JSON.stringify(hintUsed));
     localStorage.setItem(`${deckName}-typedAnswer`, typedAnswer);
-    localStorage.setItem(`${deckName}-wasCorrect`, wasCorrect);
+    localStorage.setItem(`${deckName}-wasCorrect`, JSON.stringify(wasCorrect));
     localStorage.setItem(`${deckName}-comparisonResult`, comparisonResult);
     localStorage.setItem(`${deckName}-feedback`, feedback);
-    localStorage.setItem(`${deckName}-showAnswer`, showAnswer);
-    localStorage.setItem(`${deckName}-isRecording`, isRecording);
+    localStorage.setItem(`${deckName}-showAnswer`, JSON.stringify(showAnswer));
+    localStorage.setItem(`${deckName}-isRecording`, JSON.stringify(isRecording));
     localStorage.setItem(`${deckName}-lastCorrectAnswer`, lastCorrectAnswer);
-    localStorage.setItem(`${deckName}-showFeedback`, showFeedback);
-    localStorage.setItem(`${deckName}-isFeedbackLoading`, isFeedbackLoading);
-    localStorage.setItem(`${deckName}-hasFeedbackBeenProvided`, hasFeedbackBeenProvided);
-    localStorage.setItem(`${deckName}-newAnswerProvided`, newAnswerProvided);
-    localStorage.setItem(`${deckName}-finished`, finished);
-    localStorage.setItem(`${deckName}-typingMode`, typingMode);
-  };
+    localStorage.setItem(`${deckName}-showFeedback`, JSON.stringify(showFeedback));
+    localStorage.setItem(`${deckName}-isFeedbackLoading`, JSON.stringify(isFeedbackLoading));
+    localStorage.setItem(`${deckName}-hasFeedbackBeenProvided`, JSON.stringify(hasFeedbackBeenProvided));
+    localStorage.setItem(`${deckName}-newAnswerProvided`, JSON.stringify(newAnswerProvided));
+    localStorage.setItem(`${deckName}-finished`, JSON.stringify(finished));
+    localStorage.setItem(`${deckName}-typingMode`, JSON.stringify(typingMode));
+};
+
+  
+  
 
   const provideFeedback = async () => {
     if (hasFeedbackBeenProvided && !newAnswerProvided) return;
@@ -442,7 +493,8 @@ const Test = () => {
   return (
     <div className="test-yourself">
       <h3>{deckName}</h3>
-      <button className="top-right-button" onClick={() => navigate(`/Deck/${deckName}`)}>
+      <button className="top-right-button" onClick={handleDone}>
+
         Done
       </button>
       <button onClick={handleShuffle}>Shuffle</button>
@@ -559,11 +611,12 @@ const Test = () => {
                   ) : null}
                 </div>
                 <div className="progress-tracker">
-                  <div className="progress-bar-container">
-                    <div className="progress-bar" style={{ width: `${(correctAnswers / totalCards) * 100}%` }}></div>
-                  </div>
-                  <p>{correctAnswers} out of {totalCards} completed</p>
-                </div>
+  <div className="progress-bar-container">
+    <div className="progress-bar" style={{ width: `${(correctAnswers / totalCards) * 100}%` }}></div>
+  </div>
+  <p>{correctAnswers} out of {totalCards} completed</p>
+</div>
+
               </>
             )
           ) : (
