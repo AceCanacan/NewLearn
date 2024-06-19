@@ -11,6 +11,29 @@ function FlashcardInput() {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const navigate = useNavigate();
 
+  const [shuffledFlashcards, setShuffledFlashcards] = useState([]);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions] = useState(new Set());
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [hintUsed, setHintUsed] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState('');
+  const [wasCorrect, setWasCorrect] = useState(false);
+  const [comparisonResult, setComparisonResult] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [lastCorrectAnswer, setLastCorrectAnswer] = useState('');
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+  const [hasFeedbackBeenProvided, setHasFeedbackBeenProvided] = useState(false);
+  const [newAnswerProvided, setNewAnswerProvided] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [typingMode, setTypingMode] = useState(false);
+  const [score, setScore] = useState(0);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [wrongAttempts, setWrongAttempts] = useState(0);
+
+
   useEffect(() => {
     const storedShuffled = localStorage.getItem(`${deckName}-shuffled`);
     const storedCurrentIndex = localStorage.getItem(`${deckName}-currentIndex`);
@@ -57,8 +80,58 @@ function FlashcardInput() {
 
   const continueTest = () => {
     setShowDisclaimer(false);
-    navigate(`/test/${deckName}`);
-  };
+    const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
+    const storedShuffled = JSON.parse(localStorage.getItem(`${deckName}-shuffled`)) || storedFlashcards;
+    const storedCurrentIndex = parseInt(localStorage.getItem(`${deckName}-currentIndex`), 10) || 0;
+    const storedCorrectlyAnsweredQuestions = new Set(JSON.parse(localStorage.getItem(`${deckName}-correctlyAnsweredQuestions`)) || []);
+    const storedCorrectAnswers = JSON.parse(localStorage.getItem(`${deckName}-correctAnswers`)) || 0;
+    const storedHintUsed = JSON.parse(localStorage.getItem(`${deckName}-hintUsed`)) || false;
+    const storedTypedAnswer = localStorage.getItem(`${deckName}-typedAnswer`) || '';
+    const storedWasCorrect = JSON.parse(localStorage.getItem(`${deckName}-wasCorrect`));
+    const storedComparisonResult = localStorage.getItem(`${deckName}-comparisonResult`) || '';
+    const storedFeedback = localStorage.getItem(`${deckName}-feedback`) || '';
+    const storedShowAnswer = JSON.parse(localStorage.getItem(`${deckName}-showAnswer`));
+    const storedIsRecording = JSON.parse(localStorage.getItem(`${deckName}-isRecording`));
+    const storedLastCorrectAnswer = localStorage.getItem(`${deckName}-lastCorrectAnswer`) || '';
+    const storedShowFeedback = JSON.parse(localStorage.getItem(`${deckName}-showFeedback`));
+    const storedIsFeedbackLoading = JSON.parse(localStorage.getItem(`${deckName}-isFeedbackLoading`));
+    const storedHasFeedbackBeenProvided = JSON.parse(localStorage.getItem(`${deckName}-hasFeedbackBeenProvided`));
+    const storedNewAnswerProvided = JSON.parse(localStorage.getItem(`${deckName}-newAnswerProvided`));
+    const storedFinished = JSON.parse(localStorage.getItem(`${deckName}-finished`));
+    const storedTypingMode = JSON.parse(localStorage.getItem(`${deckName}-typingMode`));
+    const storedScore = JSON.parse(localStorage.getItem(`${deckName}-score`)) || 0;
+    const storedHintsUsed = JSON.parse(localStorage.getItem(`${deckName}-hintsUsed`)) || 0;
+    const storedWrongAttempts = JSON.parse(localStorage.getItem(`${deckName}-wrongAttempts`)) || 0;
+
+    setFlashcards(storedFlashcards);
+    setShuffledFlashcards(storedShuffled);
+    setCurrentCardIndex(storedCurrentIndex);
+    setCorrectlyAnsweredQuestions(storedCorrectlyAnsweredQuestions);
+    setCorrectAnswers(storedCorrectAnswers);
+    setHintUsed(storedHintUsed);
+    setTypedAnswer(storedTypedAnswer);
+    setWasCorrect(storedWasCorrect);
+    setComparisonResult(storedComparisonResult);
+    setFeedback(storedFeedback);
+    setShowAnswer(storedShowAnswer);
+    setIsRecording(storedIsRecording);
+    setLastCorrectAnswer(storedLastCorrectAnswer);
+    setShowFeedback(storedShowFeedback);
+    setIsFeedbackLoading(storedIsFeedbackLoading);
+    setHasFeedbackBeenProvided(storedHasFeedbackBeenProvided);
+    setNewAnswerProvided(storedNewAnswerProvided);
+    setFinished(storedFinished);
+    setTypingMode(storedTypingMode);
+    setScore(storedScore);
+    setHintsUsed(storedHintsUsed);
+    setWrongAttempts(storedWrongAttempts);
+
+    navigate(`/test/${deckName}`); // Directly navigate to the test page
+};
+
+
+
+  
 
   const saveFlashcardsToLocalStorage = (cards) => {
     localStorage.setItem(deckName, JSON.stringify(cards));
