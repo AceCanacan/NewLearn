@@ -37,27 +37,28 @@ const Test = () => {
     const HINT_DEDUCTION = 25;
     const WRONG_ATTEMPT_DEDUCTION = 10;
 
-    const calculateScore = () => {
-    let deduction = (hintsUsed * HINT_DEDUCTION) + (wrongAttempts * WRONG_ATTEMPT_DEDUCTION);
-    return Math.max(100 - deduction, 0);
+    const calculateScoreForCurrentQuestion = () => {
+      const deduction = (hintUsed ? HINT_DEDUCTION : 0) + (wrongAttempts * WRONG_ATTEMPT_DEDUCTION);
+      return Math.max(100 - deduction, 0);
     };
-
+    
     const calculateFinalScore = () => {
-        const totalQuestions = flashcards.length;
-        const possiblePoints = totalQuestions * 100;
-        return (score / possiblePoints) * 100;
-      };
+      const totalScore = flashcards.length * 100;
+      return (score / totalScore) * 100;
+    };
+    
       
 
-    const updateScore = (isCorrect) => {
+      const updateScore = (isCorrect) => {
         if (isCorrect) {
-          const currentQuestionScore = calculateScore();
+          const currentQuestionScore = calculateScoreForCurrentQuestion();
           setScore(prevScore => prevScore + currentQuestionScore);
           setCorrectAnswers(prevCorrectAnswers => prevCorrectAnswers + 1);
         } else {
           setWrongAttempts(prevWrongAttempts => prevWrongAttempts + 1);
         }
       };
+      
 
     const resetTest = () => {
         setScore(0);
@@ -117,8 +118,6 @@ const Test = () => {
         setHintsUsed(storedHintsUsed);
         setWrongAttempts(storedWrongAttempts);
     }, [deckName, location.search]);
-    
-      
       
       
   
@@ -298,11 +297,14 @@ const Test = () => {
     setHasFeedbackBeenProvided(false);
     setWasCorrect(false);
     setTypedAnswer('');
-    setHintsUsed(0);
-    setWrongAttempts(0);
+    setHintsUsed(0); // Reset hints used for the new question
+    setWrongAttempts(0); // Reset wrong attempts for the new question
   
     saveProgress(); // Save progress after state updates
   };
+  
+
+
   const handlePreviousCard = () => {
     let prevIndex = currentCardIndex;
     do {
@@ -414,11 +416,33 @@ const Test = () => {
     setTypingMode(false);
     setCorrectlyAnsweredQuestions(new Set());
     setFinished(false);
+    setHintsUsed(0);
+    setWrongAttempts(0);
+    setScore(0);
     localStorage.removeItem(`${deckName}-shuffled`);
     localStorage.removeItem(`${deckName}-currentIndex`);
-    localStorage.removeItem(`${deckName}-finished`); // Clear the finished state
+    localStorage.removeItem(`${deckName}-correctAnswers`);
+    localStorage.removeItem(`${deckName}-correctlyAnsweredQuestions`);
+    localStorage.removeItem(`${deckName}-hintUsed`);
+    localStorage.removeItem(`${deckName}-typedAnswer`);
+    localStorage.removeItem(`${deckName}-wasCorrect`);
+    localStorage.removeItem(`${deckName}-comparisonResult`);
+    localStorage.removeItem(`${deckName}-feedback`);
+    localStorage.removeItem(`${deckName}-showAnswer`);
+    localStorage.removeItem(`${deckName}-isRecording`);
+    localStorage.removeItem(`${deckName}-lastCorrectAnswer`);
+    localStorage.removeItem(`${deckName}-showFeedback`);
+    localStorage.removeItem(`${deckName}-isFeedbackLoading`);
+    localStorage.removeItem(`${deckName}-hasFeedbackBeenProvided`);
+    localStorage.removeItem(`${deckName}-newAnswerProvided`);
+    localStorage.removeItem(`${deckName}-finished`);
+    localStorage.removeItem(`${deckName}-typingMode`);
+    localStorage.removeItem(`${deckName}-score`);
+    localStorage.removeItem(`${deckName}-hintsUsed`);
+    localStorage.removeItem(`${deckName}-wrongAttempts`);
     saveProgress();
   };
+  
   
 
 const saveProgress = () => {
@@ -517,30 +541,31 @@ const saveProgressAndNavigate = () => {
 };
 
 
-  const wipeProgressAndNavigate = () => {
-    localStorage.removeItem(`${deckName}-shuffled`);
-    localStorage.removeItem(`${deckName}-currentIndex`);
-    localStorage.removeItem(`${deckName}-correctAnswers`);
-    localStorage.removeItem(`${deckName}-correctlyAnsweredQuestions`);
-    localStorage.removeItem(`${deckName}-hintUsed`);
-    localStorage.removeItem(`${deckName}-typedAnswer`);
-    localStorage.removeItem(`${deckName}-wasCorrect`);
-    localStorage.removeItem(`${deckName}-comparisonResult`);
-    localStorage.removeItem(`${deckName}-feedback`);
-    localStorage.removeItem(`${deckName}-showAnswer`);
-    localStorage.removeItem(`${deckName}-isRecording`);
-    localStorage.removeItem(`${deckName}-lastCorrectAnswer`);
-    localStorage.removeItem(`${deckName}-showFeedback`);
-    localStorage.removeItem(`${deckName}-isFeedbackLoading`);
-    localStorage.removeItem(`${deckName}-hasFeedbackBeenProvided`);
-    localStorage.removeItem(`${deckName}-newAnswerProvided`);
-    localStorage.removeItem(`${deckName}-finished`);
-    localStorage.removeItem(`${deckName}-typingMode`);
-    localStorage.removeItem(`${deckName}-score`);
-    localStorage.removeItem(`${deckName}-hintsUsed`);
-    localStorage.removeItem(`${deckName}-wrongAttempts`);
-    navigate(`/Deck/${deckName}`);
-  };
+const wipeProgressAndNavigate = () => {
+  localStorage.removeItem(`${deckName}-shuffled`);
+  localStorage.removeItem(`${deckName}-currentIndex`);
+  localStorage.removeItem(`${deckName}-correctAnswers`);
+  localStorage.removeItem(`${deckName}-correctlyAnsweredQuestions`);
+  localStorage.removeItem(`${deckName}-hintUsed`);
+  localStorage.removeItem(`${deckName}-typedAnswer`);
+  localStorage.removeItem(`${deckName}-wasCorrect`);
+  localStorage.removeItem(`${deckName}-comparisonResult`);
+  localStorage.removeItem(`${deckName}-feedback`);
+  localStorage.removeItem(`${deckName}-showAnswer`);
+  localStorage.removeItem(`${deckName}-isRecording`);
+  localStorage.removeItem(`${deckName}-lastCorrectAnswer`);
+  localStorage.removeItem(`${deckName}-showFeedback`);
+  localStorage.removeItem(`${deckName}-isFeedbackLoading`);
+  localStorage.removeItem(`${deckName}-hasFeedbackBeenProvided`);
+  localStorage.removeItem(`${deckName}-newAnswerProvided`);
+  localStorage.removeItem(`${deckName}-finished`);
+  localStorage.removeItem(`${deckName}-typingMode`);
+  localStorage.removeItem(`${deckName}-score`);
+  localStorage.removeItem(`${deckName}-hintsUsed`);
+  localStorage.removeItem(`${deckName}-wrongAttempts`);
+  navigate(`/Deck/${deckName}`);
+};
+
     
   
 
@@ -673,10 +698,15 @@ const continueTest = () => {
   return (
     <div className="test-yourself">
       <h3>{deckName}</h3>
-      <button className="top-right-button" onClick={handleDone}>
-        Done
-      </button>
-      <button onClick={handleShuffle}>Shuffle</button>
+      {!finished && (
+  <>
+    <button className="top-right-button" onClick={handleDone}>
+      Done
+    </button>
+    <button onClick={handleShuffle}>Shuffle</button>
+  </>
+)}
+
       {showDisclaimer ? (
         <div className="disclaimer-modal">
           <p>You have a test in progress. Would you like to continue or start over?</p>
@@ -697,7 +727,8 @@ const continueTest = () => {
                 <div className="final-score">
                   <h2>Final Score: {calculateFinalScore().toFixed(2)}%</h2>
                   <button onClick={retakeTest}>Retake Test</button>
-                  <button onClick={() => navigate('/')}>Home</button>
+                  <button onClick={wipeProgressAndNavigate}>Go Back</button>
+
                 </div>
               </div>
             ) : (
