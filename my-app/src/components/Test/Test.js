@@ -20,6 +20,7 @@ const Test = () => {
     const [correctAnswers, setCorrectAnswers] = useState(0);
     const [showFeedback, setShowFeedback] = useState(false);
     const [feedback, setFeedback] = useState('');
+    const [feedbacks, setFeedbacks] = useState({});
     const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
     const [hasFeedbackBeenProvided, setHasFeedbackBeenProvided] = useState(false);
     const [newAnswerProvided, setNewAnswerProvided] = useState(false);
@@ -33,6 +34,12 @@ const Test = () => {
     const [hintsUsed, setHintsUsed] = useState(0);
     const [wrongAttempts, setWrongAttempts] = useState(0);
     const [showSaveProgressModal, setShowSaveProgressModal] = useState(false);
+    const [hasMovedPastFirstCard, setHasMovedPastFirstCard] = useState(false);
+    const [showFeedbacks, setShowFeedbacks] = useState({});
+    const [feedbackButtonDisabled, setFeedbackButtonDisabled] = useState({});
+    const [feedbackProvided, setFeedbackProvided] = useState({});
+
+
 
     const HINT_DEDUCTION = 25;
     const WRONG_ATTEMPT_DEDUCTION = 10;
@@ -78,6 +85,7 @@ const Test = () => {
         const storedCorrectlyAnsweredQuestions = new Set(JSON.parse(localStorage.getItem(`${deckName}-correctlyAnsweredQuestions`)) || []);
         const storedCorrectAnswers = JSON.parse(localStorage.getItem(`${deckName}-correctAnswers`)) || 0;
         const storedHintUsed = JSON.parse(localStorage.getItem(`${deckName}-hintUsed`)) || false;
+        const storedHint = localStorage.getItem(`${deckName}-hint`) || '';
         const storedTypedAnswer = localStorage.getItem(`${deckName}-typedAnswer`) || '';
         const storedWasCorrect = JSON.parse(localStorage.getItem(`${deckName}-wasCorrect`));
         const storedComparisonResult = localStorage.getItem(`${deckName}-comparisonResult`) || '';
@@ -94,6 +102,9 @@ const Test = () => {
         const storedScore = JSON.parse(localStorage.getItem(`${deckName}-score`)) || 0;
         const storedHintsUsed = JSON.parse(localStorage.getItem(`${deckName}-hintsUsed`)) || 0;
         const storedWrongAttempts = JSON.parse(localStorage.getItem(`${deckName}-wrongAttempts`)) || 0;
+        const storedFeedbacks = JSON.parse(localStorage.getItem(`${deckName}-feedbacks`)) || {};
+        const storedShowFeedbacks = JSON.parse(localStorage.getItem(`${deckName}-showFeedbacks`)) || {};
+        const storedFeedbackButtonDisabled = JSON.parse(localStorage.getItem(`${deckName}-feedbackButtonDisabled`)) || {};        
     
         setFlashcards(storedFlashcards);
         setShuffledFlashcards(storedShuffled);
@@ -101,6 +112,7 @@ const Test = () => {
         setCorrectlyAnsweredQuestions(storedCorrectlyAnsweredQuestions);
         setCorrectAnswers(storedCorrectAnswers);
         setHintUsed(storedHintUsed);
+        setHint(storedHint);
         setTypedAnswer(storedTypedAnswer);
         setWasCorrect(storedWasCorrect);
         setComparisonResult(storedComparisonResult);
@@ -117,7 +129,14 @@ const Test = () => {
         setScore(storedScore);
         setHintsUsed(storedHintsUsed);
         setWrongAttempts(storedWrongAttempts);
+        setFeedbacks(storedFeedbacks);
+        setShowFeedbacks(storedShowFeedbacks);
+        setFeedbackButtonDisabled(storedFeedbackButtonDisabled);
+
+
     }, [deckName, location.search]);
+    
+
       
       
   
@@ -202,72 +221,83 @@ const Test = () => {
       saveProgress();
     }
   };
-
   const compareQuestion = async (userQuestion) => {
     const originalQuestion = shuffledFlashcards[currentCardIndex].question;
     const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
     const userAnswer = typingMode ? typedAnswer : userQuestion;
   
     const messages = [
-        { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
-        { role: 'user', content: `Original Question: ${originalQuestion}` },
-        { role: 'user', content: `Original Answer: ${originalAnswer}` },
-        { role: 'user', content: `User Answer: ${userAnswer}` },
-        { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
+      { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
+      { role: 'user', content: `Original Question: ${originalQuestion}` },
+      { role: 'user', content: `Original Answer: ${originalAnswer}` },
+      { role: 'user', content: `User Answer: ${userAnswer}` },
+      { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
     ];
   
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: 'gpt-4o',
-                messages: messages,
-                max_tokens: 10
-            })
-        });
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: messages,
+          max_tokens: 10
+        })
+      });
   
-        if (!response.ok) {
-            const errorDetail = await response.json();
-            throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-        }
+      if (!response.ok) {
+        const errorDetail = await response.json();
+        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+      }
   
-        const data = await response.json();
+      const data = await response.json();
   
-        if (data.choices && data.choices.length > 0) {
-            const choice = data.choices[0];
-            const result = choice.message.content.trim().replace('.', '').toLowerCase();
+      if (data.choices && data.choices.length > 0) {
+        const choice = data.choices[0];
+        const result = choice.message.content.trim().replace('.', '').toLowerCase();
   
-            if (result === 'yes') {
-                if (!correctlyAnsweredQuestions.has(currentCardIndex)) {
-                    setCorrectlyAnsweredQuestions(prevQuestions => {
-                        const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
-                        localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
-                        return updatedQuestions;
-                    });
+        if (result === 'yes') {
+          if (!correctlyAnsweredQuestions.has(currentCardIndex)) {
+            setCorrectlyAnsweredQuestions(prevQuestions => {
+              const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
+              localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
+              return updatedQuestions;
+            });
   
-                    updateScore(true);
-                    setComparisonResult('Correct');
-                    setWasCorrect(true);
-                    saveProgress(); // Ensure progress is saved immediately after the correct answer is identified
-                }
-            } else {
-                updateScore(false);
-                setComparisonResult('Incorrect');
-            }
+            updateScore(true);
+            setComparisonResult('Correct');
+            setWasCorrect(true);
+            setNewAnswerProvided(true);  // Mark a new correct answer as provided
+            setFeedbackButtonDisabled(prev => ({
+              ...prev,
+              [currentCardIndex]: false
+            }));
+            saveProgress(); // Ensure progress is saved immediately after the correct answer is identified
+          }
         } else {
-            setComparisonResult('Error: No response from model');
+          updateScore(false);
+          setComparisonResult('Incorrect');
+          setFeedbackButtonDisabled(prev => ({
+            ...prev,
+            [currentCardIndex]: true  // Disable feedback button because the answer was incorrect
+          }));
         }
+      } else {
+        setComparisonResult('Error: No response from model');
+      }
     } catch (error) {
-        setComparisonResult(`Error: ${error.message}`);
+      setComparisonResult(`Error: ${error.message}`);
     } finally {
-        setIsLoading(false);
-        saveProgress(); // Save progress immediately after comparison
+      setIsLoading(false);
+      saveProgress(); // Save progress immediately after comparison
     }
   };
+  
+  
+  
   
 
 
@@ -280,15 +310,46 @@ const Test = () => {
   const handleNextCard = () => {
     let nextIndex = currentCardIndex;
     do {
-      nextIndex = (nextIndex + 1) % shuffledFlashcards.length;
+        nextIndex = (nextIndex + 1) % shuffledFlashcards.length;
     } while (correctlyAnsweredQuestions.has(nextIndex) && nextIndex !== currentCardIndex);
-  
+
     if (nextIndex === currentCardIndex) {
-      setFinished(true);
+        setFinished(true);
     } else {
-      setCurrentCardIndex(nextIndex);
+        setCurrentCardIndex(nextIndex);
+        setHasMovedPastFirstCard(true);
     }
+
+    setShowAnswer(false);
+    setComparisonResult('');
+    setHint('');
+    setHintUsed(false);
+    setShowFeedback(false);
+    setHasFeedbackBeenProvided(false);
+    setWasCorrect(false);
+    setTypedAnswer('');
+    setHintsUsed(0);
+    setWrongAttempts(0);
+    setNewAnswerProvided(false);
+    setFeedbackButtonDisabled(prev => {
+        console.log('Updating feedbackButtonDisabled for next card', { 
+            currentCardIndex: nextIndex, 
+            prevState: prev[nextIndex] !== undefined ? prev[nextIndex] : false 
+        });
+        return {
+            ...prev,
+            [nextIndex]: prev[nextIndex] !== undefined ? prev[nextIndex] : false
+        };
+    });
+
+    saveProgress();
+};
+
   
+  
+  const handlePreviousCard = () => {
+    const prevIndex = (currentCardIndex - 1 + shuffledFlashcards.length) % shuffledFlashcards.length;
+    setCurrentCardIndex(prevIndex);
     setShowAnswer(false);
     setComparisonResult('');
     setHint('');
@@ -299,35 +360,16 @@ const Test = () => {
     setTypedAnswer('');
     setHintsUsed(0); // Reset hints used for the new question
     setWrongAttempts(0); // Reset wrong attempts for the new question
+    setNewAnswerProvided(false); // Reset new answer provided for the previous question
+    setFeedbackButtonDisabled(prev => ({
+        ...prev,
+        [prevIndex]: feedbackButtonDisabled[prevIndex] !== undefined ? feedbackButtonDisabled[prevIndex] : false
+    }));
   
     saveProgress(); // Save progress after state updates
   };
   
 
-
-  const handlePreviousCard = () => {
-    let prevIndex = currentCardIndex;
-    do {
-      prevIndex = (prevIndex - 1 + shuffledFlashcards.length) % shuffledFlashcards.length;
-    } while (correctlyAnsweredQuestions.has(prevIndex) && prevIndex !== currentCardIndex);
-  
-    if (prevIndex === currentCardIndex) {
-      setFinished(true);
-    } else {
-      setCurrentCardIndex(prevIndex);
-    }
-  
-    setShowAnswer(false);
-    setComparisonResult('');
-    setHint('');
-    setHintUsed(false);
-    setShowFeedback(false);
-    setHasFeedbackBeenProvided(false);
-    setWasCorrect(false);
-    setTypedAnswer('');
-  
-    saveProgress(); // Save progress after state updates
-  };
   
   const handleFinish = () => {
     setFinished(true);
@@ -467,8 +509,12 @@ const saveProgress = () => {
     localStorage.setItem(`${deckName}-score`, JSON.stringify(score));
     localStorage.setItem(`${deckName}-hintsUsed`, JSON.stringify(hintsUsed));
     localStorage.setItem(`${deckName}-wrongAttempts`, JSON.stringify(wrongAttempts));
+    localStorage.setItem(`${deckName}-hint`, hint);
+    localStorage.setItem(`${deckName}-hintUsed`, JSON.stringify(hintUsed));
+    localStorage.setItem(`${deckName}-feedbacks`, JSON.stringify(feedbacks)); // Save feedbacks
+    localStorage.setItem(`${deckName}-showFeedbacks`, JSON.stringify(showFeedbacks)); // Save feedback visibility
+    localStorage.setItem(`${deckName}-feedbackButtonDisabled`, JSON.stringify(feedbackButtonDisabled)); // Save button state
 };
-
 
 const saveProgressAndNavigate = () => {
   console.log("Saving progress...");
@@ -563,61 +609,89 @@ const wipeProgressAndNavigate = () => {
   localStorage.removeItem(`${deckName}-score`);
   localStorage.removeItem(`${deckName}-hintsUsed`);
   localStorage.removeItem(`${deckName}-wrongAttempts`);
+  localStorage.removeItem(`${deckName}-feedbacks`);
+  localStorage.removeItem(`${deckName}-showFeedbacks`);
+  localStorage.removeItem(`${deckName}-feedbackButtonDisabled`);
+  
   navigate(`/Deck/${deckName}`);
 };
+
 
     
   
 
-  const provideFeedback = async () => {
-    if (hasFeedbackBeenProvided && !newAnswerProvided) return;
+const provideFeedback = async () => {
+  if (feedbackButtonDisabled[currentCardIndex] || (!newAnswerProvided && hasFeedbackBeenProvided)) return;
 
-    setFeedback('');
-    setIsFeedbackLoading(true);
+  setIsFeedbackLoading(true);
 
-    const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
-      { role: 'user', content: `Original Question: ${shuffledFlashcards[currentCardIndex].question}` },
-      { role: 'user', content: `Original Answer: ${shuffledFlashcards[currentCardIndex].answer}` },
-      { role: 'user', content: `The user's answer was correct. Provide praise and suggestions for improvement. Just one line` },
-      { role: 'user', content: `User's Correct Answer: ${lastCorrectAnswer}` }
-    ];
+  const messages = [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: `Original Question: ${shuffledFlashcards[currentCardIndex].question}` },
+    { role: 'user', content: `Original Answer: ${shuffledFlashcards[currentCardIndex].answer}` },
+    { role: 'user', content: `The user's answer was correct. Provide praise and suggestions for improvement.` },
+    { role: 'user', content: `User's Correct Answer: ${lastCorrectAnswer}` }
+  ];
 
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: messages,
-          max_tokens: 50
-        })
-      });
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: messages,
+        max_tokens: 50
+      })
+    });
 
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-      }
-
-      const data = await response.json();
-
-      if (data.choices && data.choices.length > 0) {
-        setFeedback(data.choices[0].message.content.trim());
-        setHasFeedbackBeenProvided(true);
-        setNewAnswerProvided(false);
-      } else {
-        setFeedback('Error: No response from model');
-      }
-    } catch (error) {
-      setFeedback(`Error: ${error.message}`);
-    } finally {
-      setIsFeedbackLoading(false);
-      saveProgress();
+    if (!response.ok) {
+      const errorDetail = await response.json();
+      throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
     }
-  };
+
+    const data = await response.json();
+    if (data.choices && data.choices.length > 0) {
+      const newFeedback = data.choices[0].message.content.trim();
+      setFeedbacks(prev => ({
+        ...prev,
+        [currentCardIndex]: newFeedback
+      }));
+      setShowFeedbacks(prev => ({
+        ...prev,
+        [currentCardIndex]: true
+      }));
+      setFeedbackButtonDisabled(prev => ({
+        ...prev,
+        [currentCardIndex]: true
+      }));
+      setHasFeedbackBeenProvided(true);
+      setNewAnswerProvided(false); // Reset new answer provided flag after feedback
+    } else {
+      setFeedbacks(prev => ({
+        ...prev,
+        [currentCardIndex]: 'Error: No response from model'
+      }));
+    }
+  } catch (error) {
+    setFeedbacks(prev => ({
+      ...prev,
+      [currentCardIndex]: `Error: ${error.message}`
+    }));
+  } finally {
+    setIsFeedbackLoading(false);
+    saveProgress();
+  }
+};
+
+
+
+
+
+
+
 
   const startOver = () => {
     localStorage.removeItem(`${deckName}-currentIndex`);
@@ -695,150 +769,169 @@ const continueTest = () => {
 };
 
 
-  return (
-    <div className="test-yourself">
-      <h3>{deckName}</h3>
-      {!finished && (
-  <>
-    <button className="top-right-button" onClick={handleDone}>
-      Done
-    </button>
-    <button onClick={handleShuffle}>Shuffle</button>
-  </>
-)}
-
-      {showDisclaimer ? (
-        <div className="disclaimer-modal">
-          <p>You have a test in progress. Would you like to continue or start over?</p>
-          <button onClick={startOver}>Start Over</button>
-          <button onClick={continueTest}>Continue</button>
-        </div>
-      ) : (
-        <>
-          {shuffledFlashcards.length > 0 ? (
-            finished ? (
-              <div className="completion-message">
-                <h2>Way to go! You've reviewed all {totalCards} cards.</h2>
-                <div className="score-display">
-                  <p>Correct Answers: {correctAnswers}</p>
-                  <p>Hints Used: {hintsUsed}</p>
-                  <p>Wrong Attempts: {wrongAttempts}</p>
-                </div>
-                <div className="final-score">
-                  <h2>Final Score: {calculateFinalScore().toFixed(2)}%</h2>
-                  <button onClick={retakeTest}>Retake Test</button>
-                  <button onClick={wipeProgressAndNavigate}>Go Back</button>
-
-                </div>
+return (
+  <div className="test-yourself">
+    <h3>{deckName}</h3>
+    {!finished && (
+      <>
+        <button className="top-right-button" onClick={handleDone}>
+          Done
+        </button>
+        <button onClick={handleShuffle}>Shuffle</button>
+      </>
+    )}
+    {showDisclaimer ? (
+      <div className="disclaimer-modal">
+        <p>You have a test in progress. Would you like to continue or start over?</p>
+        <button onClick={startOver}>Start Over</button>
+        <button onClick={continueTest}>Continue</button>
+      </div>
+    ) : (
+      <>
+        {shuffledFlashcards.length > 0 ? (
+          finished ? (
+            <div className="completion-message">
+              <h2>Way to go! You've reviewed all {totalCards} cards.</h2>
+              <div className="score-display">
+                <p>Correct Answers: {correctAnswers}</p>
+                <p>Hints Used: {hintsUsed}</p>
+                <p>Wrong Attempts: {wrongAttempts}</p>
               </div>
-            ) : (
-              <>
-                <div className="flashcard">
-                  <p><strong>Q:</strong> {shuffledFlashcards[currentCardIndex].question}</p>
-                  {showAnswer && (
-                    <p><strong>A:</strong> {shuffledFlashcards[currentCardIndex].answer}</p>
-                  )}
-                  <div className="flashcard-buttons">
-                    <button onClick={() => setTypingMode(!typingMode)}>
-                      {typingMode ? 'Voice Mode' : 'Type Mode'}
-                    </button>
-                    {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
-                      <button onClick={startRecording}>Start</button>
-                    )}
-                    {typingMode && (
-                      <>
-                        <input
-                          type="text"
-                          value={typedAnswer}
-                          onChange={(e) => {
-                            setTypedAnswer(e.target.value);
-                            saveProgress();
-                          }}
-                          placeholder="Type your answer here"
-                        />
-                        <button
-                          className="send-button"
-                          onClick={() => {
-                            setIsLoading(true);
-                            compareQuestion(typedAnswer).finally(() => setIsLoading(false));
-                          }}
-                          disabled={!typedAnswer.trim() || isLoading}
-                        >
-                          {isLoading ? 'Loading...' : 'Send'}
-                        </button>
-                      </>
-                    )}
-                    {!typingMode && isRecording && (
-                      <button onClick={finishRecording}>Finish</button>
-                    )}
-                    {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
-                      <button onClick={startRecording}>Try Again</button>
-                    )}
-                    {comparisonResult !== 'Correct' && (
-                      <>
-                        <button onClick={getHint} disabled={hintUsed}>Get Hint</button>
-                        {hint && <p><strong>Hint:</strong> {hint}</p>}
-                      </>
-                    )}
-                  </div>
-                  <div className="flashcard-secondary-buttons">
-                    <button onClick={handlePreviousCard} className="secondary-button">Back</button>
-                    {!wasCorrect && (
-                      <button onClick={handleNextCard} className="secondary-button">Skip</button>
-                    )}
-                    <button onClick={handleShowAnswer} className="secondary-button">
-                      {showAnswer ? 'Hide Answer' : 'Show Answer'}
-                    </button>
-                  </div>
-                </div>
-                {isLoading && <p>Loading...</p>}
-                <div className="comparison-result">
-                  <p><strong>Result:</strong> {comparisonResult}</p>
-                  {wasCorrect || comparisonResult === 'Correct' ? (
-                    <>
-                      {correctAnswers === totalCards && currentCardIndex === shuffledFlashcards.length - 1 ? (
-                        <button onClick={handleFinish}>Finish</button>
-                      ) : (
-                        <button onClick={handleNextCard}>Next</button>
-                      )}
-                      <button 
-                        onClick={() => { setShowFeedback(true); provideFeedback(); }} 
-                        disabled={isFeedbackLoading || (hasFeedbackBeenProvided && !newAnswerProvided)}
-                      >
-                        {isFeedbackLoading ? 'Loading...' : hasFeedbackBeenProvided && !newAnswerProvided ? 'Feedback' : 'Get Feedback'}
-                      </button>
-                      {showFeedback && feedback && (
-                        <div className="feedback-modal">
-                          <p>{feedback}</p>
-                          <button onClick={() => setShowFeedback(false)}>Close</button>
-                        </div>
-                      )}
-                    </>
-                  ) : null}
-                </div>
-                <div className="progress-tracker">
-                  <div className="progress-bar-container">
-                    <div className="progress-bar" style={{ width: `${(correctAnswers / totalCards) * 100}%` }}></div>
-                  </div>
-                  <p>{correctAnswers} out of {totalCards} completed</p>
-                </div>
-              </>
-            )
+              <div className="final-score">
+                <h2>Final Score: {calculateFinalScore().toFixed(2)}%</h2>
+                <button onClick={retakeTest}>Retake Test</button>
+                <button onClick={wipeProgressAndNavigate}>Go Back</button>
+              </div>
+            </div>
           ) : (
-            <p>No flashcards available in this deck.</p>
-          )}
-        </>
+            <>
+              <div className="flashcard">
+                <p><strong>Q:</strong> {shuffledFlashcards[currentCardIndex].question}</p>
+                {showAnswer && (
+                  <p><strong>A:</strong> {shuffledFlashcards[currentCardIndex].answer}</p>
+                )}
+                <div className="flashcard-buttons">
+                  <button onClick={() => setTypingMode(!typingMode)}>
+                    {typingMode ? 'Voice Mode' : 'Type Mode'}
+                  </button>
+                  {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
+                    <button onClick={startRecording}>Start</button>
+                  )}
+                  {typingMode && (
+                    <>
+                      <input
+                        type="text"
+                        value={typedAnswer}
+                        onChange={(e) => {
+                          setTypedAnswer(e.target.value);
+                          saveProgress();
+                        }}
+                        placeholder="Type your answer here"
+                      />
+                      <button
+                        className="send-button"
+                        onClick={() => {
+                          setIsLoading(true);
+                          compareQuestion(typedAnswer).finally(() => setIsLoading(false));
+                        }}
+                        disabled={!typedAnswer.trim() || isLoading}
+                      >
+                        {isLoading ? 'Loading...' : 'Send'}
+                      </button>
+                    </>
+                  )}
+                  {!typingMode && isRecording && (
+                    <button onClick={finishRecording}>Finish</button>
+                  )}
+                  {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
+                    <button onClick={startRecording}>Try Again</button>
+                  )}
+                  {comparisonResult !== 'Correct' && (
+                    <>
+                      <button onClick={getHint} disabled={hintUsed}>Get Hint</button>
+                      {hint && <p><strong>Hint:</strong> {hint}</p>}
+                    </>
+                  )}
+                </div>
+                <div className="flashcard-secondary-buttons">
+  {currentCardIndex > 0 && (
+    <button onClick={handlePreviousCard} className="secondary-button">Back</button>
+  )}
+  <button onClick={handleShowAnswer} className="secondary-button">
+    {showAnswer ? 'Hide Answer' : 'Show Answer'}
+  </button>
+  {(wasCorrect || comparisonResult === 'Correct' || correctlyAnsweredQuestions.has(currentCardIndex)) && (
+    <>
+      {currentCardIndex < shuffledFlashcards.length - 1 ? (
+        <button onClick={handleNextCard} className="secondary-button">Next</button>
+      ) : (
+        <button onClick={handleFinish} className="secondary-button">Finish</button>
       )}
-      {showSaveProgressModal && (
-        <div className="save-progress-modal">
-          <p>Would you like to save your progress or wipe it?</p>
-          <button onClick={saveProgressAndNavigate}>Save Progress</button>
-          <button onClick={wipeProgressAndNavigate}>Wipe Progress</button>
-          <button onClick={() => setShowSaveProgressModal(false)}>Cancel</button>
+      <button 
+        onClick={provideFeedback}
+        disabled={isFeedbackLoading || feedbackButtonDisabled[currentCardIndex] || (!newAnswerProvided && hasFeedbackBeenProvided)}
+      >
+        {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
+      </button>
+    </>
+  )}
+</div>
+
+
+
+              </div>
+              {isLoading && <p>Loading...</p>}
+              <div className="comparison-result">
+  <p><strong>Result:</strong> {comparisonResult}</p>
+  {(wasCorrect || correctlyAnsweredQuestions.has(currentCardIndex)) && (
+    <>
+      {currentCardIndex < shuffledFlashcards.length - 1 ? (
+        <button onClick={handleNextCard}>Next</button>
+      ) : (
+        <button onClick={handleFinish}>Finish</button>
+      )}
+      <button
+        onClick={() => { setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: true })); provideFeedback(); }}
+        disabled={isFeedbackLoading || feedbackButtonDisabled[currentCardIndex]}
+      >
+        {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
+      </button>
+      {showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
+        <div className="feedback-modal">
+          <p>{feedbacks[currentCardIndex]}</p>
+          <button onClick={() => setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: false }))}>Close</button>
         </div>
       )}
-    </div>
-  );
+    </>
+  )}
+</div>
+
+
+
+
+              <div className="progress-tracker">
+                <div className="progress-bar-container">
+                  <div className="progress-bar" style={{ width: `${(correctAnswers / totalCards) * 100}%` }}></div>
+                </div>
+                <p>{correctAnswers} out of {totalCards} completed</p>
+              </div>
+            </>
+          )
+        ) : (
+          <p>No flashcards available in this deck.</p>
+        )}
+      </>
+    )}
+    {showSaveProgressModal && (
+      <div className="save-progress-modal">
+        <p>Would you like to save your progress or wipe it?</p>
+        <button onClick={saveProgressAndNavigate}>Save Progress</button>
+        <button onClick={wipeProgressAndNavigate}>Wipe Progress</button>
+        <button onClick={() => setShowSaveProgressModal(false)}>Cancel</button>
+      </div>
+    )}
+  </div>
+);
   
   };
   
