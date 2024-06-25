@@ -105,6 +105,8 @@ const Test = () => {
         const storedFeedbacks = JSON.parse(localStorage.getItem(`${deckName}-feedbacks`)) || {};
         const storedShowFeedbacks = JSON.parse(localStorage.getItem(`${deckName}-showFeedbacks`)) || {};
         const storedFeedbackButtonDisabled = JSON.parse(localStorage.getItem(`${deckName}-feedbackButtonDisabled`)) || {};        
+        
+
     
         setFlashcards(storedFlashcards);
         setShuffledFlashcards(storedShuffled);
@@ -132,7 +134,7 @@ const Test = () => {
         setFeedbacks(storedFeedbacks);
         setShowFeedbacks(storedShowFeedbacks);
         setFeedbackButtonDisabled(storedFeedbackButtonDisabled);
-
+        setNewAnswerProvided(storedNewAnswerProvided);
 
     }, [deckName, location.search]);
     
@@ -225,149 +227,146 @@ const Test = () => {
     const originalQuestion = shuffledFlashcards[currentCardIndex].question;
     const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
     const userAnswer = typingMode ? typedAnswer : userQuestion;
-  
+
     const messages = [
-      { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
-      { role: 'user', content: `Original Question: ${originalQuestion}` },
-      { role: 'user', content: `Original Answer: ${originalAnswer}` },
-      { role: 'user', content: `User Answer: ${userAnswer}` },
-      { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
+        { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
+        { role: 'user', content: `Original Question: ${originalQuestion}` },
+        { role: 'user', content: `Original Answer: ${originalAnswer}` },
+        { role: 'user', content: `User Answer: ${userAnswer}` },
+        { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
     ];
-  
+
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: messages,
-          max_tokens: 10
-        })
+          method: 'POST',
+          headers: {
+              'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: messages,
+              max_tokens: 10
+          })
       });
-  
+
       if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+          const errorDetail = await response.json();
+          throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
       }
-  
+
       const data = await response.json();
-  
-      if (data.choices && data.choices.length > 0) {
-        const choice = data.choices[0];
-        const result = choice.message.content.trim().replace('.', '').toLowerCase();
-  
-        if (result === 'yes') {
-          if (!correctlyAnsweredQuestions.has(currentCardIndex)) {
-            setCorrectlyAnsweredQuestions(prevQuestions => {
-              const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
-              localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
-              return updatedQuestions;
-            });
-  
-            updateScore(true);
-            setComparisonResult('Correct');
-            setWasCorrect(true);
-            setNewAnswerProvided(true);  // Mark a new correct answer as provided
-            setFeedbackButtonDisabled(prev => ({
-              ...prev,
-              [currentCardIndex]: false
-            }));
-            saveProgress(); // Ensure progress is saved immediately after the correct answer is identified
-          }
-        } else {
-          updateScore(false);
-          setComparisonResult('Incorrect');
-          setFeedbackButtonDisabled(prev => ({
-            ...prev,
-            [currentCardIndex]: true  // Disable feedback button because the answer was incorrect
-          }));
-        }
-      } else {
-        setComparisonResult('Error: No response from model');
-      }
-    } catch (error) {
-      setComparisonResult(`Error: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-      saveProgress(); // Save progress immediately after comparison
-    }
-  };
-  
-  
-  
-  
+      const choice = data.choices[0];
+      const result = choice.message.content.trim().replace('.', '').toLowerCase();
 
-
-
-
-
-  
-  
-
-  const handleNextCard = () => {
-    let nextIndex = currentCardIndex;
-    do {
-        nextIndex = (nextIndex + 1) % shuffledFlashcards.length;
-    } while (correctlyAnsweredQuestions.has(nextIndex) && nextIndex !== currentCardIndex);
-
-    if (nextIndex === currentCardIndex) {
-        setFinished(true);
-    } else {
-        setCurrentCardIndex(nextIndex);
-        setHasMovedPastFirstCard(true);
-    }
-
-    setShowAnswer(false);
-    setComparisonResult('');
-    setHint('');
-    setHintUsed(false);
-    setShowFeedback(false);
-    setHasFeedbackBeenProvided(false);
-    setWasCorrect(false);
-    setTypedAnswer('');
-    setHintsUsed(0);
-    setWrongAttempts(0);
-    setNewAnswerProvided(false);
-    setFeedbackButtonDisabled(prev => {
-        console.log('Updating feedbackButtonDisabled for next card', { 
-            currentCardIndex: nextIndex, 
-            prevState: prev[nextIndex] !== undefined ? prev[nextIndex] : false 
+      if (result === 'yes') {
+        setCorrectlyAnsweredQuestions(prevQuestions => {
+            const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
+            localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
+            return updatedQuestions;
         });
-        return {
+        updateScore(true);
+        setComparisonResult('Correct');
+        setWasCorrect(true);
+        setNewAnswerProvided(true); // Mark a new correct answer as provided
+        setFeedbackButtonDisabled(prev => ({
             ...prev,
-            [nextIndex]: prev[nextIndex] !== undefined ? prev[nextIndex] : false
-        };
-    });
+            [currentCardIndex]: false
+        }));
+        setHasFeedbackBeenProvided(prev => ({
+            ...prev,
+            [currentCardIndex]: false
+        }));
+    } else {
+        updateScore(false);
+        setComparisonResult('Incorrect');
+        setFeedbackButtonDisabled(prev => ({
+            ...prev,
+            [currentCardIndex]: true
+        }));
+    }
 
-    saveProgress();
+  } catch (error) {
+      setComparisonResult(`Error: ${error.message}`);
+  } finally {
+      setIsLoading(false);
+      saveProgress();
+  }
 };
 
+
+
+
+
   
   
-  const handlePreviousCard = () => {
-    const prevIndex = (currentCardIndex - 1 + shuffledFlashcards.length) % shuffledFlashcards.length;
-    setCurrentCardIndex(prevIndex);
-    setShowAnswer(false);
-    setComparisonResult('');
-    setHint('');
-    setHintUsed(false);
-    setShowFeedback(false);
-    setHasFeedbackBeenProvided(false);
-    setWasCorrect(false);
-    setTypedAnswer('');
-    setHintsUsed(0); // Reset hints used for the new question
-    setWrongAttempts(0); // Reset wrong attempts for the new question
-    setNewAnswerProvided(false); // Reset new answer provided for the previous question
-    setFeedbackButtonDisabled(prev => ({
-        ...prev,
-        [prevIndex]: feedbackButtonDisabled[prevIndex] !== undefined ? feedbackButtonDisabled[prevIndex] : false
-    }));
   
-    saveProgress(); // Save progress after state updates
-  };
+  
+
+
+
+
+
+  
+  
+
+const handleNextCard = () => {
+  let nextIndex = currentCardIndex;
+  do {
+      nextIndex = (nextIndex + 1) % shuffledFlashcards.length;
+  } while (correctlyAnsweredQuestions.has(nextIndex) && nextIndex !== currentCardIndex);
+
+  if (nextIndex === currentCardIndex) {
+      setFinished(true);
+  } else {
+      setCurrentCardIndex(nextIndex);
+      setHasMovedPastFirstCard(true);
+  }
+
+  setShowAnswer(false);
+  setComparisonResult('');
+  setHint('');
+  setHintUsed(false);
+  setShowFeedback(false);
+  setHasFeedbackBeenProvided(false);
+  setWasCorrect(false);
+  setTypedAnswer('');
+  setHintsUsed(0);
+  setWrongAttempts(0);
+  setNewAnswerProvided(false);
+  setFeedbackButtonDisabled(prev => ({
+      ...prev,
+      [nextIndex]: true
+  }));
+
+  saveProgress();
+};
+
+
+const handlePreviousCard = () => {
+  const prevIndex = (currentCardIndex - 1 + shuffledFlashcards.length) % shuffledFlashcards.length;
+  setCurrentCardIndex(prevIndex);
+  setShowAnswer(false);
+  setComparisonResult('');
+  setHint('');
+  setHintUsed(false);
+  setShowFeedback(false);
+  setHasFeedbackBeenProvided(false);
+  setWasCorrect(false);
+  setTypedAnswer('');
+  setHintsUsed(0);
+  setWrongAttempts(0);
+  setNewAnswerProvided(false);
+  setFeedbackButtonDisabled(prev => ({
+      ...prev,
+      [prevIndex]: true
+  }));
+
+  saveProgress();
+};
+
+
+
   
 
   
@@ -514,6 +513,8 @@ const saveProgress = () => {
     localStorage.setItem(`${deckName}-feedbacks`, JSON.stringify(feedbacks)); // Save feedbacks
     localStorage.setItem(`${deckName}-showFeedbacks`, JSON.stringify(showFeedbacks)); // Save feedback visibility
     localStorage.setItem(`${deckName}-feedbackButtonDisabled`, JSON.stringify(feedbackButtonDisabled)); // Save button state
+    localStorage.setItem(`${deckName}-newAnswerProvided`, JSON.stringify(newAnswerProvided));
+
 };
 
 const saveProgressAndNavigate = () => {
@@ -582,6 +583,10 @@ const saveProgressAndNavigate = () => {
   localStorage.setItem(`${deckName}-wrongAttempts`, JSON.stringify(wrongAttempts));
   console.log(`${deckName}-wrongAttempts:`, wrongAttempts);
 
+  localStorage.setItem(`${deckName}-feedbackButtonDisabled`, JSON.stringify(feedbackButtonDisabled));
+    localStorage.setItem(`${deckName}-newAnswerProvided`, JSON.stringify(newAnswerProvided));
+
+
   console.log("Progress saved. Navigating to Deck...");
   navigate(`/Deck/${deckName}`);
 };
@@ -621,70 +626,69 @@ const wipeProgressAndNavigate = () => {
   
 
 const provideFeedback = async () => {
-  if (feedbackButtonDisabled[currentCardIndex] || (!newAnswerProvided && hasFeedbackBeenProvided)) return;
+  if (feedbackButtonDisabled[currentCardIndex] || (!newAnswerProvided && hasFeedbackBeenProvided[currentCardIndex])) return;
 
   setIsFeedbackLoading(true);
 
   const messages = [
-    { role: 'system', content: 'You are a helpful assistant.' },
-    { role: 'user', content: `Original Question: ${shuffledFlashcards[currentCardIndex].question}` },
-    { role: 'user', content: `Original Answer: ${shuffledFlashcards[currentCardIndex].answer}` },
-    { role: 'user', content: `The user's answer was correct. Provide praise and suggestions for improvement.` },
-    { role: 'user', content: `User's Correct Answer: ${lastCorrectAnswer}` }
+      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'user', content: `Original Question: ${shuffledFlashcards[currentCardIndex].question}` },
+      { role: 'user', content: `Original Answer: ${shuffledFlashcards[currentCardIndex].answer}` },
+      { role: 'user', content: `The user's answer was correct. Provide praise and suggestions for improvement.` },
+      { role: 'user', content: `User's Correct Answer: ${lastCorrectAnswer}` }
   ];
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: messages,
-        max_tokens: 50
-      })
-    });
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+              'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: messages,
+              max_tokens: 50
+          })
+      });
 
-    if (!response.ok) {
-      const errorDetail = await response.json();
-      throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-    }
+      if (!response.ok) {
+          const errorDetail = await response.json();
+          throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+      }
 
-    const data = await response.json();
-    if (data.choices && data.choices.length > 0) {
+      const data = await response.json();
       const newFeedback = data.choices[0].message.content.trim();
+
       setFeedbacks(prev => ({
-        ...prev,
-        [currentCardIndex]: newFeedback
+          ...prev,
+          [currentCardIndex]: newFeedback
       }));
       setShowFeedbacks(prev => ({
-        ...prev,
-        [currentCardIndex]: true
+          ...prev,
+          [currentCardIndex]: true
       }));
       setFeedbackButtonDisabled(prev => ({
-        ...prev,
-        [currentCardIndex]: true
+          ...prev,
+          [currentCardIndex]: true
       }));
-      setHasFeedbackBeenProvided(true);
+      setHasFeedbackBeenProvided(prev => ({
+          ...prev,
+          [currentCardIndex]: true
+      }));
       setNewAnswerProvided(false); // Reset new answer provided flag after feedback
-    } else {
-      setFeedbacks(prev => ({
-        ...prev,
-        [currentCardIndex]: 'Error: No response from model'
-      }));
-    }
   } catch (error) {
-    setFeedbacks(prev => ({
-      ...prev,
-      [currentCardIndex]: `Error: ${error.message}`
-    }));
+      setFeedbacks(prev => ({
+          ...prev,
+          [currentCardIndex]: `Error: ${error.message}`
+      }));
   } finally {
-    setIsFeedbackLoading(false);
-    saveProgress();
+      setIsFeedbackLoading(false);
+      saveProgress();
   }
 };
+
+
 
 
 
@@ -854,28 +858,29 @@ return (
                   )}
                 </div>
                 <div className="flashcard-secondary-buttons">
-  {currentCardIndex > 0 && (
-    <button onClick={handlePreviousCard} className="secondary-button">Back</button>
-  )}
-  <button onClick={handleShowAnswer} className="secondary-button">
-    {showAnswer ? 'Hide Answer' : 'Show Answer'}
-  </button>
-  {(wasCorrect || comparisonResult === 'Correct' || correctlyAnsweredQuestions.has(currentCardIndex)) && (
-    <>
-      {currentCardIndex < shuffledFlashcards.length - 1 ? (
-        <button onClick={handleNextCard} className="secondary-button">Next</button>
-      ) : (
-        <button onClick={handleFinish} className="secondary-button">Finish</button>
-      )}
-      <button 
-        onClick={provideFeedback}
-        disabled={isFeedbackLoading || feedbackButtonDisabled[currentCardIndex] || (!newAnswerProvided && hasFeedbackBeenProvided)}
-      >
-        {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
-      </button>
-    </>
-  )}
+    {currentCardIndex > 0 && (
+        <button onClick={handlePreviousCard} className="secondary-button">Back</button>
+    )}
+    <button onClick={handleShowAnswer} className="secondary-button">
+        {showAnswer ? 'Hide Answer' : 'Show Answer'}
+    </button>
+    {(wasCorrect || comparisonResult === 'Correct' || correctlyAnsweredQuestions.has(currentCardIndex)) && (
+        <>
+            {currentCardIndex < shuffledFlashcards.length - 1 ? (
+                <button onClick={handleNextCard} className="secondary-button">Next</button>
+            ) : (
+                <button onClick={handleFinish} className="secondary-button">Finish</button>
+            )}
+<button 
+    onClick={provideFeedback}
+    disabled={isFeedbackLoading || !newAnswerProvided || feedbackButtonDisabled[currentCardIndex]}
+>
+    {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
+</button>
+        </>
+    )}
 </div>
+
 
 
 
