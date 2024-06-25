@@ -38,6 +38,8 @@ const Test = () => {
     const [showFeedbacks, setShowFeedbacks] = useState({});
     const [feedbackButtonDisabled, setFeedbackButtonDisabled] = useState({});
     const [feedbackProvided, setFeedbackProvided] = useState({});
+    const [questionStates, setQuestionStates] = useState({});
+
 
 
 
@@ -51,20 +53,23 @@ const Test = () => {
     
     const calculateFinalScore = () => {
       const totalScore = flashcards.length * 100;
-      return (score / totalScore) * 100;
+      return Math.min((score / totalScore) * 100, 100); // Ensure the score does not exceed 100%
     };
     
       
 
-      const updateScore = (isCorrect) => {
-        if (isCorrect) {
+    const updateScore = (isCorrect) => {
+      if (isCorrect) {
+        if (!correctlyAnsweredQuestions.has(currentCardIndex)) {
           const currentQuestionScore = calculateScoreForCurrentQuestion();
           setScore(prevScore => prevScore + currentQuestionScore);
           setCorrectAnswers(prevCorrectAnswers => prevCorrectAnswers + 1);
-        } else {
-          setWrongAttempts(prevWrongAttempts => prevWrongAttempts + 1);
         }
-      };
+      } else {
+        setWrongAttempts(prevWrongAttempts => prevWrongAttempts + 1);
+      }
+    };
+    
       
 
     const resetTest = () => {
@@ -104,9 +109,8 @@ const Test = () => {
         const storedWrongAttempts = JSON.parse(localStorage.getItem(`${deckName}-wrongAttempts`)) || 0;
         const storedFeedbacks = JSON.parse(localStorage.getItem(`${deckName}-feedbacks`)) || {};
         const storedShowFeedbacks = JSON.parse(localStorage.getItem(`${deckName}-showFeedbacks`)) || {};
-        const storedFeedbackButtonDisabled = JSON.parse(localStorage.getItem(`${deckName}-feedbackButtonDisabled`)) || {};        
-        
-
+        const storedFeedbackButtonDisabled = JSON.parse(localStorage.getItem(`${deckName}-feedbackButtonDisabled`)) || {};
+        const storedQuestionStates = JSON.parse(localStorage.getItem(`${deckName}-questionStates`)) || {}; // Add this line
     
         setFlashcards(storedFlashcards);
         setShuffledFlashcards(storedShuffled);
@@ -134,9 +138,10 @@ const Test = () => {
         setFeedbacks(storedFeedbacks);
         setShowFeedbacks(storedShowFeedbacks);
         setFeedbackButtonDisabled(storedFeedbackButtonDisabled);
-        setNewAnswerProvided(storedNewAnswerProvided);
-
+        setQuestionStates(storedQuestionStates); // Add this line
+        loadQuestionState(storedCurrentIndex || 0); // Add this line
     }, [deckName, location.search]);
+    
     
 
       
@@ -147,6 +152,54 @@ const Test = () => {
         setShowSaveProgressModal(true);
       };
       
+    
+      const loadQuestionState = (index) => {
+        const state = questionStates[index];
+        if (state) {
+          setShowAnswer(state.showAnswer);
+          setComparisonResult(state.comparisonResult);
+          setHint(state.hint);
+          setHintUsed(state.hintUsed);
+          setShowFeedback(state.showFeedback);
+          setWasCorrect(state.wasCorrect);
+          setTypedAnswer(state.typedAnswer);
+          setHintsUsed(state.hintsUsed);
+          setWrongAttempts(state.wrongAttempts);
+          setNewAnswerProvided(state.newAnswerProvided);
+        } else {
+          setShowAnswer(false);
+          setComparisonResult('');
+          setHint('');
+          setHintUsed(false);
+          setShowFeedback(false);
+          setWasCorrect(false);
+          setTypedAnswer('');
+          setHintsUsed(0);
+          setWrongAttempts(0);
+          setNewAnswerProvided(false);
+        }
+      };
+      
+
+      const preserveCurrentQuestionState = () => {
+        const currentQuestionState = {
+            showAnswer,
+            comparisonResult,
+            hint,
+            hintUsed,
+            showFeedback,
+            wasCorrect,
+            typedAnswer,
+            hintsUsed,
+            wrongAttempts,
+            newAnswerProvided,
+        };
+    
+        const updatedQuestionStates = { ...questionStates, [currentCardIndex]: currentQuestionState };
+        setQuestionStates(updatedQuestionStates);
+        localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(updatedQuestionStates));
+    };
+    
       
 
   
@@ -311,66 +364,52 @@ const Test = () => {
   
 
 const handleNextCard = () => {
+  preserveCurrentQuestionState();
   let nextIndex = currentCardIndex;
+
   do {
-      nextIndex = (nextIndex + 1) % shuffledFlashcards.length;
+    nextIndex = (nextIndex + 1) % shuffledFlashcards.length;
   } while (correctlyAnsweredQuestions.has(nextIndex) && nextIndex !== currentCardIndex);
 
-  if (nextIndex === currentCardIndex) {
-      setFinished(true);
-  } else {
-      setCurrentCardIndex(nextIndex);
-      setHasMovedPastFirstCard(true);
-  }
-
-  setShowAnswer(false);
-  setComparisonResult('');
-  setHint('');
-  setHintUsed(false);
-  setShowFeedback(false);
-  setHasFeedbackBeenProvided(false);
-  setWasCorrect(false);
-  setTypedAnswer('');
-  setHintsUsed(0);
-  setWrongAttempts(0);
-  setNewAnswerProvided(false);
-  setFeedbackButtonDisabled(prev => ({
-      ...prev,
-      [nextIndex]: true
-  }));
-
+  setCurrentCardIndex(nextIndex);
+  loadQuestionState(nextIndex);
   saveProgress();
 };
+
+
+
 
 
 const handlePreviousCard = () => {
-  const prevIndex = (currentCardIndex - 1 + shuffledFlashcards.length) % shuffledFlashcards.length;
-  setCurrentCardIndex(prevIndex);
-  setShowAnswer(false);
-  setComparisonResult('');
-  setHint('');
-  setHintUsed(false);
-  setShowFeedback(false);
-  setHasFeedbackBeenProvided(false);
-  setWasCorrect(false);
-  setTypedAnswer('');
-  setHintsUsed(0);
-  setWrongAttempts(0);
-  setNewAnswerProvided(false);
-  setFeedbackButtonDisabled(prev => ({
-      ...prev,
-      [prevIndex]: true
-  }));
+  preserveCurrentQuestionState();
+  let prevIndex = currentCardIndex;
 
+  do {
+    prevIndex = (prevIndex - 1 + shuffledFlashcards.length) % shuffledFlashcards.length;
+  } while (correctlyAnsweredQuestions.has(prevIndex) && prevIndex !== currentCardIndex);
+
+  setCurrentCardIndex(prevIndex);
+  loadQuestionState(prevIndex);
+  saveProgress();
+};
+
+const navigateToCard = (index) => {
+  preserveCurrentQuestionState();
+  setCurrentCardIndex(index);
+  loadQuestionState(index);
   saveProgress();
 };
 
 
 
+
+
+
   
 
   
-  const handleFinish = () => {
+const handleFinish = () => {
+  if (correctlyAnsweredQuestions.size === shuffledFlashcards.length) {
     setFinished(true);
     localStorage.removeItem(`${deckName}-shuffled`);
     localStorage.removeItem(`${deckName}-currentIndex`);
@@ -388,8 +427,12 @@ const handlePreviousCard = () => {
     localStorage.removeItem(`${deckName}-isFeedbackLoading`);
     localStorage.removeItem(`${deckName}-hasFeedbackBeenProvided`);
     localStorage.removeItem(`${deckName}-newAnswerProvided`);
-    localStorage.setItem(`${deckName}-finished`, JSON.stringify(true)); // Ensure finished state is saved
-  };
+    localStorage.setItem(`${deckName}-finished`, JSON.stringify(true));
+  } else {
+    alert("You need to answer all questions correctly before finishing the test.");
+  }
+};
+
   
   const handleShowAnswer = () => {
     setShowAnswer(!showAnswer);
@@ -617,6 +660,8 @@ const wipeProgressAndNavigate = () => {
   localStorage.removeItem(`${deckName}-feedbacks`);
   localStorage.removeItem(`${deckName}-showFeedbacks`);
   localStorage.removeItem(`${deckName}-feedbackButtonDisabled`);
+  localStorage.removeItem(`${deckName}-questionStates`); // Add this line
+
   
   navigate(`/Deck/${deckName}`);
 };
@@ -858,19 +903,16 @@ return (
                   )}
                 </div>
                 <div className="flashcard-secondary-buttons">
-    {currentCardIndex > 0 && (
-        <button onClick={handlePreviousCard} className="secondary-button">Back</button>
+                {currentCardIndex > 0 && (
+  <button onClick={() => navigateToCard(currentCardIndex - 1)} className="secondary-button">Back</button>
+)}
+{(wasCorrect || comparisonResult === 'Correct' || correctlyAnsweredQuestions.has(currentCardIndex)) && (
+  <>
+    {currentCardIndex < shuffledFlashcards.length - 1 ? (
+      <button onClick={() => navigateToCard(currentCardIndex + 1)} className="secondary-button">Next</button>
+    ) : (
+      <button onClick={handleFinish} className="secondary-button">Finish</button>
     )}
-    <button onClick={handleShowAnswer} className="secondary-button">
-        {showAnswer ? 'Hide Answer' : 'Show Answer'}
-    </button>
-    {(wasCorrect || comparisonResult === 'Correct' || correctlyAnsweredQuestions.has(currentCardIndex)) && (
-        <>
-            {currentCardIndex < shuffledFlashcards.length - 1 ? (
-                <button onClick={handleNextCard} className="secondary-button">Next</button>
-            ) : (
-                <button onClick={handleFinish} className="secondary-button">Finish</button>
-            )}
 <button 
     onClick={provideFeedback}
     disabled={isFeedbackLoading || !newAnswerProvided || feedbackButtonDisabled[currentCardIndex]}
