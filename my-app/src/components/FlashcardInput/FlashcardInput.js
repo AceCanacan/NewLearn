@@ -10,6 +10,9 @@ function FlashcardInput() {
   const [isEditingDeck, setIsEditingDeck] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const navigate = useNavigate();
+  const [shuffleEnabled, setShuffleEnabled] = useState(
+    JSON.parse(localStorage.getItem(`${deckName}-shuffleEnabled`)) ?? false
+  );  
 
   const [shuffledFlashcards, setShuffledFlashcards] = useState([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -56,9 +59,22 @@ function FlashcardInput() {
     if (storedShuffled && storedCurrentIndex !== null && !storedFinished) {
       setShowDisclaimer(true);
     } else {
+      if (shuffleEnabled) {
+        const shuffled = shuffleArray(flashcards);
+        localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffled));
+        setShuffledFlashcards(shuffled);
+      } else {
+        setShuffledFlashcards(flashcards);
+      }
       navigate(`/test/${deckName}`);
     }
   };
+  
+  
+  useEffect(() => {
+    localStorage.setItem(`${deckName}-shuffleEnabled`, JSON.stringify(shuffleEnabled));
+  }, [shuffleEnabled]);
+  
   
 
   const startOver = () => {
@@ -131,7 +147,15 @@ function FlashcardInput() {
 
 
 
-  
+const shuffleArray = (array) => {
+  const shuffledArray = [...array];
+  for (let i = shuffledArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+  }
+  return shuffledArray;
+};
+
 
   const saveFlashcardsToLocalStorage = (cards) => {
     localStorage.setItem(deckName, JSON.stringify(cards));
@@ -215,16 +239,25 @@ function FlashcardInput() {
         )}
       </h3>
       <div className="deck-actions">
-        <button onClick={isEditingDeck ? handleRenameDeck : () => setIsEditingDeck(true)}>
-          {isEditingDeck ? 'Save' : 'Edit Deck'}
-        </button>
-        {isEditingDeck && (
-          <>
-            <button onClick={handleDeleteDeck}>Delete Deck</button>
-            <button onClick={() => setIsEditingDeck(false)}>Cancel</button>
-          </>
-        )}
-      </div>
+  <button onClick={isEditingDeck ? handleRenameDeck : () => setIsEditingDeck(true)}>
+    {isEditingDeck ? 'Save' : 'Edit Deck'}
+  </button>
+  {isEditingDeck && (
+    <>
+      <button onClick={handleDeleteDeck}>Delete Deck</button>
+      <button onClick={() => setIsEditingDeck(false)}>Cancel</button>
+    </>
+  )}
+  <label>
+    <input 
+      type="checkbox" 
+      checked={shuffleEnabled} 
+      onChange={(e) => setShuffleEnabled(e.target.checked)} 
+    />
+    Shuffle Cards
+  </label>
+</div>
+
       {showDisclaimer ? (
         <div className="disclaimer-modal">
           <p>You have a test in progress. Would you like to continue or start over?</p>

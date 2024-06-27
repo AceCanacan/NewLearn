@@ -214,13 +214,42 @@ const Test = () => {
     return shuffledArray;
   };
 
+  
 
-  const handleShuffle = () => {
-    const shuffled = shuffleArray(flashcards);
-    setShuffledFlashcards(shuffled);
-    setCurrentCardIndex(0); // Reset to the first card
-    saveProgress();
-  };
+
+  const shuffleArrayWithState = (flashcards, states) => {
+    // Combine flashcards and their states into one array of objects
+    const arrayWithState = flashcards.map((flashcard, index) => ({
+        flashcard,
+        state: states[index],
+    }));
+
+    // Shuffle the combined array
+    for (let i = arrayWithState.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arrayWithState[i], arrayWithState[j]] = [arrayWithState[j], arrayWithState[i]];
+    }
+
+    // Separate the shuffled array back into flashcards and states
+    const shuffledFlashcards = arrayWithState.map(item => item.flashcard);
+    const shuffledStates = arrayWithState.reduce((acc, item, index) => {
+        acc[index] = item.state;
+        return acc;
+    }, {});
+
+    return { shuffledFlashcards, shuffledStates };
+};
+  
+const handleShuffle = () => {
+  const questionStatesArray = Object.keys(questionStates).map(key => questionStates[key]);
+  const { shuffledFlashcards, shuffledStates } = shuffleArrayWithState(flashcards, questionStatesArray);
+
+  setShuffledFlashcards(shuffledFlashcards);
+  setQuestionStates(shuffledStates);
+  setCurrentCardIndex(0); // Reset to the first card
+  saveProgress();
+};
+  
 
   const startRecording = async () => {
     setIsRecording(true);
@@ -529,7 +558,7 @@ const handleFinish = () => {
   
   
 
-const saveProgress = () => {
+  const saveProgress = () => {
     localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffledFlashcards));
     localStorage.setItem(`${deckName}-currentIndex`, currentCardIndex);
     localStorage.setItem(`${deckName}-correctAnswers`, JSON.stringify(correctAnswers));
@@ -551,14 +580,12 @@ const saveProgress = () => {
     localStorage.setItem(`${deckName}-score`, JSON.stringify(score));
     localStorage.setItem(`${deckName}-hintsUsed`, JSON.stringify(hintsUsed));
     localStorage.setItem(`${deckName}-wrongAttempts`, JSON.stringify(wrongAttempts));
-    localStorage.setItem(`${deckName}-hint`, hint);
-    localStorage.setItem(`${deckName}-hintUsed`, JSON.stringify(hintUsed));
+    localStorage.setItem(`${deckName}-feedbackButtonDisabled`, JSON.stringify(feedbackButtonDisabled));
     localStorage.setItem(`${deckName}-feedbacks`, JSON.stringify(feedbacks)); // Save feedbacks
     localStorage.setItem(`${deckName}-showFeedbacks`, JSON.stringify(showFeedbacks)); // Save feedback visibility
-    localStorage.setItem(`${deckName}-feedbackButtonDisabled`, JSON.stringify(feedbackButtonDisabled)); // Save button state
-    localStorage.setItem(`${deckName}-newAnswerProvided`, JSON.stringify(newAnswerProvided));
-
-};
+    localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(questionStates)); // Save question states
+  };
+  
 
 const saveProgressAndNavigate = () => {
   console.log("Saving progress...");
@@ -826,7 +853,6 @@ return (
         <button className="top-right-button" onClick={handleDone}>
           Done
         </button>
-        <button onClick={handleShuffle}>Shuffle</button>
       </>
     )}
     {showDisclaimer ? (
