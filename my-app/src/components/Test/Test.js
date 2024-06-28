@@ -421,6 +421,7 @@ const handlePreviousCard = () => {
   loadQuestionState(prevIndex);
   saveProgress();
 };
+
 const navigateToCard = (index) => {
   preserveCurrentQuestionState();
   setCurrentCardIndex(index);
@@ -466,7 +467,6 @@ const handleFinish = () => {
     setShowAnswer(!showAnswer);
     saveProgress();
   };
-  
 
   const getHint = async () => {
     if (hintUsed) return;
@@ -532,22 +532,6 @@ const handleFinish = () => {
     setHintsUsed(0);
     setWrongAttempts(0);
     setScore(0);
-    setShowFeedback(false);
-    setFeedback('');
-    setFeedbacks({});
-    setIsFeedbackLoading(false);
-    setHasFeedbackBeenProvided(false);
-    setNewAnswerProvided(false);
-    setWasCorrect(false);
-    setLastCorrectAnswer('');
-    setHintUsed(false);
-    setShowDisclaimer(false);
-    setHasMovedPastFirstCard(false);
-    setShowFeedbacks({});
-    setFeedbackButtonDisabled({});
-    setFeedbackProvided({});
-    setQuestionStates({});
-
     localStorage.removeItem(`${deckName}-shuffled`);
     localStorage.removeItem(`${deckName}-currentIndex`);
     localStorage.removeItem(`${deckName}-correctAnswers`);
@@ -569,14 +553,8 @@ const handleFinish = () => {
     localStorage.removeItem(`${deckName}-score`);
     localStorage.removeItem(`${deckName}-hintsUsed`);
     localStorage.removeItem(`${deckName}-wrongAttempts`);
-    localStorage.removeItem(`${deckName}-feedbacks`);
-    localStorage.removeItem(`${deckName}-showFeedbacks`);
-    localStorage.removeItem(`${deckName}-feedbackButtonDisabled`);
-    localStorage.removeItem(`${deckName}-questionStates`);
-  
     saveProgress();
-};
-
+  };
   
   
 
@@ -867,14 +845,12 @@ const continueTest = () => {
 };
 
 
-
-
 return (
   <div className="test-yourself">
     <h3>{deckName}</h3>
     {!finished && (
       <>
-        <button className="done-button" onClick={handleDone}>
+        <button className="top-right-button" onClick={handleDone}>
           Done
         </button>
       </>
@@ -953,43 +929,58 @@ return (
                   )}
                 </div>
                 <div className="flashcard-secondary-buttons">
-                  {(wasCorrect || comparisonResult === 'Correct' || correctlyAnsweredQuestions.has(currentCardIndex)) && (
-                    <>
-                      {currentCardIndex < shuffledFlashcards.length - 1 ? (
-                        <button onClick={handleNextCard} className="secondary-button">Next</button>
-                      ) : (
-                        <button onClick={handleFinish} className="secondary-button">Finish</button>
-                      )}
+                {currentCardIndex > 0 && (
+  <button onClick={() => navigateToCard(currentCardIndex - 1)} className="secondary-button">Back</button>
+)}
+{(wasCorrect || comparisonResult === 'Correct' || correctlyAnsweredQuestions.has(currentCardIndex)) && (
+  <>
+    {currentCardIndex < shuffledFlashcards.length - 1 ? (
+      <button onClick={() => navigateToCard(currentCardIndex + 1)} className="secondary-button">Next</button>
+    ) : (
+      <button onClick={handleFinish} className="secondary-button">Finish</button>
+    )}
+<button 
+    onClick={provideFeedback}
+    disabled={isFeedbackLoading || !newAnswerProvided || feedbackButtonDisabled[currentCardIndex]}
+>
+    {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
+</button>
+        </>
+    )}
+</div>
 
-                    </>
-                  )}
-                </div>
+
+
+
               </div>
-
               {isLoading && <p>Loading...</p>}
               <div className="comparison-result">
-                <p><strong>Result:</strong> {comparisonResult}</p>
-                {(wasCorrect || correctlyAnsweredQuestions.has(currentCardIndex)) && (
-                  <>
-                    {currentCardIndex < shuffledFlashcards.length - 1 ? (
-                      <button onClick={handleNextCard}>Next</button>
-                    ) : (
-                      <button onClick={handleFinish}>Finish</button>
-                    )}
-                    <button
-                      onClick={() => { setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: true })); provideFeedback(); }}
-                      disabled={isFeedbackLoading || feedbackButtonDisabled[currentCardIndex]}
-                    >
-                      {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
-                    </button>
-                    {showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
-                      <div className="feedback-modal">
-                        <p>{feedbacks[currentCardIndex]}</p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+  <p><strong>Result:</strong> {comparisonResult}</p>
+  {(wasCorrect || correctlyAnsweredQuestions.has(currentCardIndex)) && (
+    <>
+      {currentCardIndex < shuffledFlashcards.length - 1 ? (
+        <button onClick={handleNextCard}>Next</button>
+      ) : (
+        <button onClick={handleFinish}>Finish</button>
+      )}
+      <button
+        onClick={() => { setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: true })); provideFeedback(); }}
+        disabled={isFeedbackLoading || feedbackButtonDisabled[currentCardIndex]}
+      >
+        {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
+      </button>
+      {showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
+        <div className="feedback-modal">
+          <p>{feedbacks[currentCardIndex]}</p>
+          <button onClick={() => setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: false }))}>Close</button>
+        </div>
+      )}
+    </>
+  )}
+</div>
+
+
+
 
               <div className="progress-tracker">
                 <div className="progress-bar-container">
@@ -997,19 +988,6 @@ return (
                 </div>
                 <p>{correctAnswers} out of {totalCards} completed</p>
               </div>
-
-              <div className="card-navigation-bar">
-  {shuffledFlashcards.map((_, index) => (
-    <button
-      key={index}
-      className={`nav-button ${index === currentCardIndex ? 'active' : ''}`}
-      onClick={() => navigateToCard(index)}
-    >
-      {index + 1}
-    </button>
-  ))}
-</div>
-
             </>
           )
         ) : (
@@ -1027,11 +1005,9 @@ return (
     )}
   </div>
 );
-
-
-
-
-}  
+  
+  };
+  
   
 
 export default Test;
