@@ -309,74 +309,74 @@ const handleShuffle = () => {
     const originalQuestion = shuffledFlashcards[currentCardIndex].question;
     const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
     const userAnswer = typingMode ? typedAnswer : userQuestion;
-
+  
     const messages = [
-        { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
-        { role: 'user', content: `Original Question: ${originalQuestion}` },
-        { role: 'user', content: `Original Answer: ${originalAnswer}` },
-        { role: 'user', content: `User Answer: ${userAnswer}` },
-        { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
+      { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
+      { role: 'user', content: `Original Question: ${originalQuestion}` },
+      { role: 'user', content: `Original Answer: ${originalAnswer}` },
+      { role: 'user', content: `User Answer: ${userAnswer}` },
+      { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
     ];
-
+  
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-              'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-              model: 'gpt-4o',
-              messages: messages,
-              max_tokens: 10
-          })
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: messages,
+          max_tokens: 10
+        })
       });
-
+  
       if (!response.ok) {
-          const errorDetail = await response.json();
-          throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+        const errorDetail = await response.json();
+        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
       }
-
+  
       const data = await response.json();
       const choice = data.choices[0];
       const result = choice.message.content.trim().replace('.', '').toLowerCase();
-
+  
       if (result === 'yes') {
         setCorrectlyAnsweredQuestions(prevQuestions => {
-            const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
-            localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
-            return updatedQuestions;
+          const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
+          localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
+          return updatedQuestions;
         });
         updateScore(true);
         setComparisonResult('Correct');
         setWasCorrect(true);
         setNewAnswerProvided(true); // Mark a new correct answer as provided
         setFeedbackButtonDisabled(prev => ({
-            ...prev,
-            [currentCardIndex]: false
+          ...prev,
+          [currentCardIndex]: false
         }));
         setHasFeedbackBeenProvided(prev => ({
-            ...prev,
-            [currentCardIndex]: false
+          ...prev,
+          [currentCardIndex]: false
         }));
-    } else {
+      } else {
         updateScore(false);
         setComparisonResult('Incorrect');
         setFeedbackButtonDisabled(prev => ({
-            ...prev,
-            [currentCardIndex]: true
+          ...prev,
+          [currentCardIndex]: true
         }));
-    }
-
-  } catch (error) {
+      }
+  
+    } catch (error) {
       setComparisonResult(`Error: ${error.message}`);
-  } finally {
+    } finally {
       setIsLoading(false);
       saveProgress();
-  }
-};
-
-
+    }
+  };
+  
+  
 
 
 
@@ -463,10 +463,33 @@ const handleFinish = () => {
 };
 
   
-  const handleShowAnswer = () => {
-    setShowAnswer(!showAnswer);
+const handleShowAnswer = () => {
+  if (!showAnswer) {
+    setShowAnswer(true);
+    updateScore(false); // Set score to 0 for this question
+    setCorrectlyAnsweredQuestions(prev => new Set(prev).add(currentCardIndex)); // Mark as correct for UI flow
+
+    // Mark the question as skipped in the state without changing the comparisonResult
+    setQuestionStates(prevStates => {
+      const updatedStates = { 
+        ...prevStates, 
+        [currentCardIndex]: { 
+          ...prevStates[currentCardIndex], 
+          skipped: true, 
+          showAnswer: true 
+        } 
+      };
+      localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(updatedStates));
+      return updatedStates;
+    });
+
     saveProgress();
-  };
+  }
+};
+
+
+
+
 
   const getHint = async () => {
     if (hintUsed) return;
@@ -698,74 +721,67 @@ const wipeProgressAndNavigate = () => {
   
 
 const provideFeedback = async () => {
-  if (feedbackButtonDisabled[currentCardIndex] || (!newAnswerProvided && hasFeedbackBeenProvided[currentCardIndex])) return;
+  if (feedbackButtonDisabled[currentCardIndex] || (!newAnswerProvided && hasFeedbackBeenProvided[currentCardIndex]) || !showAnswer) return;
 
   setIsFeedbackLoading(true);
 
   const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
-      { role: 'user', content: `Original Question: ${shuffledFlashcards[currentCardIndex].question}` },
-      { role: 'user', content: `Original Answer: ${shuffledFlashcards[currentCardIndex].answer}` },
-      { role: 'user', content: `The user's answer was correct. Provide praise and suggestions for improvement.` },
-      { role: 'user', content: `User's Correct Answer: ${lastCorrectAnswer}` }
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: `Original Question: ${shuffledFlashcards[currentCardIndex].question}` },
+    { role: 'user', content: `Original Answer: ${shuffledFlashcards[currentCardIndex].answer}` },
+    { role: 'user', content: `The user's answer was correct. Provide praise and suggestions for improvement.` },
+    { role: 'user', content: `User's Correct Answer: ${lastCorrectAnswer}` }
   ];
 
   try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-              'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-              model: 'gpt-4o',
-              messages: messages,
-              max_tokens: 50
-          })
-      });
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: messages,
+        max_tokens: 50
+      })
+    });
 
-      if (!response.ok) {
-          const errorDetail = await response.json();
-          throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-      }
+    if (!response.ok) {
+      const errorDetail = await response.json();
+      throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+    }
 
-      const data = await response.json();
-      const newFeedback = data.choices[0].message.content.trim();
+    const data = await response.json();
+    const newFeedback = data.choices[0].message.content.trim();
 
-      setFeedbacks(prev => ({
-          ...prev,
-          [currentCardIndex]: newFeedback
-      }));
-      setShowFeedbacks(prev => ({
-          ...prev,
-          [currentCardIndex]: true
-      }));
-      setFeedbackButtonDisabled(prev => ({
-          ...prev,
-          [currentCardIndex]: true
-      }));
-      setHasFeedbackBeenProvided(prev => ({
-          ...prev,
-          [currentCardIndex]: true
-      }));
-      setNewAnswerProvided(false); // Reset new answer provided flag after feedback
+    setFeedbacks(prev => ({
+      ...prev,
+      [currentCardIndex]: newFeedback
+    }));
+    setShowFeedbacks(prev => ({
+      ...prev,
+      [currentCardIndex]: true
+    }));
+    setFeedbackButtonDisabled(prev => ({
+      ...prev,
+      [currentCardIndex]: true
+    }));
+    setHasFeedbackBeenProvided(prev => ({
+      ...prev,
+      [currentCardIndex]: true
+    }));
+    setNewAnswerProvided(false); // Reset new answer provided flag after feedback
   } catch (error) {
-      setFeedbacks(prev => ({
-          ...prev,
-          [currentCardIndex]: `Error: ${error.message}`
-      }));
+    setFeedbacks(prev => ({
+      ...prev,
+      [currentCardIndex]: `Error: ${error.message}`
+    }));
   } finally {
-      setIsFeedbackLoading(false);
-      saveProgress();
+    setIsFeedbackLoading(false);
+    saveProgress();
   }
 };
-
-
-
-
-
-
-
 
 
 
@@ -844,9 +860,29 @@ const continueTest = () => {
 
 };
 
+const NavigationBar = ({ totalCards, currentCardIndex, navigateToCard }) => (
+  <div className="navigation-bar">
+    {Array.from({ length: totalCards }).map((_, index) => (
+      <button
+        key={index}
+        className={`nav-button ${index === currentCardIndex ? 'active' : ''}`}
+        onClick={() => navigateToCard(index)}
+      >
+        {index + 1}
+      </button>
+    ))}
+  </div>
+);
+
+
 
 return (
   <div className="test-yourself">
+    <NavigationBar
+      totalCards={shuffledFlashcards.length}
+      currentCardIndex={currentCardIndex}
+      navigateToCard={navigateToCard}
+    />
     <h3>{deckName}</h3>
     {!finished && (
       <>
@@ -923,40 +959,40 @@ return (
                   )}
                   {comparisonResult !== 'Correct' && (
                     <>
-                      <button onClick={getHint} disabled={hintUsed}>Get Hint</button>
-                      {hint && <p><strong>Hint:</strong> {hint}</p>}
-                    </>
+                    {!showAnswer && (
+                      <>
+                        <button onClick={getHint} disabled={hintUsed}>Get Hint</button>
+                        {hint && <p><strong>Hint:</strong> {hint}</p>}
+                      </>
+                    )}
+                    <button onClick={handleShowAnswer} disabled={showAnswer}>
+                      {showAnswer ? 'Answer Shown' : 'Show Answer'}
+                    </button>
+                  </>
+
                   )}
                 </div>
                 <div className="flashcard-secondary-buttons">
-                {currentCardIndex > 0 && (
-  <button onClick={() => navigateToCard(currentCardIndex - 1)} className="secondary-button">Back</button>
-)}
-{(wasCorrect || comparisonResult === 'Correct' || correctlyAnsweredQuestions.has(currentCardIndex)) && (
-  <>
-    {currentCardIndex < shuffledFlashcards.length - 1 ? (
-      <button onClick={() => navigateToCard(currentCardIndex + 1)} className="secondary-button">Next</button>
-    ) : (
-      <button onClick={handleFinish} className="secondary-button">Finish</button>
-    )}
-<button 
-    onClick={provideFeedback}
-    disabled={isFeedbackLoading || !newAnswerProvided || feedbackButtonDisabled[currentCardIndex]}
->
-    {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
-</button>
-        </>
-    )}
-</div>
+                  {(showAnswer || wasCorrect || comparisonResult === 'Correct' || correctlyAnsweredQuestions.has(currentCardIndex)) && (
+                    <>
 
-
-
-
+                      {showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
+                        <div className="feedback-modal">
+                          <p>{feedbacks[currentCardIndex]}</p>
+                          <button onClick={() => setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: false }))}>Close</button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
               {isLoading && <p>Loading...</p>}
               <div className="comparison-result">
-  <p><strong>Result:</strong> {comparisonResult}</p>
-  {(wasCorrect || correctlyAnsweredQuestions.has(currentCardIndex)) && (
+  <p><strong>Result:</strong> {comparisonResult === 'Correct' && questionStates[currentCardIndex]?.skipped ? 'Correct (Skipped)' : comparisonResult}</p>
+  {questionStates[currentCardIndex]?.skipped && (
+    <p><em>Note: This question was skipped, and the result does not count towards your score.</em></p>
+  )}
+  {(showAnswer || wasCorrect || correctlyAnsweredQuestions.has(currentCardIndex)) && (
     <>
       {currentCardIndex < shuffledFlashcards.length - 1 ? (
         <button onClick={handleNextCard}>Next</button>
@@ -965,7 +1001,7 @@ return (
       )}
       <button
         onClick={() => { setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: true })); provideFeedback(); }}
-        disabled={isFeedbackLoading || feedbackButtonDisabled[currentCardIndex]}
+        disabled={isFeedbackLoading || feedbackButtonDisabled[currentCardIndex] || !wasCorrect}
       >
         {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
       </button>
@@ -1005,7 +1041,6 @@ return (
     )}
   </div>
 );
-  
   };
   
   
