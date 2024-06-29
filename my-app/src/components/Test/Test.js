@@ -973,17 +973,7 @@ return (
                   )}
                 </div>
                 <div className="flashcard-secondary-buttons">
-                  {(showAnswer || wasCorrect || comparisonResult === 'Correct' || correctlyAnsweredQuestions.has(currentCardIndex)) && (
-                    <>
 
-                      {showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
-                        <div className="feedback-modal">
-                          <p>{feedbacks[currentCardIndex]}</p>
-                          <button onClick={() => setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: false }))}>Close</button>
-                        </div>
-                      )}
-                    </>
-                  )}
                 </div>
               </div>
               {isLoading && <p>Loading...</p>}
@@ -1018,12 +1008,13 @@ return (
 
 
 
-              <div className="progress-tracker">
-                <div className="progress-bar-container">
-                  <div className="progress-bar" style={{ width: `${(correctAnswers / totalCards) * 100}%` }}></div>
-                </div>
-                <p>{correctAnswers} out of {totalCards} completed</p>
-              </div>
+<div className="progress-tracker">
+  <div className="progress-bar-container">
+    <div className="progress-bar" style={{ width: `${(correctlyAnsweredQuestions.size / totalCards) * 100}%` }}></div>
+  </div>
+  <p>{correctlyAnsweredQuestions.size} out of {totalCards} completed</p>
+</div>
+
             </>
           )
         ) : (
