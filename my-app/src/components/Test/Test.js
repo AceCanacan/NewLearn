@@ -350,7 +350,7 @@ const handleShuffle = () => {
         updateScore(true);
         setComparisonResult('Correct');
         setWasCorrect(true);
-        setNewAnswerProvided(true); // Mark a new correct answer as provided
+        setNewAnswerProvided(true); // Add this line
         setFeedbackButtonDisabled(prev => ({
           ...prev,
           [currentCardIndex]: false
@@ -359,6 +359,8 @@ const handleShuffle = () => {
           ...prev,
           [currentCardIndex]: false
         }));
+        setLastCorrectAnswer(userAnswer); // Add this line
+        console.log("Answer is correct, states set:", { wasCorrect: true, newAnswerProvided: true, lastCorrectAnswer: userAnswer });
       } else {
         updateScore(false);
         setComparisonResult('Incorrect');
@@ -366,6 +368,7 @@ const handleShuffle = () => {
           ...prev,
           [currentCardIndex]: true
         }));
+        console.log("Answer is incorrect, states set:", { wasCorrect: false, newAnswerProvided: false });
       }
   
     } catch (error) {
@@ -721,7 +724,15 @@ const wipeProgressAndNavigate = () => {
   
 
 const provideFeedback = async () => {
-  if (feedbackButtonDisabled[currentCardIndex] || (!newAnswerProvided && hasFeedbackBeenProvided[currentCardIndex]) || !showAnswer) return;
+  if (feedbackButtonDisabled[currentCardIndex] || (!newAnswerProvided && !wasCorrect)) {
+    console.log("Feedback button disabled, conditions not met:", {
+      isFeedbackLoading,
+      feedbackButtonDisabled: feedbackButtonDisabled[currentCardIndex],
+      newAnswerProvided,
+      wasCorrect
+    });
+    return;
+  }
 
   setIsFeedbackLoading(true);
 
@@ -741,7 +752,7 @@ const provideFeedback = async () => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4',
         messages: messages,
         max_tokens: 50
       })
@@ -772,16 +783,19 @@ const provideFeedback = async () => {
       [currentCardIndex]: true
     }));
     setNewAnswerProvided(false); // Reset new answer provided flag after feedback
+    console.log("Feedback provided successfully");
   } catch (error) {
     setFeedbacks(prev => ({
       ...prev,
       [currentCardIndex]: `Error: ${error.message}`
     }));
+    console.log("Error providing feedback:", error.message);
   } finally {
     setIsFeedbackLoading(false);
     saveProgress();
   }
 };
+
 
 
 
@@ -989,12 +1003,17 @@ return (
       ) : (
         <button onClick={handleFinish}>Finish</button>
       )}
-      <button
-        onClick={() => { setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: true })); provideFeedback(); }}
-        disabled={isFeedbackLoading || feedbackButtonDisabled[currentCardIndex] || !wasCorrect}
-      >
-        {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
-      </button>
+<button
+  onClick={() => { 
+    setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: true })); 
+    provideFeedback(); 
+    console.log("Get Feedback clicked");
+  }}
+  disabled={isFeedbackLoading || feedbackButtonDisabled[currentCardIndex] || !(newAnswerProvided || wasCorrect)} // Edit this line
+>
+  {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
+</button>
+
       {showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
         <div className="feedback-modal">
           <p>{feedbacks[currentCardIndex]}</p>
