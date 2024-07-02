@@ -45,7 +45,7 @@ const Test = () => {
       answersShown: 0,
       multipleAttempts: 0,
       answeredPerfectly: 0,
-    });
+    });    
     
   
       useEffect(() => {
@@ -129,40 +129,50 @@ const Test = () => {
         localStorage.removeItem(`${deckName}-hasFeedbackBeenProvided`);
         localStorage.removeItem(`${deckName}-newAnswerProvided`);
         localStorage.setItem(`${deckName}-finished`, JSON.stringify(true));
+        displayReport();
       } else {
         alert("You need to answer all questions correctly before finishing the test.");
       }
     };
     
-
+    const displayReport = () => {
+      alert(`
+        Report:
+        Hints Used: ${report.hintsUsed}
+        Answers Shown: ${report.answersShown}
+        Multiple Attempts: ${report.multipleAttempts}
+        Perfectly Answered: ${report.answeredPerfectly}
+      `);
+    };
       
     
-      const loadQuestionState = (index) => {
-        const state = questionStates[index];
-        if (state) {
-          setShowAnswer(state.showAnswer);
-          setComparisonResult(state.comparisonResult);
-          setHint(state.hint);
-          setHintUsed(state.hintUsed);
-          setShowFeedback(state.showFeedback);
-          setWasCorrect(state.wasCorrect);
-          setTypedAnswer(state.typedAnswer);
-          setHintsUsed(state.hintsUsed);
-          setWrongAttempts(state.wrongAttempts);
-          setNewAnswerProvided(state.newAnswerProvided);
-        } else {
-          setShowAnswer(false);
-          setComparisonResult('');
-          setHint('');
-          setHintUsed(false);
-          setShowFeedback(false);
-          setWasCorrect(false);
-          setTypedAnswer('');
-          setHintsUsed(0);
-          setWrongAttempts(0);
-          setNewAnswerProvided(false);
-        }
-      };
+    const loadQuestionState = (index) => {
+      const state = questionStates[index];
+      if (state) {
+        setShowAnswer(state.showAnswer);
+        setComparisonResult(state.comparisonResult);
+        setHint(state.hint);
+        setHintUsed(state.hintUsed);
+        setShowFeedback(state.showFeedback);
+        setWasCorrect(state.wasCorrect);
+        setTypedAnswer(state.typedAnswer);
+        setHintsUsed(state.hintsUsed);
+        setWrongAttempts(state.wrongAttempts);
+        setNewAnswerProvided(state.newAnswerProvided);
+      } else {
+        setShowAnswer(false);
+        setComparisonResult('');
+        setHint('');
+        setHintUsed(false);
+        setShowFeedback(false);
+        setWasCorrect(false);
+        setTypedAnswer('');
+        setHintsUsed(0);
+        setWrongAttempts(0);
+        setNewAnswerProvided(false);
+      }
+    };
+    
       
 
       const preserveCurrentQuestionState = () => {
@@ -517,7 +527,7 @@ const compareQuestion = async (userQuestion) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4',
         messages: messages,
         max_tokens: 10
       })
@@ -538,10 +548,11 @@ const compareQuestion = async (userQuestion) => {
         localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
         return updatedQuestions;
       });
+
       updateScore(true);
       setComparisonResult('Correct');
       setWasCorrect(true);
-      setNewAnswerProvided(true); // Add this line
+      setNewAnswerProvided(true);
       setFeedbackButtonDisabled(prev => ({
         ...prev,
         [currentCardIndex]: false
@@ -550,13 +561,28 @@ const compareQuestion = async (userQuestion) => {
         ...prev,
         [currentCardIndex]: false
       }));
-      setLastCorrectAnswer(userAnswer); // Add this line
+      setLastCorrectAnswer(userAnswer);
+
+      setReport(prevReport => {
+        const isFirstAttempt = !questionStates[currentCardIndex]?.attempts;
+        return {
+          ...prevReport,
+          answeredPerfectly: isFirstAttempt ? prevReport.answeredPerfectly + 1 : prevReport.answeredPerfectly,
+          multipleAttempts: isFirstAttempt ? prevReport.multipleAttempts : prevReport.multipleAttempts + 1,
+        };
+      });
+
     } else {
       updateScore(false);
       setComparisonResult('Incorrect');
       setFeedbackButtonDisabled(prev => ({
         ...prev,
         [currentCardIndex]: true
+      }));
+
+      setReport(prevReport => ({
+        ...prevReport,
+        multipleAttempts: prevReport.multipleAttempts + 1,
       }));
     }
 
@@ -568,6 +594,7 @@ const compareQuestion = async (userQuestion) => {
   }
 };
 
+
   
 const handleShowAnswer = () => {
   if (!showAnswer) {
@@ -575,19 +602,23 @@ const handleShowAnswer = () => {
     updateScore(false); // Set score to 0 for this question
     setCorrectlyAnsweredQuestions(prev => new Set(prev).add(currentCardIndex)); // Mark as correct for UI flow
 
-
     setQuestionStates(prevStates => {
-      const updatedStates = { 
-        ...prevStates, 
-        [currentCardIndex]: { 
-          ...prevStates[currentCardIndex], 
-          skipped: true, 
-          showAnswer: true 
-        } 
+      const updatedStates = {
+        ...prevStates,
+        [currentCardIndex]: {
+          ...prevStates[currentCardIndex],
+          skipped: true,
+          showAnswer: true
+        }
       };
       localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(updatedStates));
       return updatedStates;
     });
+
+    setReport(prevReport => ({
+      ...prevReport,
+      answersShown: prevReport.answersShown + 1,
+    }));
 
     saveProgress();
   }
@@ -595,56 +626,64 @@ const handleShowAnswer = () => {
 
 
 
-  const getHint = async () => {
-    if (hintUsed) return;
-  
-    setIsLoading(true);
-    setHint('');
-    const originalQuestion = shuffledFlashcards[currentCardIndex].question;
-    const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
-  
-    const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
-      { role: 'user', content: `Original Question: ${originalQuestion}` },
-      { role: 'user', content: `Original Answer: ${originalAnswer}` },
-      { role: 'user', content: 'Provide a hint that will help the user get closer to the answer but does not directly reveal it.' }
-    ];
-  
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: messages,
-          max_tokens: 50
-        })
-      });
-  
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-      }
-  
-      const data = await response.json();
-  
-      if (data.choices && data.choices.length > 0) {
-        setHint(data.choices[0].message.content.trim());
-        setHintUsed(true);
-        setHintsUsed(prevHintsUsed => prevHintsUsed + 1); // Update hints used state
-      } else {
-        setHint('Error: No response from model');
-      }
-    } catch (error) {
-      setHint(`Error: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-      saveProgress();
+
+
+const getHint = async () => {
+  if (hintUsed) return;
+
+  setIsLoading(true);
+  setHint('');
+  const originalQuestion = shuffledFlashcards[currentCardIndex].question;
+  const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
+
+  const messages = [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: `Original Question: ${originalQuestion}` },
+    { role: 'user', content: `Original Answer: ${originalAnswer}` },
+    { role: 'user', content: 'Provide a hint that will help the user get closer to the answer but does not directly reveal it.' }
+  ];
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: messages,
+        max_tokens: 50
+      })
+    });
+
+    if (!response.ok) {
+      const errorDetail = await response.json();
+      throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
     }
-  };
+
+    const data = await response.json();
+
+    if (data.choices && data.choices.length > 0) {
+      setHint(data.choices[0].message.content.trim());
+      setHintUsed(true);
+      setHintsUsed(prevHintsUsed => prevHintsUsed + 1); // Update hints used state
+
+      setReport(prevReport => ({
+        ...prevReport,
+        hintsUsed: prevReport.hintsUsed + 1,
+      }));
+    } else {
+      setHint('Error: No response from model');
+    }
+  } catch (error) {
+    setHint(`Error: ${error.message}`);
+  } finally {
+    setIsLoading(false);
+    saveProgress();
+  }
+};
+
 
 
     
