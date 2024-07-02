@@ -39,6 +39,8 @@ const Test = () => {
     const [feedbackButtonDisabled, setFeedbackButtonDisabled] = useState({});
     const [feedbackProvided, setFeedbackProvided] = useState({});
     const [questionStates, setQuestionStates] = useState({});
+    const [sendButtonDisabled, setSendButtonDisabled] = useState(false);
+
 
     const [report, setReport] = useState({
       hintsUsed: 0,
@@ -506,10 +508,15 @@ const processRecording = async (audioBlob) => {
 
 
 
+
 const compareQuestion = async (userQuestion) => {
   const originalQuestion = shuffledFlashcards[currentCardIndex].question;
   const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
   const userAnswer = typingMode ? typedAnswer : userQuestion;
+
+  console.log("Original Question:", originalQuestion);
+  console.log("Original Answer:", originalAnswer);
+  console.log("User Answer:", userAnswer);
 
   const messages = [
     { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
@@ -542,9 +549,39 @@ const compareQuestion = async (userQuestion) => {
     const choice = data.choices[0];
     const result = choice.message.content.trim().replace('.', '').toLowerCase();
 
+    console.log("Comparison Result from API:", result);
+
+    // Update questionStates
+    const currentQuestionState = questionStates[currentCardIndex] || { attempts: 0, correct: false, hintUsed: false, skipped: false };
+    const updatedQuestionState = {
+      ...currentQuestionState,
+      attempts: currentQuestionState.attempts + 1,
+      correct: result === 'yes',
+    };
+
+    setQuestionStates(prevStates => {
+      const updatedStates = {
+        ...prevStates,
+        [currentCardIndex]: updatedQuestionState,
+      };
+      console.log("Updated Question States:", updatedStates);
+      localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(updatedStates));
+      return updatedStates;
+    });
+
+    const isFirstAttempt = updatedQuestionState.attempts === 1;
+    const noHintUsed = !updatedQuestionState.hintUsed;
+    const notSkipped = !updatedQuestionState.skipped;
+
+    console.log("Current Question State:", updatedQuestionState);
+    console.log("Is First Attempt:", isFirstAttempt);
+    console.log("No Hint Used:", noHintUsed);
+    console.log("Not Skipped:", notSkipped);
+
     if (result === 'yes') {
       setCorrectlyAnsweredQuestions(prevQuestions => {
         const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
+        console.log("Updated Correctly Answered Questions:", [...updatedQuestions]);
         localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
         return updatedQuestions;
       });
@@ -564,13 +601,19 @@ const compareQuestion = async (userQuestion) => {
       setLastCorrectAnswer(userAnswer);
 
       setReport(prevReport => {
-        const isFirstAttempt = !questionStates[currentCardIndex]?.attempts;
+        const wasMultipleAttempt = updatedQuestionState.attempts > 1;
+        console.log("Was Multiple Attempt:", wasMultipleAttempt);
         return {
           ...prevReport,
-          answeredPerfectly: isFirstAttempt ? prevReport.answeredPerfectly + 1 : prevReport.answeredPerfectly,
-          multipleAttempts: isFirstAttempt ? prevReport.multipleAttempts : prevReport.multipleAttempts + 1,
+          answeredPerfectly: isFirstAttempt && noHintUsed && notSkipped ? prevReport.answeredPerfectly + 1 : prevReport.answeredPerfectly,
+          multipleAttempts: wasMultipleAttempt ? prevReport.multipleAttempts + 1 : prevReport.multipleAttempts,
         };
       });
+
+      setSendButtonDisabled(prev => ({
+        ...prev,
+        [currentCardIndex]: true
+      }));
 
     } else {
       updateScore(false);
@@ -580,10 +623,14 @@ const compareQuestion = async (userQuestion) => {
         [currentCardIndex]: true
       }));
 
-      setReport(prevReport => ({
-        ...prevReport,
-        multipleAttempts: prevReport.multipleAttempts + 1,
-      }));
+      setReport(prevReport => {
+        const wasMultipleAttempt = updatedQuestionState.attempts > 1;
+        console.log("Was Multiple Attempt:", wasMultipleAttempt);
+        return {
+          ...prevReport,
+          multipleAttempts: wasMultipleAttempt ? prevReport.multipleAttempts + 1 : prevReport.multipleAttempts,
+        };
+      });
     }
 
   } catch (error) {
@@ -593,6 +640,33 @@ const compareQuestion = async (userQuestion) => {
     saveProgress();
   }
 };
+
+
+useEffect(() => {
+  console.log("Question States:", questionStates);
+  console.log("Report:", report);
+}, [questionStates, report]);
+
+const renderSendButton = () => {
+  if (sendButtonDisabled[currentCardIndex]) {
+    return <button className="send-button" disabled>Send</button>;
+  } else {
+    return (
+      <button
+        className="send-button"
+        onClick={() => {
+          setIsLoading(true);
+          compareQuestion(typedAnswer).finally(() => setIsLoading(false));
+        }}
+        disabled={!typedAnswer.trim() || isLoading}
+      >
+        {isLoading ? 'Loading...' : 'Send'}
+      </button>
+    );
+  }
+};
+
+
 
 
   
@@ -669,6 +743,18 @@ const getHint = async () => {
       setHintUsed(true);
       setHintsUsed(prevHintsUsed => prevHintsUsed + 1); // Update hints used state
 
+      setQuestionStates(prevStates => {
+        const updatedStates = {
+          ...prevStates,
+          [currentCardIndex]: {
+            ...prevStates[currentCardIndex],
+            hintUsed: true,
+          }
+        };
+        localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(updatedStates));
+        return updatedStates;
+      });
+
       setReport(prevReport => ({
         ...prevReport,
         hintsUsed: prevReport.hintsUsed + 1,
@@ -683,6 +769,7 @@ const getHint = async () => {
     saveProgress();
   }
 };
+
 
 
 
@@ -840,16 +927,7 @@ return (
                         }}
                         placeholder="Type your answer here"
                       />
-                      <button
-                        className="send-button"
-                        onClick={() => {
-                          setIsLoading(true);
-                          compareQuestion(typedAnswer).finally(() => setIsLoading(false));
-                        }}
-                        disabled={!typedAnswer.trim() || isLoading}
-                      >
-                        {isLoading ? 'Loading...' : 'Send'}
-                      </button>
+                      {renderSendButton()}
                     </>
                   )}
                   {!typingMode && isRecording && (
