@@ -131,21 +131,21 @@ const Test = () => {
         localStorage.removeItem(`${deckName}-hasFeedbackBeenProvided`);
         localStorage.removeItem(`${deckName}-newAnswerProvided`);
         localStorage.setItem(`${deckName}-finished`, JSON.stringify(true));
-        displayReport();
+        generateReportContent();
       } else {
         alert("You need to answer all questions correctly before finishing the test.");
       }
     };
     
-    const displayReport = () => {
-      alert(`
-        Report:
-        Hints Used: ${report.hintsUsed}
-        Answers Shown: ${report.answersShown}
-        Multiple Attempts: ${report.multipleAttempts}
-        Perfectly Answered: ${report.answeredPerfectly}
-      `);
-    };
+    const generateReportContent = () => (
+      <>
+        <p>Hints Used: {report.hintsUsed}</p>
+        <p>Answers Shown: {report.answersShown}</p>
+        <p>Multiple Attempts: {report.multipleAttempts}</p>
+        <p>Perfectly Answered: {report.answeredPerfectly}</p>
+      </>
+    );
+    
       
     
     const loadQuestionState = (index) => {
@@ -890,18 +890,17 @@ return (
         {shuffledFlashcards.length > 0 ? (
           finished ? (
             <div className="completion-message">
-              <h2>Way to go! You've reviewed all {totalCards} cards.</h2>
-              <div className="score-display">
-                <p>Correct Answers: {correctAnswers}</p>
-                <p>Hints Used: {hintsUsed}</p>
-                <p>Wrong Attempts: {wrongAttempts}</p>
-              </div>
-              <div className="final-score">
-                <h2>Final Score: {calculateFinalScore().toFixed(2)}%</h2>
-                <button onClick={retakeTest}>Retake Test</button>
-                <button onClick={wipeProgressAndNavigate}>Go Back</button>
-              </div>
+            <h2>Way to go! You've reviewed all {totalCards} cards.</h2>
+            <div className="score-display">
+
+              {generateReportContent()}
             </div>
+            <div className="final-score">
+              <h2>Final Score: {calculateFinalScore().toFixed(2)}%</h2>
+              <button onClick={retakeTest}>Retake Test</button>
+              <button onClick={wipeProgressAndNavigate}>Go Back</button>
+            </div>
+          </div>
           ) : (
             <>
               <div className="flashcard">
