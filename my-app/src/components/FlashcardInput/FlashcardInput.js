@@ -52,23 +52,18 @@ function FlashcardInput() {
   }, [deckName]);
   
   const handleTestYourself = () => {
-    const storedShuffled = localStorage.getItem(`${deckName}-shuffled`);
-    const storedCurrentIndex = localStorage.getItem(`${deckName}-currentIndex`);
-    const storedFinished = JSON.parse(localStorage.getItem(`${deckName}-finished`));
-    
-    if (storedShuffled && storedCurrentIndex !== null && !storedFinished) {
-      setShowDisclaimer(true);
+    if (shuffleEnabled) {
+      const shuffled = shuffleArray(flashcards);
+      localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffled));
+      setShuffledFlashcards(shuffled);
+      setCurrentCardIndex(0); // Reset current index to 0
     } else {
-      if (shuffleEnabled) {
-        const shuffled = shuffleArray(flashcards);
-        localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffled));
-        setShuffledFlashcards(shuffled);
-      } else {
-        setShuffledFlashcards(flashcards);
-      }
-      navigate(`/test/${deckName}`);
+      setShuffledFlashcards(flashcards);
+      setCurrentCardIndex(0); // Reset current index to 0
     }
+    navigate(`/test/${deckName}`);
   };
+  
   
   
   useEffect(() => {
