@@ -38,31 +38,42 @@ function FlashcardInput() {
 
 
   useEffect(() => {
+    const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
+    setFlashcards(storedFlashcards);
+  
     const storedShuffled = localStorage.getItem(`${deckName}-shuffled`);
     const storedCurrentIndex = localStorage.getItem(`${deckName}-currentIndex`);
     const storedCorrectAnswers = localStorage.getItem(`${deckName}-correctAnswers`);
     const storedCorrectlyAnsweredQuestions = localStorage.getItem(`${deckName}-correctlyAnsweredQuestions`);
-    
+  
     if (storedShuffled && storedCurrentIndex !== null && storedCorrectAnswers !== null && storedCorrectlyAnsweredQuestions) {
       setShowDisclaimer(true);
     }
   
-    const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
-    setFlashcards(storedFlashcards);
+    // Add this log to print all questions and answers
+    console.log('Loaded flashcards:', storedFlashcards);
+    storedFlashcards.forEach((card, index) => {
+      console.log(`Flashcard ${index + 1}: Question - ${card.question}, Answer - ${card.answer}`);
+    });
   }, [deckName]);
   
+  
   const handleTestYourself = () => {
+    console.log('handleTestYourself called'); // Debug log
     if (shuffleEnabled) {
       const shuffled = shuffleArray(flashcards);
+      console.log('Shuffling flashcards:', shuffled); // Debug log
       localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffled));
       setShuffledFlashcards(shuffled);
-      setCurrentCardIndex(0); // Reset current index to 0
     } else {
+      localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(flashcards)); // Ensure non-shuffled flashcards are saved
       setShuffledFlashcards(flashcards);
-      setCurrentCardIndex(0); // Reset current index to 0
     }
+    setCurrentCardIndex(0); // Reset current index to 0
     navigate(`/test/${deckName}`);
   };
+  
+  
   
   
   
@@ -152,12 +163,36 @@ const shuffleArray = (array) => {
 };
 
 
-  const saveFlashcardsToLocalStorage = (cards) => {
-    localStorage.setItem(deckName, JSON.stringify(cards));
-    const decks = JSON.parse(localStorage.getItem('decks')) || {};
-    decks[deckName] = cards.length; // Save the count directly
-    localStorage.setItem('decks', JSON.stringify(decks));
-  };
+const saveFlashcardsToLocalStorage = (cards) => {
+  localStorage.setItem(deckName, JSON.stringify(cards));
+  const decks = JSON.parse(localStorage.getItem('decks')) || {};
+  decks[deckName] = cards.length; // Save the count directly
+  localStorage.setItem('decks', JSON.stringify(decks));
+  
+  // Save other states to local storage
+  localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffledFlashcards));
+  localStorage.setItem(`${deckName}-currentIndex`, currentCardIndex);
+  localStorage.setItem(`${deckName}-correctAnswers`, JSON.stringify(correctAnswers));
+  localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...correctlyAnsweredQuestions]));
+  localStorage.setItem(`${deckName}-hintUsed`, JSON.stringify(hintUsed));
+  localStorage.setItem(`${deckName}-typedAnswer`, typedAnswer);
+  localStorage.setItem(`${deckName}-wasCorrect`, JSON.stringify(wasCorrect));
+  localStorage.setItem(`${deckName}-comparisonResult`, comparisonResult);
+  localStorage.setItem(`${deckName}-feedback`, feedback);
+  localStorage.setItem(`${deckName}-showAnswer`, JSON.stringify(showAnswer));
+  localStorage.setItem(`${deckName}-isRecording`, JSON.stringify(isRecording));
+  localStorage.setItem(`${deckName}-lastCorrectAnswer`, lastCorrectAnswer);
+  localStorage.setItem(`${deckName}-showFeedback`, JSON.stringify(showFeedback));
+  localStorage.setItem(`${deckName}-isFeedbackLoading`, JSON.stringify(isFeedbackLoading));
+  localStorage.setItem(`${deckName}-hasFeedbackBeenProvided`, JSON.stringify(hasFeedbackBeenProvided));
+  localStorage.setItem(`${deckName}-newAnswerProvided`, JSON.stringify(newAnswerProvided));
+  localStorage.setItem(`${deckName}-finished`, JSON.stringify(finished));
+  localStorage.setItem(`${deckName}-typingMode`, JSON.stringify(typingMode));
+  localStorage.setItem(`${deckName}-score`, JSON.stringify(score));
+  localStorage.setItem(`${deckName}-hintsUsed`, JSON.stringify(hintsUsed));
+  localStorage.setItem(`${deckName}-wrongAttempts`, JSON.stringify(wrongAttempts));
+};
+
 
   const updateDeckTermsCount = (deckName, count) => {
     const decks = JSON.parse(localStorage.getItem('decks')) || {};
