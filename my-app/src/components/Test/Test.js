@@ -174,6 +174,8 @@ const Test = () => {
         setHintsUsed(state.hintsUsed);
         setWrongAttempts(state.wrongAttempts);
         setNewAnswerProvided(state.newAnswerProvided);
+        setHint(state.hint || '');
+        setHintUsed(state.hintUsed || false);
       } else {
         setShowAnswer(false);
         setComparisonResult('');
@@ -185,6 +187,8 @@ const Test = () => {
         setHintsUsed(0);
         setWrongAttempts(0);
         setNewAnswerProvided(false);
+        setHint('');
+        setHintUsed(false);
       }
     };
     
@@ -287,6 +291,9 @@ const Test = () => {
       localStorage.setItem(`${deckName}-feedbacks`, JSON.stringify(feedbacks)); 
       localStorage.setItem(`${deckName}-showFeedbacks`, JSON.stringify(showFeedbacks));
       localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(questionStates));
+    
+      localStorage.setItem(`${deckName}-hint`, hint);
+
     };
     
     const saveProgressAndNavigate = () => {
@@ -308,6 +315,7 @@ const Test = () => {
       localStorage.setItem(`${deckName}-newAnswerProvided`, JSON.stringify(newAnswerProvided));
       localStorage.setItem(`${deckName}-finished`, JSON.stringify(finished));
       localStorage.setItem(`${deckName}-typingMode`, JSON.stringify(typingMode));
+      localStorage.setItem(`${deckName}-hintsUsed`, JSON.stringify(hintsUsed));
       localStorage.setItem(`${deckName}-score`, JSON.stringify(score));
       localStorage.setItem(`${deckName}-hintsUsed`, JSON.stringify(hintsUsed));
       localStorage.setItem(`${deckName}-wrongAttempts`, JSON.stringify(wrongAttempts));
@@ -579,7 +587,13 @@ const compareQuestion = async (userQuestion) => {
     setQuestionStates(prevStates => {
       const updatedStates = {
         ...prevStates,
-        [currentCardIndex]: updatedQuestionState,
+        [currentCardIndex]: {
+          ...updatedStates,
+          attempts: updatedQuestionState.attempts,
+          correct: result === 'yes',
+          hintUsed: false, // Reset hint used state
+          hint: '', // Clear the hint
+        }
       };
       console.log("Updated Question States:", updatedStates);
       localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(updatedStates));
@@ -632,7 +646,12 @@ const compareQuestion = async (userQuestion) => {
         [currentCardIndex]: true
       }));
 
+
+      setHintUsed(false);
+      setHint('');
     } else {
+      setHintUsed(false);
+      setHint('');
       updateScore(false);
       setComparisonResult('Incorrect');
       setFeedbackButtonDisabled(prev => ({
@@ -756,9 +775,10 @@ const getHint = async () => {
     const data = await response.json();
 
     if (data.choices && data.choices.length > 0) {
-      setHint(data.choices[0].message.content.trim());
+      const newHint = data.choices[0].message.content.trim();
+      setHint(newHint);
       setHintUsed(true);
-      setHintsUsed(prevHintsUsed => prevHintsUsed + 1); // Update hints used state
+      setHintsUsed(prevHintsUsed => prevHintsUsed + 1);
 
       setQuestionStates(prevStates => {
         const updatedStates = {
@@ -766,6 +786,7 @@ const getHint = async () => {
           [currentCardIndex]: {
             ...prevStates[currentCardIndex],
             hintUsed: true,
+            hint: newHint,
           }
         };
         localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(updatedStates));
@@ -954,15 +975,19 @@ return (
                   )}
                   {comparisonResult !== 'Correct' && (
                     <>
-                    {!showAnswer && (
-                      <>
-                        <button onClick={getHint} disabled={hintUsed}>Get Hint</button>
-                        {hint && <p><strong>Hint:</strong> {hint}</p>}
-                      </>
-                    )}
-                    <button onClick={handleShowAnswer} disabled={showAnswer}>
-                      {showAnswer ? 'Answer Shown' : 'Show Answer'}
-                    </button>
+{!showAnswer && (
+  <>
+    <button 
+      onClick={getHint} 
+      disabled={hintUsed || questionStates[currentCardIndex]?.hintUsed}
+    >
+      Get Hint
+    </button>
+    {(hint || questionStates[currentCardIndex]?.hint) && (
+      <p><strong>Hint:</strong> {hint || questionStates[currentCardIndex]?.hint}</p>
+    )}
+  </>
+)}
                   </>
 
                   )}

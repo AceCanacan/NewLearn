@@ -245,15 +245,16 @@ const saveFlashcardsToLocalStorage = (cards) => {
     const newFlashcards = [...flashcards, { question: '', answer: '' }];
     setFlashcards(newFlashcards);
     setEditIndex(newFlashcards.length - 1);
-    saveFlashcardsToLocalStorage(newFlashcards);
+    localStorage.setItem(deckName, JSON.stringify(newFlashcards)); // Save to local storage
   };
-
+  
   const handleInputChange = (index, field, value) => {
     const newFlashcards = [...flashcards];
     newFlashcards[index][field] = value;
     setFlashcards(newFlashcards);
-    saveFlashcardsToLocalStorage(newFlashcards);
+    localStorage.setItem(deckName, JSON.stringify(newFlashcards)); // Save to local storage
   };
+  
 
   return (
     <div className="flashcard-input">
