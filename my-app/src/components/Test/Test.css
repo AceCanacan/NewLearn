@@ -11,6 +11,8 @@
 
 .test-yourself h3 {
   margin-bottom: 20px;
+  font-size: 1.5em;
+  color: #333;
 }
 
 /* Flashcard styling */
@@ -21,19 +23,21 @@
   margin-bottom: 20px;
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  text-align: left; /* Align text to the left */
+  text-align: left;
 }
 
 .flashcard p {
   margin: 0;
   padding: 10px 0;
+  font-size: 1.2em;
+  color: #555;
 }
 
 /* Flashcard buttons styling */
 .flashcard-buttons {
   display: flex;
-  flex-direction: column; /* Align buttons vertically */
-  align-items: center; /* Center buttons */
+  flex-direction: column;
+  align-items: center;
   gap: 10px;
   margin-top: 10px;
 }
@@ -47,6 +51,7 @@
   color: white;
   cursor: pointer;
   transition: background-color 0.2s;
+  font-size: 1em;
 }
 
 .flashcard-buttons button:hover,
@@ -64,8 +69,9 @@
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 8px;
-  width: 100%; /* Full width input */
-  max-width: 400px; /* Limit max width */
+  width: 100%;
+  max-width: 400px;
+  font-size: 1em;
 }
 
 .flashcard-buttons input:focus {
@@ -93,6 +99,8 @@
 .comparison-result p {
   margin: 0;
   padding: 10px 0;
+  font-size: 1.2em;
+  color: #555;
 }
 
 .comparison-result button {
@@ -104,6 +112,7 @@
   color: white;
   cursor: pointer;
   transition: background-color 0.2s;
+  font-size: 1em;
 }
 
 .comparison-result button:hover {
@@ -147,6 +156,8 @@
 
 .completion-message h2 {
   margin-bottom: 20px;
+  font-size: 1.5em;
+  color: #333;
 }
 
 .completion-message button {
@@ -157,6 +168,7 @@
   color: white;
   cursor: pointer;
   transition: background-color 0.2s;
+  font-size: 1em;
 }
 
 .completion-message button:hover {
@@ -171,6 +183,7 @@
   border: none;
   border-radius: 5px;
   margin: 5px 0;
+  font-size: 1em;
 }
 
 .send-button:disabled {
@@ -190,6 +203,7 @@
   border: 1px solid #ccc;
   background-color: #f9f9f9;
   cursor: pointer;
+  font-size: 1em;
 }
 
 .nav-button.active {
@@ -199,4 +213,75 @@
 
 .nav-button:hover {
   background-color: #ddd;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.modal-content button {
+  margin: 10px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 1em;
+}
+
+.modal-content .btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.modal-content .btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.modal-content .btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.modal-content .btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.modal-content .btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.modal-content .btn-danger:hover {
+  background-color: #c82333;
+}
+
+.feedback-modal {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  text-align: left;
+}
+
+.feedback-modal p {
+  margin: 0;
+  color: #555;
 }

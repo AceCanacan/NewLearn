@@ -230,6 +230,7 @@ const Test = () => {
         multipleAttempts: 0,
         answeredPerfectly: 0,
       });
+      setSendButtonDisabled({});
       
       localStorage.removeItem(`${deckName}-shuffled`);
       localStorage.removeItem(`${deckName}-currentIndex`);
@@ -255,6 +256,7 @@ const Test = () => {
       localStorage.removeItem(`${deckName}-feedbackButtonDisabled`);
       localStorage.removeItem(`${deckName}-showFeedbacks`);
       localStorage.removeItem(`${deckName}-questionStates`);
+      localStorage.removeItem(`${deckName}-sendButtonDisabled`);
       saveProgress();
     };
     
@@ -288,6 +290,7 @@ const Test = () => {
       localStorage.setItem(`$${deckName}-typedAnswer-$${currentCardIndex}`, typedAnswer);
       localStorage.setItem(`${deckName}-hint`, hint);
       localStorage.setItem(`${deckName}-sendButtonDisabled`, JSON.stringify(sendButtonDisabled));
+
 
 
     };
@@ -353,6 +356,8 @@ const Test = () => {
       localStorage.removeItem(`${deckName}-showFeedbacks`);
       localStorage.removeItem(`${deckName}-feedbackButtonDisabled`);
       localStorage.removeItem(`${deckName}-questionStates`);
+      localStorage.removeItem(`${deckName}-sendButtonDisabled`);
+      setSendButtonDisabled({});
       navigate(`/Deck/${deckName}`);
     };
   
@@ -384,6 +389,7 @@ const Test = () => {
       const storedFeedbacks = JSON.parse(localStorage.getItem(`${deckName}-feedbacks`)) || {};
       const storedShowFeedbacks = JSON.parse(localStorage.getItem(`${deckName}-showFeedbacks`)) || {};
       const storedFeedbackButtonDisabled = JSON.parse(localStorage.getItem(`${deckName}-feedbackButtonDisabled`)) || {};
+      const storedSendButtonDisabled = JSON.parse(localStorage.getItem(`${deckName}-sendButtonDisabled`)) ||
 
   
       setFlashcards(storedFlashcards);
@@ -412,7 +418,8 @@ const Test = () => {
       setFeedbackButtonDisabled(storedFeedbackButtonDisabled);
       setQuestionStates(storedQuestionStates);
       loadQuestionState(storedCurrentIndex || 0);
-  
+      setSendButtonDisabled(storedSendButtonDisabled);
+
       navigate(`/test/${deckName}`);
   
   };
