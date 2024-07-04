@@ -40,18 +40,15 @@ const Test = () => {
     const [feedbackProvided, setFeedbackProvided] = useState({});
     const [questionStates, setQuestionStates] = useState({});
     const [sendButtonDisabled, setSendButtonDisabled] = useState(false);
+    const [showBackDisclaimer, setShowBackDisclaimer] = useState(false);
+    const [showTestDisclaimer, setShowTestDisclaimer] = useState(false);
 
     
   
     useEffect(() => {
-      const storedFlashcards = JSON.parse(localStorage.getItem(deckName) || '[]');
-      console.log('Loaded flashcards:', storedFlashcards); // Debug log
-    
+      const storedFlashcards = JSON.parse(localStorage.getItem(deckName) || '[]'); 
       const storedShuffled = JSON.parse(localStorage.getItem(`${deckName}-shuffled`) || '[]') || storedFlashcards;
-      console.log('Loaded shuffled flashcards:', storedShuffled); // Debug log
-    
       const storedCurrentIndex = parseInt(localStorage.getItem(`${deckName}-currentIndex`) || '0', 10);
-      console.log('Loaded current card index:', storedCurrentIndex); // Debug log
       const storedCorrectlyAnsweredQuestions = new Set(JSON.parse(localStorage.getItem(`${deckName}-correctlyAnsweredQuestions`) || '[]'));
       const storedCorrectAnswers = JSON.parse(localStorage.getItem(`${deckName}-correctAnswers`) || '0');
       const storedHintUsed = JSON.parse(localStorage.getItem(`${deckName}-hintUsed`) || 'false');
@@ -77,8 +74,7 @@ const Test = () => {
       const storedFeedbackButtonDisabled = JSON.parse(localStorage.getItem(`${deckName}-feedbackButtonDisabled`) || '{}');
       const storedQuestionStates = JSON.parse(localStorage.getItem(`${deckName}-questionStates`) || '{}');
       const storedSendButtonDisabled = JSON.parse(localStorage.getItem(`${deckName}-sendButtonDisabled`) || '{}');
-
-  
+    
       setFlashcards(storedFlashcards);
       setShuffledFlashcards(storedShuffled);
       setCurrentCardIndex(storedCurrentIndex || 0);
@@ -109,10 +105,44 @@ const Test = () => {
       loadQuestionState(storedCurrentIndex || 0);
       setTypedAnswer(storedTypedAnswer);
       setSendButtonDisabled(storedSendButtonDisabled);
+    
+    }, [deckName, location.pathname, navigate]);
+    
+    
+    useEffect(() => {
+      const handlePopState = (event) => {
+        event.preventDefault();
+        setShowBackDisclaimer(true);
+      };
+    
+      window.addEventListener('popstate', handlePopState);
+    
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }, []);
 
+    useEffect(() => {
+      const handleBeforeUnload = (event) => {
+        if (!finished) {
+          event.preventDefault();
+          event.returnValue = '';
+        }
+      };
+    
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      };
+    }, [finished]);
 
-  }, [deckName, location.search]);
-  
+    useEffect(() => {
+      const testInProgress = localStorage.getItem(`${deckName}-testInProgress`);
+      if (testInProgress === 'true') {
+        setShowDisclaimer(true);
+      }
+    }, []);
     
 
     const handleFinish = () => {
@@ -143,6 +173,7 @@ const Test = () => {
         localStorage.removeItem(`${deckName}-showFeedbacks`);
         localStorage.removeItem(`${deckName}-feedbackButtonDisabled`);
         localStorage.removeItem(`${deckName}-questionStates`);
+        localStorage.removeItem(`${deckName}-testInProgress`);
         generateReportContent();
       } else {
         alert("You need to answer all questions correctly before finishing the test.");
@@ -290,6 +321,7 @@ const Test = () => {
       localStorage.setItem(`$${deckName}-typedAnswer-$${currentCardIndex}`, typedAnswer);
       localStorage.setItem(`${deckName}-hint`, hint);
       localStorage.setItem(`${deckName}-sendButtonDisabled`, JSON.stringify(sendButtonDisabled));
+      localStorage.setItem(`${deckName}-testInProgress`, 'true');
 
 
 
@@ -324,6 +356,7 @@ const Test = () => {
       localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(questionStates)); // Save question states
       localStorage.setItem(`${deckName}-report`, JSON.stringify(report)); // Save report
       localStorage.setItem(`${deckName}-sendButtonDisabled`, JSON.stringify(sendButtonDisabled));
+      localStorage.setItem(`${deckName}-testInProgress`, 'true');
 
       navigate(`/Deck/${deckName}`);
     };
@@ -357,9 +390,10 @@ const Test = () => {
       localStorage.removeItem(`${deckName}-feedbackButtonDisabled`);
       localStorage.removeItem(`${deckName}-questionStates`);
       localStorage.removeItem(`${deckName}-sendButtonDisabled`);
-      setSendButtonDisabled({});
-      navigate(`/Deck/${deckName}`);
+      localStorage.removeItem(`${deckName}-testInProgress`);
+      navigate(`/deck/${deckName}`);
     };
+    
   
   const continueTest = () => {
       setShowDisclaimer(false);
@@ -442,8 +476,8 @@ const Test = () => {
 
   const handleDone = () => {
     setShowSaveProgressModal(true);
+    setShowBackDisclaimer(false);
   };
-
   const HINT_DEDUCTION = 25;
   const WRONG_ATTEMPT_DEDUCTION = 10;
 
@@ -921,15 +955,6 @@ return (
         Done
       </button>
     )}
-    {showDisclaimer && (
-      <div className="modal">
-        <div className="modal-content">
-          <p>You have a test in progress. Would you like to continue or start over?</p>
-          <button className="btn btn-primary" onClick={continueTest}>Continue</button>
-          <button className="btn btn-secondary" onClick={wipeProgressAndNavigate}>Start Over</button>
-        </div>
-      </div>
-    )}
     {shuffledFlashcards.length > 0 ? (
       finished ? (
         <div className="completion-message">
@@ -1033,16 +1058,26 @@ return (
     ) : (
       <p>No flashcards available in this deck.</p>
     )}
-    {showSaveProgressModal && (
-      <div className="modal">
-        <div className="modal-content">
-          <p>Would you like to save your progress or wipe it?</p>
-          <button className="btn btn-primary" onClick={saveProgressAndNavigate}>Save Progress</button>
-          <button className="btn btn-secondary" onClick={wipeProgressAndNavigate}>Wipe Progress</button>
-          <button className="btn btn-danger" onClick={() => setShowSaveProgressModal(false)}>Cancel</button>
-        </div>
-      </div>
-    )}
+{showSaveProgressModal && (
+  <div className="modal">
+    <div className="modal-content">
+      <p>Would you like to save your progress or wipe it?</p>
+      <button className="btn btn-primary" onClick={saveProgressAndNavigate}>Save Progress</button>
+      <button className="btn btn-secondary" onClick={wipeProgressAndNavigate}>Wipe Progress</button>
+      <button className="btn btn-danger" onClick={() => setShowSaveProgressModal(false)}>Cancel</button>
+    </div>
+  </div>
+)}
+{showBackDisclaimer && (
+  <div className="modal">
+    <div className="modal-content">
+      <p>You have a test in progress. Would you like to save your progress or wipe it?</p>
+      <button className="btn btn-primary" onClick={saveProgressAndNavigate}>Save Progress</button>
+      <button className="btn btn-secondary" onClick={wipeProgressAndNavigate}>Wipe Progress</button>
+      <button className="btn btn-danger" onClick={() => setShowBackDisclaimer(false)}>Cancel</button>
+    </div>
+  </div>
+)}
   </div>
 );  };
   

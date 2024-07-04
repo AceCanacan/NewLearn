@@ -35,6 +35,9 @@ function FlashcardInput() {
   const [score, setScore] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [wrongAttempts, setWrongAttempts] = useState(0);
+  const [showTestDisclaimer, setShowTestDisclaimer] = useState(false);
+  const [testInProgress, setTestInProgress] = useState(false);
+
 
 
   useEffect(() => {
@@ -72,6 +75,11 @@ function FlashcardInput() {
     setCurrentCardIndex(0); // Reset current index to 0
     navigate(`/test/${deckName}`);
   };
+
+  useEffect(() => {
+    const testProgress = localStorage.getItem(`${deckName}-testInProgress`);
+    setTestInProgress(testProgress === 'true');
+  }, [deckName]);
   
   
   
@@ -84,22 +92,65 @@ function FlashcardInput() {
   
 
   const startOver = () => {
-    localStorage.removeItem(`${deckName}-currentIndex`);
-    localStorage.removeItem(`${deckName}-correctAnswers`);
-    localStorage.removeItem(`${deckName}-correctlyAnsweredQuestions`);
-    localStorage.removeItem(`${deckName}-shuffled`);
-    localStorage.removeItem(`${deckName}-hintUsed`);
-    localStorage.removeItem(`${deckName}-typedAnswer`);
-    localStorage.removeItem(`${deckName}-wasCorrect`);
-    localStorage.removeItem(`${deckName}-comparisonResult`);
-    localStorage.removeItem(`${deckName}-feedback`);
-    localStorage.removeItem(`${deckName}-showAnswer`);
-    localStorage.removeItem(`${deckName}-finished`); // Clear the finished state
+    // Remove all related local storage items
+    localStorage.removeItem(`$${deckName}-shuffled`);
+    localStorage.removeItem(`$${deckName}-currentIndex`);
+    localStorage.removeItem(`$${deckName}-correctAnswers`);
+    localStorage.removeItem(`$${deckName}-correctlyAnsweredQuestions`);
+    localStorage.removeItem(`$${deckName}-hintUsed`);
+    localStorage.removeItem(`$${deckName}-typedAnswer`);
+    localStorage.removeItem(`$${deckName}-wasCorrect`);
+    localStorage.removeItem(`$${deckName}-comparisonResult`);
+    localStorage.removeItem(`$${deckName}-feedback`);
+    localStorage.removeItem(`$${deckName}-showAnswer`);
+    localStorage.removeItem(`$${deckName}-isRecording`);
+    localStorage.removeItem(`$${deckName}-lastCorrectAnswer`);
+    localStorage.removeItem(`$${deckName}-showFeedback`);
+    localStorage.removeItem(`$${deckName}-isFeedbackLoading`);
+    localStorage.removeItem(`$${deckName}-hasFeedbackBeenProvided`);
+    localStorage.removeItem(`$${deckName}-newAnswerProvided`);
+    localStorage.removeItem(`$${deckName}-finished`);
+    localStorage.removeItem(`$${deckName}-typingMode`);
+    localStorage.removeItem(`$${deckName}-score`);
+    localStorage.removeItem(`$${deckName}-hintsUsed`);
+    localStorage.removeItem(`$${deckName}-wrongAttempts`);
+    localStorage.removeItem(`$${deckName}-feedbacks`);
+    localStorage.removeItem(`$${deckName}-showFeedbacks`);
+    localStorage.removeItem(`$${deckName}-feedbackButtonDisabled`);
+    localStorage.removeItem(`$${deckName}-questionStates`);
+    localStorage.removeItem(`$${deckName}-sendButtonDisabled`);
+  
+    // Reset the state
     setShowDisclaimer(false);
+    setCurrentCardIndex(0);
+    setCorrectAnswers(0);
+    setCorrectlyAnsweredQuestions(new Set());
+    setHintUsed(false);
+    setTypedAnswer('');
+    setWasCorrect(false);
+    setComparisonResult('');
+    setFeedback('');
+    setShowAnswer(false);
+    setIsRecording(false);
+    setLastCorrectAnswer('');
+    setShowFeedback(false);
+    setIsFeedbackLoading(false);
+    setHasFeedbackBeenProvided(false);
+    setNewAnswerProvided(false);
+    setFinished(false);
+    setTypingMode(false);
+    setScore(0);
+    setHintsUsed(0);
+    setWrongAttempts(0);
+  
+    // Reload the flashcards from local storage
+    const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
+    setFlashcards(storedFlashcards);
+  
+    // Navigate to the test page
     navigate(`/test/${deckName}`);
   };
   
-
   const continueTest = () => {
     setShowDisclaimer(false);
     const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
@@ -146,6 +197,7 @@ function FlashcardInput() {
     setTypingMode(storedTypingMode);
     setScore(storedScore);
     setHintsUsed(storedHintsUsed);
+    setShowDisclaimer(false);
     setWrongAttempts(storedWrongAttempts);
 
     navigate(`/test/${deckName}`); // Directly navigate to the test page
@@ -289,7 +341,7 @@ const saveFlashcardsToLocalStorage = (cards) => {
   </label>
 </div>
 
-      {showDisclaimer ? (
+      {(showDisclaimer || testInProgress) ? (
         <div className="disclaimer-modal">
           <p>You have a test in progress. Would you like to continue or start over?</p>
           <button onClick={startOver}>Start Over</button>
