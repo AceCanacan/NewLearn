@@ -41,13 +41,6 @@ const Test = () => {
     const [questionStates, setQuestionStates] = useState({});
     const [sendButtonDisabled, setSendButtonDisabled] = useState(false);
 
-
-    const [report, setReport] = useState({
-      hintsUsed: 0,
-      answersShown: 0,
-      multipleAttempts: 0,
-      answeredPerfectly: 0,
-    });    
     
   
     useEffect(() => {
@@ -83,6 +76,7 @@ const Test = () => {
       const storedShowFeedbacks = JSON.parse(localStorage.getItem(`${deckName}-showFeedbacks`) || '{}');
       const storedFeedbackButtonDisabled = JSON.parse(localStorage.getItem(`${deckName}-feedbackButtonDisabled`) || '{}');
       const storedQuestionStates = JSON.parse(localStorage.getItem(`${deckName}-questionStates`) || '{}');
+
   
       setFlashcards(storedFlashcards);
       setShuffledFlashcards(storedShuffled);
@@ -112,6 +106,8 @@ const Test = () => {
       setFeedbackButtonDisabled(storedFeedbackButtonDisabled);
       setQuestionStates(storedQuestionStates);
       loadQuestionState(storedCurrentIndex || 0);
+      setTypedAnswer(storedTypedAnswer);
+
   }, [deckName, location.search]);
   
     
@@ -149,15 +145,7 @@ const Test = () => {
         alert("You need to answer all questions correctly before finishing the test.");
       }
     };
-    
-    const generateReportContent = () => (
-      <>
-        <p>Hints Used: {report.hintsUsed}</p>
-        <p>Answers Shown: {report.answersShown}</p>
-        <p>Multiple Attempts: {report.multipleAttempts}</p>
-        <p>Perfectly Answered: {report.answeredPerfectly}</p>
-      </>
-    );
+  
     
       
     
@@ -176,6 +164,7 @@ const Test = () => {
         setNewAnswerProvided(state.newAnswerProvided);
         setHint(state.hint || '');
         setHintUsed(state.hintUsed || false);
+        setTypedAnswer(localStorage.getItem(`$${deckName}-typedAnswer-$${index}`) || '');
       } else {
         setShowAnswer(false);
         setComparisonResult('');
@@ -189,6 +178,8 @@ const Test = () => {
         setNewAnswerProvided(false);
         setHint('');
         setHintUsed(false);
+        setTypedAnswer('');
+
       }
     };
     
@@ -291,7 +282,7 @@ const Test = () => {
       localStorage.setItem(`${deckName}-feedbacks`, JSON.stringify(feedbacks)); 
       localStorage.setItem(`${deckName}-showFeedbacks`, JSON.stringify(showFeedbacks));
       localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(questionStates));
-    
+      localStorage.setItem(`$${deckName}-typedAnswer-$${currentCardIndex}`, typedAnswer);
       localStorage.setItem(`${deckName}-hint`, hint);
 
     };
@@ -419,7 +410,22 @@ const Test = () => {
       navigate(`/test/${deckName}`);
   
   };
+
+  const [report, setReport] = useState({
+    hintsUsed: 0,
+    answersShown: 0,
+    multipleAttempts: 0,
+    answeredPerfectly: 0,
+  });    
   
+  const generateReportContent = () => (
+    <>
+      <p>Hints Used: {report.hintsUsed}</p>
+      <p>Answers Shown: {report.answersShown}</p>
+      <p>Multiple Attempts: {report.multipleAttempts}</p>
+      <p>Perfectly Answered: {report.answeredPerfectly}</p>
+    </>
+  );
 
   const handleDone = () => {
     setShowSaveProgressModal(true);
@@ -472,6 +478,8 @@ const navigateToCard = (index) => {
   preserveCurrentQuestionState();
   setCurrentCardIndex(index);
   loadQuestionState(index);
+  const storedTypedAnswer = localStorage.getItem(`$${deckName}-typedAnswer-$${index}`) || '';
+  setTypedAnswer(storedTypedAnswer);
   saveProgress();
 };
 
@@ -545,9 +553,9 @@ const compareQuestion = async (userQuestion) => {
 
   const messages = [
     { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
-    { role: 'user', content: `Original Question: ${originalQuestion}` },
-    { role: 'user', content: `Original Answer: ${originalAnswer}` },
-    { role: 'user', content: `User Answer: ${userAnswer}` },
+    { role: 'user', content: `Original Question: $${originalQuestion}` },
+    { role: 'user', content: `Original Answer: $${originalAnswer}` },
+    { role: 'user', content: `User Answer: $${userAnswer}` },
     { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
   ];
 
@@ -567,7 +575,7 @@ const compareQuestion = async (userQuestion) => {
 
     if (!response.ok) {
       const errorDetail = await response.json();
-      throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+      throw new Error(`Error: $${response.status} $${response.statusText} - $${JSON.stringify(errorDetail)}`);
     }
 
     const data = await response.json();
@@ -576,35 +584,31 @@ const compareQuestion = async (userQuestion) => {
 
     console.log("Comparison Result from API:", result);
 
-    // Update questionStates
-    const currentQuestionState = questionStates[currentCardIndex] || { attempts: 0, correct: false, hintUsed: false, skipped: false };
-    const updatedQuestionState = {
-      ...currentQuestionState,
-      attempts: currentQuestionState.attempts + 1,
-      correct: result === 'yes',
-    };
-
     setQuestionStates(prevStates => {
+      const currentQuestionState = prevStates[currentCardIndex] || { attempts: 0, correct: false, hintUsed: false, skipped: false };
+      const updatedQuestionState = {
+        ...currentQuestionState,
+        attempts: currentQuestionState.attempts + 1,
+        correct: result === 'yes',
+        hintUsed: false,
+        hint: '',
+      };
+
       const updatedStates = {
         ...prevStates,
-        [currentCardIndex]: {
-          ...updatedStates,
-          attempts: updatedQuestionState.attempts,
-          correct: result === 'yes',
-          hintUsed: false, // Reset hint used state
-          hint: '', // Clear the hint
-        }
+        [currentCardIndex]: updatedQuestionState
       };
+
       console.log("Updated Question States:", updatedStates);
-      localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(updatedStates));
+      localStorage.setItem(`$${deckName}-questionStates`, JSON.stringify(updatedStates));
       return updatedStates;
     });
 
-    const isFirstAttempt = updatedQuestionState.attempts === 1;
-    const noHintUsed = !updatedQuestionState.hintUsed;
-    const notSkipped = !updatedQuestionState.skipped;
+    const isFirstAttempt = questionStates[currentCardIndex]?.attempts === 1;
+    const noHintUsed = !questionStates[currentCardIndex]?.hintUsed;
+    const notSkipped = !questionStates[currentCardIndex]?.skipped;
 
-    console.log("Current Question State:", updatedQuestionState);
+    console.log("Current Question State:", questionStates[currentCardIndex]);
     console.log("Is First Attempt:", isFirstAttempt);
     console.log("No Hint Used:", noHintUsed);
     console.log("Not Skipped:", notSkipped);
@@ -613,7 +617,7 @@ const compareQuestion = async (userQuestion) => {
       setCorrectlyAnsweredQuestions(prevQuestions => {
         const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
         console.log("Updated Correctly Answered Questions:", [...updatedQuestions]);
-        localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
+        localStorage.setItem(`$${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
         return updatedQuestions;
       });
 
@@ -632,7 +636,7 @@ const compareQuestion = async (userQuestion) => {
       setLastCorrectAnswer(userAnswer);
 
       setReport(prevReport => {
-        const wasMultipleAttempt = updatedQuestionState.attempts > 1;
+        const wasMultipleAttempt = questionStates[currentCardIndex]?.attempts > 1;
         console.log("Was Multiple Attempt:", wasMultipleAttempt);
         return {
           ...prevReport,
@@ -645,7 +649,6 @@ const compareQuestion = async (userQuestion) => {
         ...prev,
         [currentCardIndex]: true
       }));
-
 
       setHintUsed(false);
       setHint('');
@@ -660,7 +663,7 @@ const compareQuestion = async (userQuestion) => {
       }));
 
       setReport(prevReport => {
-        const wasMultipleAttempt = updatedQuestionState.attempts > 1;
+        const wasMultipleAttempt = questionStates[currentCardIndex]?.attempts > 1;
         console.log("Was Multiple Attempt:", wasMultipleAttempt);
         return {
           ...prevReport,
@@ -956,13 +959,13 @@ return (
                   {typingMode && (
                     <>
                       <input
-                        type="text"
-                        value={typedAnswer}
-                        onChange={(e) => {
-                          setTypedAnswer(e.target.value);
-                          saveProgress();
-                        }}
-                        placeholder="Type your answer here"
+                      type="text"
+                      value={typedAnswer}
+                      onChange={(e) => {
+                        setTypedAnswer(e.target.value);
+                        localStorage.setItem(`$${deckName}-typedAnswer-$${currentCardIndex}`, e.target.value);
+                      }}
+                      placeholder="Type your answer here"
                       />
                       {renderSendButton()}
                     </>
