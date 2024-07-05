@@ -37,6 +37,7 @@ function FlashcardInput() {
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [showTestDisclaimer, setShowTestDisclaimer] = useState(false);
   const [testInProgress, setTestInProgress] = useState(false);
+  const [questionStates, setQuestionStates] = useState({});
 
 
 
@@ -53,7 +54,6 @@ function FlashcardInput() {
       setShowDisclaimer(true);
     }
   
-    // Add this log to print all questions and answers
     console.log('Loaded flashcards:', storedFlashcards);
     storedFlashcards.forEach((card, index) => {
       console.log(`Flashcard ${index + 1}: Question - ${card.question}, Answer - ${card.answer}`);
@@ -61,20 +61,22 @@ function FlashcardInput() {
   }, [deckName]);
   
   
+  
   const handleTestYourself = () => {
-    console.log('handleTestYourself called'); // Debug log
+    console.log('handleTestYourself called');
     if (shuffleEnabled) {
       const shuffled = shuffleArray(flashcards);
-      console.log('Shuffling flashcards:', shuffled); // Debug log
+      console.log('Shuffling flashcards:', shuffled);
       localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffled));
       setShuffledFlashcards(shuffled);
     } else {
-      localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(flashcards)); // Ensure non-shuffled flashcards are saved
+      localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(flashcards));
       setShuffledFlashcards(flashcards);
     }
-    setCurrentCardIndex(0); // Reset current index to 0
+    setCurrentCardIndex(0);
     navigate(`/test/${deckName}`);
   };
+  
 
   useEffect(() => {
     const testProgress = localStorage.getItem(`${deckName}-testInProgress`);
@@ -93,33 +95,34 @@ function FlashcardInput() {
 
   const startOver = () => {
     // Remove all related local storage items
-    localStorage.removeItem(`$${deckName}-shuffled`);
-    localStorage.removeItem(`$${deckName}-currentIndex`);
-    localStorage.removeItem(`$${deckName}-correctAnswers`);
-    localStorage.removeItem(`$${deckName}-correctlyAnsweredQuestions`);
-    localStorage.removeItem(`$${deckName}-hintUsed`);
-    localStorage.removeItem(`$${deckName}-typedAnswer`);
-    localStorage.removeItem(`$${deckName}-wasCorrect`);
-    localStorage.removeItem(`$${deckName}-comparisonResult`);
-    localStorage.removeItem(`$${deckName}-feedback`);
-    localStorage.removeItem(`$${deckName}-showAnswer`);
-    localStorage.removeItem(`$${deckName}-isRecording`);
-    localStorage.removeItem(`$${deckName}-lastCorrectAnswer`);
-    localStorage.removeItem(`$${deckName}-showFeedback`);
-    localStorage.removeItem(`$${deckName}-isFeedbackLoading`);
-    localStorage.removeItem(`$${deckName}-hasFeedbackBeenProvided`);
-    localStorage.removeItem(`$${deckName}-newAnswerProvided`);
-    localStorage.removeItem(`$${deckName}-finished`);
-    localStorage.removeItem(`$${deckName}-typingMode`);
-    localStorage.removeItem(`$${deckName}-score`);
-    localStorage.removeItem(`$${deckName}-hintsUsed`);
-    localStorage.removeItem(`$${deckName}-wrongAttempts`);
-    localStorage.removeItem(`$${deckName}-feedbacks`);
-    localStorage.removeItem(`$${deckName}-showFeedbacks`);
-    localStorage.removeItem(`$${deckName}-feedbackButtonDisabled`);
-    localStorage.removeItem(`$${deckName}-questionStates`);
-    localStorage.removeItem(`$${deckName}-sendButtonDisabled`);
-  
+    localStorage.removeItem(`${deckName}-shuffled`);
+    localStorage.removeItem(`${deckName}-currentIndex`);
+    localStorage.removeItem(`${deckName}-correctAnswers`);
+    localStorage.removeItem(`${deckName}-correctlyAnsweredQuestions`);
+    localStorage.removeItem(`${deckName}-hintUsed`);
+    localStorage.removeItem(`${deckName}-typedAnswer`);
+    localStorage.removeItem(`${deckName}-wasCorrect`);
+    localStorage.removeItem(`${deckName}-comparisonResult`);
+    localStorage.removeItem(`${deckName}-feedback`);
+    localStorage.removeItem(`${deckName}-showAnswer`);
+    localStorage.removeItem(`${deckName}-isRecording`);
+    localStorage.removeItem(`${deckName}-lastCorrectAnswer`);
+    localStorage.removeItem(`${deckName}-showFeedback`);
+    localStorage.removeItem(`${deckName}-isFeedbackLoading`);
+    localStorage.removeItem(`${deckName}-hasFeedbackBeenProvided`);
+    localStorage.removeItem(`${deckName}-newAnswerProvided`);
+    localStorage.removeItem(`${deckName}-finished`);
+    localStorage.removeItem(`${deckName}-typingMode`);
+    localStorage.removeItem(`${deckName}-score`);
+    localStorage.removeItem(`${deckName}-hintsUsed`);
+    localStorage.removeItem(`${deckName}-wrongAttempts`);
+    localStorage.removeItem(`${deckName}-feedbacks`);
+    localStorage.removeItem(`${deckName}-showFeedbacks`);
+    localStorage.removeItem(`${deckName}-feedbackButtonDisabled`);
+    localStorage.removeItem(`${deckName}-questionStates`);
+    localStorage.removeItem(`${deckName}-sendButtonDisabled`);
+    localStorage.removeItem(`${deckName}-testInProgress`);
+    
     // Reset the state
     setShowDisclaimer(false);
     setCurrentCardIndex(0);
@@ -146,10 +149,14 @@ function FlashcardInput() {
     // Reload the flashcards from local storage
     const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
     setFlashcards(storedFlashcards);
+    setShuffledFlashcards(storedFlashcards); // Ensure the shuffled flashcards are also set
+    localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(storedFlashcards)); // Save the initial shuffled state
+    localStorage.setItem(`${deckName}-currentIndex`, 0); // Reset the current index
   
     // Navigate to the test page
     navigate(`/test/${deckName}`);
   };
+  
   
   const continueTest = () => {
     setShowDisclaimer(false);
@@ -175,7 +182,8 @@ function FlashcardInput() {
     const storedScore = JSON.parse(localStorage.getItem(`${deckName}-score`)) || 0;
     const storedHintsUsed = JSON.parse(localStorage.getItem(`${deckName}-hintsUsed`)) || 0;
     const storedWrongAttempts = JSON.parse(localStorage.getItem(`${deckName}-wrongAttempts`)) || 0;
-
+    const storedQuestionStates = JSON.parse(localStorage.getItem(`${deckName}-questionStates`) || '{}');
+  
     setFlashcards(storedFlashcards);
     setShuffledFlashcards(storedShuffled);
     setCurrentCardIndex(storedCurrentIndex);
@@ -199,10 +207,11 @@ function FlashcardInput() {
     setHintsUsed(storedHintsUsed);
     setShowDisclaimer(false);
     setWrongAttempts(storedWrongAttempts);
-
-    navigate(`/test/${deckName}`); // Directly navigate to the test page
-};
-
+    setQuestionStates(storedQuestionStates);
+  
+    navigate(`/test/${deckName}`);
+  };
+  
 
 
 const shuffleArray = (array) => {
