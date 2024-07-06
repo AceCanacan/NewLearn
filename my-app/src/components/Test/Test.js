@@ -40,9 +40,8 @@ const Test = () => {
     const [feedbackProvided, setFeedbackProvided] = useState({});
     const [questionStates, setQuestionStates] = useState({});
     const [sendButtonDisabled, setSendButtonDisabled] = useState(false);
-    const [showTestDisclaimer, setShowTestDisclaimer] = useState(false);
+    const [testStarted, setTestStarted] = useState(false);
 
-    
   
     useEffect(() => {
       const storedFlashcards = JSON.parse(localStorage.getItem(deckName) || '[]'); 
@@ -106,47 +105,7 @@ const Test = () => {
       setSendButtonDisabled(storedSendButtonDisabled);
     
     }, [deckName, location.pathname, navigate]);
-    
-    const handleBackNavigation = () => {
-      console.log("handleBackNavigation called");
-      preserveCurrentQuestionState();
-      saveProgress();
-      navigate(`/deck/$${deckName}`, { replace: true });
-    };
-    
-    useEffect(() => {
-      const handlePopState = (event) => {
-        console.log("popstate event triggered");
-        event.preventDefault();
-        handleBackNavigation();
-      };
-    
-      window.addEventListener('popstate', handlePopState);
-    
-      return () => {
-        window.removeEventListener('popstate', handlePopState);
-      };
-    }, [deckName, navigate]);
-    
-    useEffect(() => {
-      const handleBeforeUnload = (event) => {
-        if (!finished) {
-          console.log("beforeunload event triggered");
-          event.preventDefault();
-          event.returnValue = '';
-          handleBackNavigation();
-        }
-      };
-    
-      window.addEventListener('beforeunload', handleBeforeUnload);
-    
-      return () => {
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-      };
-    }, [finished]);
-    
-    
-    
+     
 
     const handleFinish = () => {
       if (correctlyAnsweredQuestions.size === shuffledFlashcards.length) {
@@ -269,6 +228,8 @@ const Test = () => {
         answeredPerfectly: 0,
       });
       setSendButtonDisabled({});
+      setShowDisclaimer(true);
+
       
       localStorage.removeItem(`${deckName}-shuffled`);
       localStorage.removeItem(`${deckName}-currentIndex`);
@@ -374,6 +335,8 @@ const Test = () => {
       localStorage.removeItem(`${deckName}-testInProgress`);
       navigate(`/deck/${deckName}`);
   };
+
+  
   
     
     

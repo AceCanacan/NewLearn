@@ -12,10 +12,16 @@ const CustomRouter = ({ children }) => {
   const currentPath = location.pathname;
 
   useEffect(() => {
-    const handlePopState = (event) => {
-      event.preventDefault();
-      
+    const handleBeforeUnload = (event) => {
       if (currentPath.includes('/test/')) {
+        event.preventDefault();
+        event.returnValue = 'Please make sure that you have saved your progress.';
+      }
+    };
+
+    const handlePopState = (event) => {
+      if (currentPath.includes('/test/')) {
+        event.preventDefault();
         window.dispatchEvent(new Event('showBackDisclaimer'));
       } else if (currentPath.includes('/deck/')) {
         navigate(`/`);
@@ -24,9 +30,11 @@ const CustomRouter = ({ children }) => {
       }
     };
 
+    window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('popstate', handlePopState);
 
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('popstate', handlePopState);
     };
   }, [currentPath, navigate]);
@@ -35,6 +43,22 @@ const CustomRouter = ({ children }) => {
 };
 
 function App() {
+  useEffect(() => {
+    const showDisclaimer = (event) => {
+      const userConfirmed = window.confirm('Please make sure that you have saved your progress. Press OK to leave, Cancel to stay.');
+      if (!userConfirmed) {
+        event.preventDefault();
+        window.history.pushState(null, '', window.location.pathname);
+      }
+    };
+
+    window.addEventListener('showBackDisclaimer', showDisclaimer);
+
+    return () => {
+      window.removeEventListener('showBackDisclaimer', showDisclaimer);
+    };
+  }, []);
+
   return (
     <Router>
       <CustomRouter>
