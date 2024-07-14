@@ -203,34 +203,8 @@ const Test = () => {
       console.log("Preserved question state for index:", currentCardIndex, currentQuestionState);
     };
     
-
-
     const retakeTest = () => {
-      setCorrectAnswers(0);
-      setCurrentCardIndex(0);
-      setComparisonResult('');
-      setHint('');
-      setShowAnswer(false);
-      setTypedAnswer('');
-      setTypingMode(false);
-      setCorrectlyAnsweredQuestions(new Set());
-      setFinished(false);
-      setHintsUsed(0);
-      setWrongAttempts(0);
-      setScore(0);
-      setQuestionStates({});
-      setFeedbackButtonDisabled({});
-      setShowFeedbacks({});
-      setReport({
-        hintsUsed: 0,
-        answersShown: 0,
-        multipleAttempts: 0,
-        answeredPerfectly: 0,
-      });
-      setSendButtonDisabled({});
-      setShowDisclaimer(true);
-
-      
+      // Clear all related local storage items
       localStorage.removeItem(`${deckName}-shuffled`);
       localStorage.removeItem(`${deckName}-currentIndex`);
       localStorage.removeItem(`${deckName}-correctAnswers`);
@@ -256,8 +230,86 @@ const Test = () => {
       localStorage.removeItem(`${deckName}-showFeedbacks`);
       localStorage.removeItem(`${deckName}-questionStates`);
       localStorage.removeItem(`${deckName}-sendButtonDisabled`);
+      localStorage.removeItem(`${deckName}-testInProgress`);
+      localStorage.removeItem(`${deckName}-typedAnswer`);
+      localStorage.removeItem(`${deckName}-hint`);
+    
+      // Clear individual question typed answers and related states
+      flashcards.forEach((_, index) => {
+        localStorage.removeItem(`$${deckName}-typedAnswer-$${index}`);
+        localStorage.removeItem(`${deckName}-feedbackButtonDisabled-${index}`);
+        localStorage.removeItem(`${deckName}-showFeedbacks-${index}`);
+        localStorage.removeItem(`${deckName}-questionStates-${index}`);
+      });
+    
+      // Reset all necessary state variables
+      setFlashcards([]);  // Reset flashcards
+      setShuffledFlashcards([]);
+      setCurrentCardIndex(0);
+      setCorrectAnswers(0);
+      setComparisonResult('');
+      setHint('');
+      setShowAnswer(false);
+      setTypedAnswer('');
+      setTypingMode(false);
+      setCorrectlyAnsweredQuestions(new Set());
+      setFinished(false);
+      setHintsUsed(0);
+      setWrongAttempts(0);
+      setScore(0);
+      setQuestionStates({});
+      setFeedbackButtonDisabled({});
+      setShowFeedbacks({});
+      setReport({
+        hintsUsed: 0,
+        answersShown: 0,
+        multipleAttempts: 0,
+        answeredPerfectly: 0,
+      });
+      setSendButtonDisabled({});
+      setShowDisclaimer(true);
+    
+      // Fetch flashcards again
+      const storedFlashcards = JSON.parse(localStorage.getItem(deckName) || '[]');
+      const shuffled = shuffleArray(storedFlashcards); // Assuming you have a shuffleArray function
+      setFlashcards(storedFlashcards);
+      setShuffledFlashcards(shuffled);
+    
+      // Ensure the first card is properly reset
+      setTimeout(() => {
+        setShowAnswer(false);
+        setComparisonResult('');
+        setHint('');
+        setHintUsed(false);
+        setShowFeedback(false);
+        setWasCorrect(false);
+        setTypedAnswer('');
+        setHintsUsed(0);
+        setWrongAttempts(0);
+        setNewAnswerProvided(false);
+        setFeedback('');
+        setFeedbackButtonDisabled(false);
+        setShowFeedbacks({});
+        setSendButtonDisabled(false);
+        setLastCorrectAnswer('');
+      }, 0);
+    
+      // Save progress and navigate to the start of the test
       saveProgress();
+      setCurrentCardIndex(0);
+      loadQuestionState(0);
     };
+    
+    // Helper function to shuffle an array
+    const shuffleArray = (array) => {
+      let shuffledArray = array.slice();
+      for (let i = shuffledArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+      }
+      return shuffledArray;
+    };
+    
     
 
     const saveProgress = () => {
