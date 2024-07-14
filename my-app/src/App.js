@@ -9,21 +9,21 @@ import Review from './components/Test/Review';
 const CustomRouter = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const currentPath = location.pathname;
+  const [isNavigatingBack, setIsNavigatingBack] = React.useState(false);
 
   useEffect(() => {
     const handleBeforeUnload = (event) => {
-      if (currentPath.includes('/test/')) {
+      if (location.pathname.includes('/test/')) {
         event.preventDefault();
         event.returnValue = 'Please make sure that you have saved your progress.';
       }
     };
 
     const handlePopState = (event) => {
-      if (currentPath.includes('/test/')) {
+      if (location.pathname.includes('/test/')) {
         event.preventDefault();
         window.dispatchEvent(new Event('showBackDisclaimer'));
-      } else if (currentPath.includes('/deck/')) {
+      } else if (location.pathname.includes('/deck/')) {
         navigate(`/`);
       } else {
         window.history.go(-1);
@@ -37,28 +37,35 @@ const CustomRouter = ({ children }) => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [currentPath, navigate]);
+  }, [location.pathname, navigate]);
 
-  return children;
-};
-
-function App() {
   useEffect(() => {
     const showDisclaimer = (event) => {
       const userConfirmed = window.confirm('Please make sure that you have saved your progress. Press OK to leave, Cancel to stay.');
-      if (!userConfirmed) {
+      if (userConfirmed) {
+        setIsNavigatingBack(true);
+        window.history.go(-1);
+      } else {
         event.preventDefault();
         window.history.pushState(null, '', window.location.pathname);
       }
     };
 
-    window.addEventListener('showBackDisclaimer', showDisclaimer);
+    if (isNavigatingBack) {
+      setIsNavigatingBack(false);
+    } else {
+      window.addEventListener('showBackDisclaimer', showDisclaimer);
+    }
 
     return () => {
       window.removeEventListener('showBackDisclaimer', showDisclaimer);
     };
-  }, []);
+  }, [isNavigatingBack]);
 
+  return children;
+};
+
+function App() {
   return (
     <Router>
       <CustomRouter>

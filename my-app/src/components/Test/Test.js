@@ -306,42 +306,44 @@ const Test = () => {
 
   
   const wipeProgressAndNavigate = () => {
-      localStorage.removeItem(`${deckName}-shuffled`);
-      localStorage.removeItem(`${deckName}-currentIndex`);
-      localStorage.removeItem(`${deckName}-correctAnswers`);
-      localStorage.removeItem(`${deckName}-correctlyAnsweredQuestions`);
-      localStorage.removeItem(`${deckName}-hintUsed`);
-      localStorage.removeItem(`${deckName}-typedAnswer`);
-      localStorage.removeItem(`${deckName}-wasCorrect`);
-      localStorage.removeItem(`${deckName}-comparisonResult`);
-      localStorage.removeItem(`${deckName}-feedback`);
-      localStorage.removeItem(`${deckName}-showAnswer`);
-      localStorage.removeItem(`${deckName}-isRecording`);
-      localStorage.removeItem(`${deckName}-lastCorrectAnswer`);
-      localStorage.removeItem(`${deckName}-showFeedback`);
-      localStorage.removeItem(`${deckName}-isFeedbackLoading`);
-      localStorage.removeItem(`${deckName}-hasFeedbackBeenProvided`);
-      localStorage.removeItem(`${deckName}-newAnswerProvided`);
-      localStorage.removeItem(`${deckName}-finished`);
-      localStorage.removeItem(`${deckName}-typingMode`);
-      localStorage.removeItem(`${deckName}-score`);
-      localStorage.removeItem(`${deckName}-hintsUsed`);
-      localStorage.removeItem(`${deckName}-wrongAttempts`);
-      localStorage.removeItem(`${deckName}-feedbacks`);
-      localStorage.removeItem(`${deckName}-showFeedbacks`);
-      localStorage.removeItem(`${deckName}-feedbackButtonDisabled`);
-      localStorage.removeItem(`${deckName}-questionStates`);
-      localStorage.removeItem(`${deckName}-sendButtonDisabled`);
-      localStorage.removeItem(`${deckName}-testInProgress`);
-      navigate(`/deck/${deckName}`);
+    // Remove keys related to overall test progress
+    localStorage.removeItem(`${deckName}-shuffled`);
+    localStorage.removeItem(`${deckName}-currentIndex`);
+    localStorage.removeItem(`${deckName}-correctAnswers`);
+    localStorage.removeItem(`${deckName}-correctlyAnsweredQuestions`);
+    localStorage.removeItem(`${deckName}-hintUsed`);
+    localStorage.removeItem(`${deckName}-wasCorrect`);
+    localStorage.removeItem(`${deckName}-comparisonResult`);
+    localStorage.removeItem(`${deckName}-feedback`);
+    localStorage.removeItem(`${deckName}-showAnswer`);
+    localStorage.removeItem(`${deckName}-isRecording`);
+    localStorage.removeItem(`${deckName}-lastCorrectAnswer`);
+    localStorage.removeItem(`${deckName}-showFeedback`);
+    localStorage.removeItem(`${deckName}-isFeedbackLoading`);
+    localStorage.removeItem(`${deckName}-hasFeedbackBeenProvided`);
+    localStorage.removeItem(`${deckName}-newAnswerProvided`);
+    localStorage.removeItem(`${deckName}-finished`);
+    localStorage.removeItem(`${deckName}-typingMode`);
+    localStorage.removeItem(`${deckName}-score`);
+    localStorage.removeItem(`${deckName}-hintsUsed`);
+    localStorage.removeItem(`${deckName}-wrongAttempts`);
+    localStorage.removeItem(`${deckName}-feedbacks`);
+    localStorage.removeItem(`${deckName}-showFeedbacks`);
+    localStorage.removeItem(`${deckName}-feedbackButtonDisabled`);
+    localStorage.removeItem(`${deckName}-questionStates`);
+    localStorage.removeItem(`${deckName}-sendButtonDisabled`);
+    localStorage.removeItem(`${deckName}-testInProgress`);
+    localStorage.removeItem(`${deckName}-typedAnswer`);
+    localStorage.removeItem(`${deckName}-hint`);
+    
+    // Remove keys related to individual question typed answers
+    shuffledFlashcards.forEach((_, index) => {
+      localStorage.removeItem(`$${deckName}-typedAnswer-$${index}`);
+    });
+  
+    navigate(`/deck/${deckName}`);
   };
-
   
-  
-    
-    
-
-    
 
   const [report, setReport] = useState({
     hintsUsed: 0,
