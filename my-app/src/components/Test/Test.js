@@ -406,12 +406,13 @@ const Test = () => {
   
   const generateReportContent = () => (
     <>
-      <p>Hints Used: {report.hintsUsed}</p>
-      <p>Answers Shown: {report.answersShown}</p>
-      <p>Multiple Attempts: {report.multipleAttempts}</p>
-      <p>Perfectly Answered: {report.answeredPerfectly}</p>
+        <p>Hints Used: {report.hintsUsed}</p>
+        <p>Answers Shown: {report.answersShown}</p>
+        <p>Multiple Attempts: {report.multipleAttempts}</p>
+        <p>Perfectly Answered: {report.answeredPerfectly}</p>
     </>
-  );
+);
+
 
   const handleDone = () => {
     setShowSaveProgressModal(true);
@@ -436,13 +437,19 @@ const Test = () => {
     if (isCorrect) {
       if (!correctlyAnsweredQuestions.has(currentCardIndex)) {
         const currentQuestionScore = calculateScoreForCurrentQuestion();
-        setScore(prevScore => prevScore + currentQuestionScore);
+        setScore(prevScore => {
+          const newScore = prevScore + currentQuestionScore;
+          console.log(`Updated Score: ${newScore}`);
+          return newScore;
+        });
         setCorrectAnswers(prevCorrectAnswers => prevCorrectAnswers + 1);
       }
     } else {
       setWrongAttempts(prevWrongAttempts => prevWrongAttempts + 1);
     }
+    console.log(`Current Score: ${score}`);
   };
+  
 
   
   const totalCards = flashcards.length;
@@ -528,14 +535,12 @@ const processRecording = async (audioBlob) => {
 
 
 
+
+
 const compareQuestion = async (userQuestion) => {
   const originalQuestion = shuffledFlashcards[currentCardIndex].question;
   const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
   const userAnswer = typingMode ? typedAnswer : userQuestion;
-
-  console.log("Original Question:", originalQuestion);
-  console.log("Original Answer:", originalAnswer);
-  console.log("User Answer:", userAnswer);
 
   const messages = [
     { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
@@ -568,41 +573,33 @@ const compareQuestion = async (userQuestion) => {
     const choice = data.choices[0];
     const result = choice.message.content.trim().replace('.', '').toLowerCase();
 
-    console.log("Comparison Result from API:", result);
+    const currentQuestionState = questionStates[currentCardIndex] || { attempts: 0, correct: false, hintUsed: false, skipped: false, multipleAttempts: false, firstAttemptIncorrect: false };
+    const isFirstAttempt = currentQuestionState.attempts === 0;
+    const isFirstAttemptIncorrect = isFirstAttempt && result === 'no';
+
+    const updatedQuestionState = {
+      ...currentQuestionState,
+      attempts: currentQuestionState.attempts + 1,
+      correct: result === 'yes',
+      hintUsed: false,
+      hint: '',
+      multipleAttempts: currentQuestionState.attempts > 0 || result === 'no',
+      firstAttemptIncorrect: isFirstAttemptIncorrect || currentQuestionState.firstAttemptIncorrect
+    };
 
     setQuestionStates(prevStates => {
-      const currentQuestionState = prevStates[currentCardIndex] || { attempts: 0, correct: false, hintUsed: false, skipped: false };
-      const updatedQuestionState = {
-        ...currentQuestionState,
-        attempts: currentQuestionState.attempts + 1,
-        correct: result === 'yes',
-        hintUsed: false,
-        hint: '',
-      };
-
       const updatedStates = {
         ...prevStates,
         [currentCardIndex]: updatedQuestionState
       };
 
-      console.log("Updated Question States:", updatedStates);
       localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(updatedStates));
       return updatedStates;
     });
 
-    const isFirstAttempt = questionStates[currentCardIndex]?.attempts === 1;
-    const noHintUsed = !questionStates[currentCardIndex]?.hintUsed;
-    const notSkipped = !questionStates[currentCardIndex]?.skipped;
-
-    console.log("Current Question State:", questionStates[currentCardIndex]);
-    console.log("Is First Attempt:", isFirstAttempt);
-    console.log("No Hint Used:", noHintUsed);
-    console.log("Not Skipped:", notSkipped);
-
     if (result === 'yes') {
       setCorrectlyAnsweredQuestions(prevQuestions => {
         const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
-        console.log("Updated Correctly Answered Questions:", [...updatedQuestions]);
         localStorage.setItem(`${deckName}-correctlyAnsweredQuestions`, JSON.stringify([...updatedQuestions]));
         return updatedQuestions;
       });
@@ -618,13 +615,11 @@ const compareQuestion = async (userQuestion) => {
       setLastCorrectAnswer(userAnswer);
 
       setReport(prevReport => {
-        const wasMultipleAttempt = questionStates[currentCardIndex]?.attempts > 1;
-        console.log("Was Multiple Attempt:", wasMultipleAttempt);
-        return {
-          ...prevReport,
-          answeredPerfectly: isFirstAttempt && noHintUsed && notSkipped ? prevReport.answeredPerfectly + 1 : prevReport.answeredPerfectly,
-          multipleAttempts: wasMultipleAttempt ? prevReport.multipleAttempts + 1 : prevReport.multipleAttempts,
-        };
+        const updatedReport = { ...prevReport };
+        if (!updatedQuestionState.firstAttemptIncorrect) {
+          updatedReport.answeredPerfectly += 1;
+        }
+        return updatedReport;
       });
 
       setSendButtonDisabled(prev => ({
@@ -635,19 +630,13 @@ const compareQuestion = async (userQuestion) => {
       setHintUsed(false);
       setHint('');
     } else {
-      setHintUsed(false);
-      setHint('');
       updateScore(false);
       setComparisonResult('Incorrect');
 
-      setReport(prevReport => {
-        const wasMultipleAttempt = questionStates[currentCardIndex]?.attempts > 1;
-        console.log("Was Multiple Attempt:", wasMultipleAttempt);
-        return {
-          ...prevReport,
-          multipleAttempts: wasMultipleAttempt ? prevReport.multipleAttempts + 1 : prevReport.multipleAttempts,
-        };
-      });
+      setReport(prevReport => ({
+        ...prevReport,
+        multipleAttempts: currentQuestionState.attempts === 0 ? prevReport.multipleAttempts + 1 : prevReport.multipleAttempts,
+      }));
     }
 
   } catch (error) {
@@ -657,6 +646,11 @@ const compareQuestion = async (userQuestion) => {
     saveProgress();
   }
 };
+
+
+
+
+
 
 
 
@@ -686,7 +680,6 @@ const renderSendButton = () => {
 
 
 
-  
 const handleShowAnswer = () => {
   if (!showAnswer) {
     setShowAnswer(true);
@@ -714,6 +707,7 @@ const handleShowAnswer = () => {
     saveProgress();
   }
 };
+
 
 
 
@@ -768,6 +762,7 @@ const getHint = async () => {
             ...prevStates[currentCardIndex],
             hintUsed: true,
             hint: newHint,
+            firstAttemptIncorrect: true // Mark as not perfectly answered if a hint is used
           }
         };
         localStorage.setItem(`${deckName}-questionStates`, JSON.stringify(updatedStates));
@@ -788,7 +783,6 @@ const getHint = async () => {
     saveProgress();
   }
 };
-
 
 
 
@@ -914,43 +908,50 @@ return (
             {showAnswer && (
               <p><strong>A:</strong> {shuffledFlashcards[currentCardIndex].answer}</p>
             )}
-            <div className="flashcard-buttons">
-              <button className="btn btn-secondary" onClick={() => setTypingMode(!typingMode)}>
-                {typingMode ? 'Voice Mode' : 'Type Mode'}
-              </button>
-              {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
-                <button className="btn btn-primary" onClick={startRecording}>Start</button>
-              )}
-              {typingMode && (
-                <>
-                  <input
-                    type="text"
-                    value={typedAnswer}
-                    onChange={(e) => {
-                      setTypedAnswer(e.target.value);
-                      localStorage.setItem(`$${deckName}-typedAnswer-$${currentCardIndex}`, e.target.value);
-                    }}
-                    placeholder="Type your answer here"
-                  />
-                  {renderSendButton()}
-                </>
-              )}
-              {!typingMode && isRecording && (
-                <button className="btn btn-danger" onClick={finishRecording}>Finish</button>
-              )}
-              {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
-                <button className="btn btn-primary" onClick={startRecording}>Try Again</button>
-              )}
-              {comparisonResult !== 'Correct' && !showAnswer && (
-                <button 
-                  className="btn btn-secondary"
-                  onClick={getHint} 
-                  disabled={hintUsed || questionStates[currentCardIndex]?.hintUsed}
-                >
-                  Get Hint
-                </button>
-              )}
-            </div>
+<div className="flashcard-buttons">
+  <button className="btn btn-secondary" onClick={() => setTypingMode(!typingMode)}>
+    {typingMode ? 'Voice Mode' : 'Type Mode'}
+  </button>
+  {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
+    <button className="btn btn-primary" onClick={startRecording}>Start</button>
+  )}
+  {typingMode && (
+    <>
+      <input
+        type="text"
+        value={typedAnswer}
+        onChange={(e) => {
+          setTypedAnswer(e.target.value);
+          localStorage.setItem(`$${deckName}-typedAnswer-$${currentCardIndex}`, e.target.value);
+        }}
+        placeholder="Type your answer here"
+      />
+      {renderSendButton()}
+    </>
+  )}
+  {!typingMode && isRecording && (
+    <button className="btn btn-danger" onClick={finishRecording}>Finish</button>
+  )}
+  {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
+    <button className="btn btn-primary" onClick={startRecording}>Try Again</button>
+  )}
+  {comparisonResult !== 'Correct' && !showAnswer && (
+    <button
+      className="btn btn-secondary"
+      onClick={getHint} 
+      disabled={hintUsed || questionStates[currentCardIndex]?.hintUsed}
+    >
+      Get Hint
+    </button>
+  )}
+  <button
+    className="btn btn-warning"
+    onClick={handleShowAnswer}
+  >
+    Show Answer
+  </button>
+</div>
+
             {(hint || questionStates[currentCardIndex]?.hint) && (
               <p className="hint"><strong>Hint:</strong> {hint || questionStates[currentCardIndex]?.hint}</p>
             )}
