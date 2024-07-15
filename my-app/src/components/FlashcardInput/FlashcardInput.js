@@ -364,6 +364,9 @@ const saveFlashcardsToLocalStorage = (cards) => {
           <Link to={`/review/${deckName}`} className="test-link">
             <button>Review</button>
           </Link>
+          <Link to={`/score-report/${deckName}`} className="test-link">
+            <button>View Scores</button>
+          </Link>
         </>
       )}
       <div className="flashcard-list">

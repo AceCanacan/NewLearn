@@ -109,7 +109,30 @@ const Test = () => {
 
     const handleFinish = () => {
       if (correctlyAnsweredQuestions.size === shuffledFlashcards.length) {
+        const finalScore = calculateFinalScore();
+        const scoreEntry = {
+          score: finalScore,
+          date: new Date().toISOString(),
+          report: {
+            hintsUsed: report.hintsUsed,
+            answersShown: report.answersShown,
+            multipleAttempts: report.multipleAttempts,
+            answeredPerfectly: report.answeredPerfectly,
+          }
+        };
+    
         setFinished(true);
+    
+        // Save the final score with details
+        const storedScores = JSON.parse(localStorage.getItem('scores') || '{}');
+        const updatedScores = {
+          ...storedScores,
+          [deckName]: [...(storedScores[deckName] || []), scoreEntry]
+        };
+        localStorage.setItem('scores', JSON.stringify(updatedScores));
+    
+    
+        // Clear related local storage items
         localStorage.removeItem(`${deckName}-shuffled`);
         localStorage.removeItem(`${deckName}-currentIndex`);
         localStorage.removeItem(`${deckName}-correctAnswers`);
@@ -141,6 +164,7 @@ const Test = () => {
         alert("You need to answer all questions correctly before finishing the test.");
       }
     };
+    
   
     
       

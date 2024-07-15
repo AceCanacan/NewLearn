@@ -5,6 +5,7 @@ import Deck from './components/Home/Deck';
 import FlashcardInput from './components/FlashcardInput/FlashcardInput';
 import TestYourself from './components/Test/Test';
 import Review from './components/Test/Review';
+import ScoreReport from './components/ScoreReport/ScoreReport';
 
 const CustomRouter = ({ children }) => {
   const navigate = useNavigate();
@@ -75,6 +76,7 @@ function App() {
             <Route path="/deck/:deckName" element={<FlashcardInput />} />
             <Route path="/test/:deckName" element={<TestYourself />} />
             <Route path="/review/:deckName" element={<Review />} />
+            <Route path="/score-report/:deckName" element={<ScoreReport />} />
           </Routes>
         </div>
       </CustomRouter>
