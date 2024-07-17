@@ -222,7 +222,6 @@ const saveFlashcardsToLocalStorage = (cards) => {
   decks[deckName] = cards.length; // Save the count directly
   localStorage.setItem('decks', JSON.stringify(decks));
   
-  // Save other states to local storage
   localStorage.setItem(`${deckName}-shuffled`, JSON.stringify(shuffledFlashcards));
   localStorage.setItem(`${deckName}-currentIndex`, currentCardIndex);
   localStorage.setItem(`${deckName}-correctAnswers`, JSON.stringify(correctAnswers));
@@ -290,9 +289,11 @@ const saveFlashcardsToLocalStorage = (cards) => {
       delete decks[deckName];
       localStorage.setItem('decks', JSON.stringify(decks));
       localStorage.removeItem(deckName);
+      localStorage.removeItem(`${deckName}-generated`); // Add this line to remove the generated flag
       navigate('/');
     }
   };
+  
 
   const handleAddFlashcard = () => {
     const newFlashcards = [...flashcards, { question: '', answer: '' }];
