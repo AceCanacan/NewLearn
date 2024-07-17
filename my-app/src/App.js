@@ -8,6 +8,10 @@ import Review from './components/Test/Review';
 import ScoreReport from './components/ScoreReport/ScoreReport';
 import QuizMaker from './components/QuizMaker/QuizMaker';
 
+
+
+
+
 const CustomRouter = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,9 +26,12 @@ const CustomRouter = ({ children }) => {
     };
 
     const handlePopState = (event) => {
-      if (location.pathname === '/' || location.pathname.startsWith('/deck/')) {
+      if (location.pathname === '/') {
         event.preventDefault();
         window.history.pushState(null, '', window.location.pathname);
+      } else if (location.pathname.startsWith('/deck/')) {
+        event.preventDefault();
+        navigate('/');
       } else if (location.pathname.includes('/test/')) {
         event.preventDefault();
         window.dispatchEvent(new Event('showBackDisclaimer'));
@@ -73,6 +80,9 @@ const CustomRouter = ({ children }) => {
 
   return children;
 };
+
+
+
 
 function App() {
   return (

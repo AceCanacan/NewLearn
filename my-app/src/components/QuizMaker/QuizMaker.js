@@ -9,19 +9,30 @@ const QuizMaker = () => {
   const navigate = useNavigate();
 
   const handleGenerate = async () => {
+    if (localStorage.getItem(`${deckName}-generated`) === 'true') {
+      alert('You have already generated questions for this deck.');
+      return;
+    }
+  
     if (!inputText.trim()) {
       alert('Please enter some text.');
       return;
     }
-
+  
+    const userConfirmed = window.confirm('This action can only be performed once per deck and you will not be able to generate new questions again for this deck. Do you want to proceed?');
+  
+    if (!userConfirmed) {
+      return;
+    }
+  
     setIsLoading(true);
-
+  
     const messages = [
       { role: 'system', content: 'You are a helpful assistant.' },
       { role: 'user', content: `Text to generate questions from: ${inputText}` },
       { role: 'user', content: 'Generate a series of questions and answers from the provided text. Format: Q: Question A: Answer. MAXIMUM OF 10 QUESTIONS ONLY' }
     ];
-
+  
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -35,14 +46,14 @@ const QuizMaker = () => {
           max_tokens: 1500
         })
       });
-
+  
       if (!response.ok) {
         const errorDetail = await response.json();
         throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
       }
-
+  
       const data = await response.json();
-
+  
       if (data.choices && data.choices.length > 0) {
         const text = data.choices[0].message.content.trim();
         const qaPairs = text.split('\n').reduce((acc, line) => {
@@ -53,7 +64,7 @@ const QuizMaker = () => {
           }
           return acc;
         }, []);
-
+  
         saveGeneratedQuestions(qaPairs);
         navigate(`/deck/${deckName}`);
       } else {
@@ -66,13 +77,15 @@ const QuizMaker = () => {
       setIsLoading(false);
     }
   };
-
+  
   const saveGeneratedQuestions = (generatedQuestions) => {
-    const flashcards = generatedQuestions.map(q => ({ question: q.question, answer: q.answer }));
+    const limitedQuestions = generatedQuestions.slice(0, 10);
+    const flashcards = limitedQuestions.map(q => ({ question: q.question, answer: q.answer }));
     localStorage.setItem(deckName, JSON.stringify(flashcards));
     const decks = JSON.parse(localStorage.getItem('decks')) || {};
     decks[deckName] = flashcards.length;
     localStorage.setItem('decks', JSON.stringify(decks));
+    localStorage.setItem(`${deckName}-generated`, 'true');
   };
 
   return (

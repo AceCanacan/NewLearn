@@ -39,8 +39,6 @@ function FlashcardInput() {
   const [testInProgress, setTestInProgress] = useState(false);
   const [questionStates, setQuestionStates] = useState({});
 
-
-
   useEffect(() => {
     const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
     setFlashcards(storedFlashcards);
@@ -53,13 +51,7 @@ function FlashcardInput() {
     if (storedShuffled && storedCurrentIndex !== null && storedCorrectAnswers !== null && storedCorrectlyAnsweredQuestions) {
       setShowDisclaimer(true);
     }
-  
-    console.log('Loaded flashcards:', storedFlashcards);
-    storedFlashcards.forEach((card, index) => {
-      console.log(`Flashcard ${index + 1}: Question - ${card.question}, Answer - ${card.answer}`);
-    });
   }, [deckName]);
-  
   
   
   const handleTestYourself = () => {
@@ -350,28 +342,32 @@ const saveFlashcardsToLocalStorage = (cards) => {
   </label>
 </div>
 
-      {(showDisclaimer || testInProgress) ? (
-        <div className="disclaimer-modal">
-          <p>You have a test in progress. Would you like to continue or start over?</p>
-          <button onClick={startOver}>Start Over</button>
-          <button onClick={continueTest}>Continue</button>
-        </div>
-      ) : (
-        <>
-          <Link to={`/test/${deckName}`} className="test-link">
-            <button onClick={handleTestYourself}>Test Yourself</button>
-          </Link>
-          <Link to={`/review/${deckName}`} className="test-link">
-            <button>Review</button>
-          </Link>
-          <Link to={`/score-report/${deckName}`} className="test-link">
-            <button>View Scores</button>
-          </Link>
-          <Link to={`/quizmaker/${deckName}`} className="test-link">
-            <button>Go to QuizMaker</button>
-          </Link>
-        </>
-      )}
+{(showDisclaimer || testInProgress) ? (
+  <div className="disclaimer-modal">
+    <p>You have a test in progress. Would you like to continue or start over?</p>
+    <button onClick={startOver}>Start Over</button>
+    <button onClick={continueTest}>Continue</button>
+  </div>
+) : (
+<>
+  <Link to={`/test/${deckName}`} className="test-link">
+    <button onClick={handleTestYourself}>Test Yourself</button>
+  </Link>
+  <Link to={`/review/${deckName}`} className="test-link">
+    <button>Review</button>
+  </Link>
+  <Link to={`/score-report/${deckName}`} className="test-link">
+    <button>View Scores</button>
+  </Link>
+  <button className="test-link" onClick={() => {
+  if (localStorage.getItem(`${deckName}-generated`) === 'true') {
+    alert('You have already used the QuizMaker feature for this deck.');
+  } else {
+    navigate(`/quizmaker/${deckName}`);
+  }
+}}>Go to QuizMaker</button>
+</>
+)}
       <div className="flashcard-list">
         {flashcards.map((flashcard, index) => (
           <div key={index} className="flashcard">
