@@ -6,6 +6,7 @@ import FlashcardInput from './components/FlashcardInput/FlashcardInput';
 import TestYourself from './components/Test/Test';
 import Review from './components/Test/Review';
 import ScoreReport from './components/ScoreReport/ScoreReport';
+import QuizMaker from './components/QuizMaker/QuizMaker';
 
 const CustomRouter = ({ children }) => {
   const navigate = useNavigate();
@@ -21,14 +22,18 @@ const CustomRouter = ({ children }) => {
     };
 
     const handlePopState = (event) => {
-      if (location.pathname.includes('/test/')) {
+      if (location.pathname === '/' || location.pathname.startsWith('/deck/')) {
+        event.preventDefault();
+        window.history.pushState(null, '', window.location.pathname);
+      } else if (location.pathname.includes('/test/')) {
         event.preventDefault();
         window.dispatchEvent(new Event('showBackDisclaimer'));
       } else if (location.pathname.includes('/score-report/')) {
         const deckName = location.pathname.split('/').pop();
         navigate(`/deck/${deckName}`);
-      } else if (location.pathname.includes('/deck/')) {
-        navigate(`/`);
+      } else if (location.pathname.includes('/quizmaker/')) {
+        const deckName = location.pathname.split('/').pop();
+        navigate(`/deck/${deckName}`);
       } else {
         window.history.go(-1);
       }
@@ -80,6 +85,7 @@ function App() {
             <Route path="/test/:deckName" element={<TestYourself />} />
             <Route path="/review/:deckName" element={<Review />} />
             <Route path="/score-report/:deckName" element={<ScoreReport />} />
+            <Route path="/quizmaker/:deckName" element={<QuizMaker />} />
           </Routes>
         </div>
       </CustomRouter>

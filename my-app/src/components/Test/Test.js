@@ -908,7 +908,7 @@ return (
     />
     <h3>{deckName}</h3>
     {!finished && (
-      <button className="btn btn-secondary top-right-button" onClick={handleDone}>
+      <button className="btn btn-secondary" onClick={handleDone}>
         Done
       </button>
     )}
