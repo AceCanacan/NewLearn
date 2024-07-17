@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 import Deck from './components/Home/Deck';
@@ -10,7 +10,7 @@ import ScoreReport from './components/ScoreReport/ScoreReport';
 const CustomRouter = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isNavigatingBack, setIsNavigatingBack] = React.useState(false);
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
 
   useEffect(() => {
     const handleBeforeUnload = (event) => {
@@ -24,6 +24,9 @@ const CustomRouter = ({ children }) => {
       if (location.pathname.includes('/test/')) {
         event.preventDefault();
         window.dispatchEvent(new Event('showBackDisclaimer'));
+      } else if (location.pathname.includes('/score-report/')) {
+        const deckName = location.pathname.split('/').pop();
+        navigate(`/deck/${deckName}`);
       } else if (location.pathname.includes('/deck/')) {
         navigate(`/`);
       } else {

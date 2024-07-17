@@ -37,7 +37,7 @@ const ScoreReport = () => {
           ))}
         </ul>
       )}
-      <Link to="/">Back to Home</Link>
+      <Link to={`/deck/${deckName}`}>Back</Link>
     </div>
   );
 };
