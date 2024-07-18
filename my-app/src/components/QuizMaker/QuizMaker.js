@@ -20,6 +20,34 @@ const QuizMaker = () => {
       alert('You have already generated questions for this deck.');
       return;
     }
+
+
+  const saveGeneratedQuestions = (generatedQuestions) => {
+    const limitedQuestions = generatedQuestions.slice(0, 10);
+    const flashcards = limitedQuestions.map(q => ({ question: q.question, answer: q.answer }));
+    localStorage.setItem(deckName, JSON.stringify(flashcards));
+    const decks = JSON.parse(localStorage.getItem('decks')) || {};
+    decks[deckName] = flashcards.length;
+    localStorage.setItem('decks', JSON.stringify(decks));
+    localStorage.setItem(`${deckName}-generated`, 'true');
+  };
+
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+
   
     if (!inputText.trim()) {
       alert('Please enter some text.');
@@ -105,48 +133,6 @@ const QuizMaker = () => {
     }
   };
   
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-  const saveGeneratedQuestions = (generatedQuestions) => {
-    const limitedQuestions = generatedQuestions.slice(0, 10);
-    const flashcards = limitedQuestions.map(q => ({ question: q.question, answer: q.answer }));
-    localStorage.setItem(deckName, JSON.stringify(flashcards));
-    const decks = JSON.parse(localStorage.getItem('decks')) || {};
-    decks[deckName] = flashcards.length;
-    localStorage.setItem('decks', JSON.stringify(decks));
-    localStorage.setItem(`${deckName}-generated`, 'true');
-  };
-
-
-
-
-
-  
-
-
   const handleConfirm = async () => {
     if (!inputText.trim()) {
       alert('Please enter some text.');
@@ -349,4 +335,3 @@ const QuizMaker = () => {
   };
 
 export default QuizMaker;
-
