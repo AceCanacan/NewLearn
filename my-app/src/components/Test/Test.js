@@ -428,6 +428,425 @@ const Test = () => {
     answeredPerfectly: 0,
   });    
   
+<<<<<<< Updated upstream
+=======
+    const dataToSave = {
+      currentCardIndex,
+      correctAnswers,
+      correctlyAnsweredQuestions: [...correctlyAnsweredQuestions],
+      hintUsed,
+      typedAnswer,
+      wasCorrect,
+      comparisonResult,
+      feedback,
+      showAnswer,
+      isRecording,
+      lastCorrectAnswer,
+      showFeedback,
+      isFeedbackLoading,
+      hasFeedbackBeenProvided,
+      newAnswerProvided,
+      finished,
+      typingMode,
+      score,
+      hintsUsed,
+      wrongAttempts,
+      feedbackButtonDisabled,
+      feedbacks,
+      showFeedbacks,
+      questionStates,
+      sendButtonDisabled,
+      testInProgress: true
+    };
+  
+    // Save progress data to local storage
+    saveMultipleToLocalStorage(deckName, dataToSave, currentCardIndex);
+  
+    console.log("Progress saved");
+  };
+
+  const resetState = () => {
+    Object.keys(localStorageKeys).forEach(key => {
+      const setterFunction = `set${key.charAt(0).toUpperCase() + key.slice(1)}`;
+      if (typeof window[setterFunction] === 'function') {
+        window[setterFunction](localStorageKeys[key]);
+      }
+    });
+  };
+
+  const saveMultipleToLocalStorage = (deckName, data, currentCardIndex) => {
+    Object.keys(data).forEach(key => {
+      localStorage.setItem(`${deckName}-${key}`, JSON.stringify(data[key]));
+    });
+    localStorage.setItem(`$${deckName}-typedAnswer-$${currentCardIndex}`, JSON.stringify(data['typedAnswer']));
+  };
+
+  const removeMultipleFromLocalStorage = (deckName) => {
+    Object.keys(localStorageKeys).forEach(key => removeFromLocalStorage(`${deckName}-${key}`));
+  };
+  
+  const saveProgressAndNavigate = () => {
+    saveProgress();
+    navigate(`/deck/${deckName}`);
+  };
+
+  const wipeProgressAndNavigate = () => {
+    removeMultipleFromLocalStorage(deckName);
+  
+    shuffledFlashcards.forEach((_, index) => {
+      removeFromLocalStorage(`$${deckName}-typedAnswer-$${index}`);
+    });
+  
+    navigate(`/deck/${deckName}`);
+  };
+
+
+  const handleFinish = () => {
+    if (correctlyAnsweredQuestions.size === shuffledFlashcards.length) {
+      const finalScore = calculateFinalScore();
+      const scoreEntry = {
+        score: finalScore,
+        date: new Date().toISOString(),
+        report: {
+          hintsUsed: report.hintsUsed,
+          answersShown: report.answersShown,
+          multipleAttempts: report.multipleAttempts,
+          answeredPerfectly: report.answeredPerfectly,
+        }
+      };
+  
+      setFinished(true);
+  
+      // Save the final score with details
+      const storedScores = loadFromLocalStorage('scores', {});
+      const updatedScores = {
+        ...storedScores,
+        [deckName]: [...(storedScores[deckName] || []), scoreEntry]
+      };
+      saveToLocalStorage('scores', updatedScores);
+  
+      // Clear related local storage items
+      Object.keys(localStorageKeys).forEach(key => removeFromLocalStorage(`${deckName}-${key}`));
+  
+      generateReportContent();
+    } else {
+      alert("You need to answer all questions correctly before finishing the test.");
+    }
+  };
+
+  const questionKeysSliceIndices = {
+    start: 8,
+    end: 17
+  };
+  
+  const getSetterFunction = (key) => `set${key.charAt(0).toUpperCase() + key.slice(1)}`;
+  
+  const resetKeys = (keys, state, defaultValues = {}) => {
+    keys.forEach(key => {
+      const setterFunction = getSetterFunction(key);
+      if (typeof window[setterFunction] === 'function') {
+        window[setterFunction](state ? (state[key] || defaultValues[key] || '') : (key in defaultValues ? defaultValues[key] : false));
+      }
+    });
+  };
+  
+  const loadQuestionState = (index) => {
+    const state = questionStates[index];
+    const questionKeys = Object.keys(localStorageKeys).slice(questionKeysSliceIndices.start, questionKeysSliceIndices.end);
+    const defaultValues = { hintsUsed: 0, wrongAttempts: 0 };
+  
+    if (state) {
+      resetKeys(questionKeys, state, defaultValues);
+      setTypedAnswer(loadFromLocalStorage(`$${deckName}-typedAnswer-$${index}`, ''));
+    } else {
+      resetKeys(questionKeys, null, defaultValues);
+      setTypedAnswer('');
+    }
+  };
+  
+  const preserveCurrentQuestionState = () => {
+    const currentQuestionState = {};
+    const questionKeys = Object.keys(localStorageKeys).slice(questionKeysSliceIndices.start, questionKeysSliceIndices.end);
+  
+    questionKeys.forEach(key => {
+      currentQuestionState[key] = window[key];
+    });
+  
+    const updatedQuestionStates = { ...questionStates, [currentCardIndex]: currentQuestionState };
+    setQuestionStates(updatedQuestionStates);
+    saveToLocalStorage(`${deckName}-questionStates`, updatedQuestionStates);
+  };
+  
+  const retakeTest = () => {
+    removeMultipleFromLocalStorage(deckName);
+  
+    flashcards.forEach((_, index) => {
+      removeFromLocalStorage(`$${deckName}-typedAnswer-$${index}`);
+      removeFromLocalStorage(`${deckName}-feedbackButtonDisabled-${index}`);
+      removeFromLocalStorage(`${deckName}-showFeedbacks-${index}`);
+      removeFromLocalStorage(`${deckName}-questionStates-${index}`);
+    });
+  
+    resetState();
+    setFlashcards([]);
+    setShuffledFlashcards([]);
+  
+    const storedFlashcards = loadFromLocalStorage(deckName, []);
+    const shuffled = shuffleArray(storedFlashcards);
+    setFlashcards(storedFlashcards);
+    setShuffledFlashcards(shuffled);
+  
+    setTimeout(() => {
+      resetState();
+      setLastCorrectAnswer('');
+    }, 0);
+  
+    saveProgress();
+    setCurrentCardIndex(0);
+    loadQuestionState(0);
+    };
+
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+// with backend ^^^^
+
+
+const navigateToCard = (index) => {
+  preserveCurrentQuestionState();
+  setCurrentCardIndex(index);
+  loadQuestionState(index);
+  const storedTypedAnswer = loadTypedAnswer(deckName, index);
+  setTypedAnswer(storedTypedAnswer);
+  setWasCorrect(false); // Reset wasCorrect state
+  setComparisonResult(''); // Reset comparisonResult state
+  saveProgress();
+};
+
+  const compareQuestion = async (userQuestion) => {
+    const originalQuestion = shuffledFlashcards[currentCardIndex].question;
+    const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
+    const userAnswer = typingMode ? typedAnswer : userQuestion;
+
+    const messages = [
+      { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
+      { role: 'user', content: `Original Question: ${originalQuestion}` },
+      { role: 'user', content: `Original Answer: ${originalAnswer}` },
+      { role: 'user', content: `User Answer: ${userAnswer}` },
+      { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
+    ];
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: messages,
+          max_tokens: 10
+        })
+      });
+
+      if (!response.ok) {
+        const errorDetail = await response.json();
+        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+      }
+
+      const data = await response.json();
+      const choice = data.choices[0];
+      const result = choice.message.content.trim().replace('.', '').toLowerCase();
+
+      const currentQuestionState = questionStates[currentCardIndex] || { attempts: 0, correct: false, hintUsed: false, skipped: false, multipleAttempts: false, firstAttemptIncorrect: false };
+      const isFirstAttempt = currentQuestionState.attempts === 0;
+      const isFirstAttemptIncorrect = isFirstAttempt && result === 'no';
+
+      const updatedQuestionState = {
+        ...currentQuestionState,
+        attempts: currentQuestionState.attempts + 1,
+        correct: result === 'yes',
+        hintUsed: false,
+        hint: '',
+        multipleAttempts: currentQuestionState.attempts > 0 || result === 'no',
+        firstAttemptIncorrect: isFirstAttemptIncorrect || currentQuestionState.firstAttemptIncorrect
+      };
+
+      setQuestionStates(prevStates => {
+        const updatedStates = {
+          ...prevStates,
+          [currentCardIndex]: updatedQuestionState
+        };
+
+        updateQuestionStates(deckName, updatedStates);
+        return updatedStates;
+      });
+
+      if (result === 'yes') {
+        setCorrectlyAnsweredQuestions(prevQuestions => {
+          const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
+          updateCorrectlyAnsweredQuestions(deckName, updatedQuestions);
+          return updatedQuestions;
+        });
+
+        updateScore(true);
+        setComparisonResult('Correct');
+        setWasCorrect(true);
+        setNewAnswerProvided(true);
+        setHasFeedbackBeenProvided(prev => ({
+          ...prev,
+          [currentCardIndex]: false
+        }));
+        setLastCorrectAnswer(userAnswer);
+
+        setReport(prevReport => {
+          const updatedReport = { ...prevReport };
+          if (!updatedQuestionState.firstAttemptIncorrect) {
+            updatedReport.answeredPerfectly += 1;
+          }
+          return updatedReport;
+        });
+
+        setSendButtonDisabled(prev => ({
+          ...prev,
+          [currentCardIndex]: true
+        }));
+
+        setHintUsed(false);
+        setHint('');
+      } else {
+        updateScore(false);
+        setComparisonResult('Incorrect');
+
+        setReport(prevReport => ({
+          ...prevReport,
+          multipleAttempts: currentQuestionState.attempts === 0 ? prevReport.multipleAttempts + 1 : prevReport.multipleAttempts,
+        }));
+      }
+
+    } catch (error) {
+      setComparisonResult(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+      saveProgress();
+    }
+  };
+
+  const handleShowAnswer = () => {
+    if (!showAnswer) {
+      setShowAnswer(true);
+      updateScore(false);
+      setCorrectlyAnsweredQuestions(prev => new Set(prev).add(currentCardIndex));
+
+      setQuestionStates(prevStates => {
+        const updatedStates = {
+          ...prevStates,
+          [currentCardIndex]: {
+            ...prevStates[currentCardIndex],
+            skipped: true,
+            showAnswer: true
+          }
+        };
+        updateQuestionStates(deckName, updatedStates);
+        return updatedStates;
+      });
+
+      setReport(prevReport => ({
+        ...prevReport,
+        answersShown: prevReport.answersShown + 1,
+      }));
+
+      saveProgress();
+    }
+  };
+
+
+  const getHint = async () => {
+    if (hintUsed) return;
+
+    setIsLoading(true);
+    setHint('');
+    const originalQuestion = shuffledFlashcards[currentCardIndex].question;
+    const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
+
+    const messages = [
+      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'user', content: `Original Question: ${originalQuestion}` },
+      { role: 'user', content: `Original Answer: ${originalAnswer}` },
+      { role: 'user', content: 'Provide a hint that will help the user get closer to the answer but does not directly reveal it.' }
+    ];
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: messages,
+          max_tokens: 50
+        })
+      });
+
+      if (!response.ok) {
+        const errorDetail = await response.json();
+        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+      }
+
+      const data = await response.json();
+
+      if (data.choices && data.choices.length > 0) {
+        const newHint = data.choices[0].message.content.trim();
+        setHint(newHint);
+        setHintUsed(true);
+        setHintsUsed(prevHintsUsed => prevHintsUsed + 1);
+
+        setQuestionStates(prevStates => {
+          const updatedStates = {
+            ...prevStates,
+            [currentCardIndex]: {
+              ...prevStates[currentCardIndex],
+              hintUsed: true,
+              hint: newHint,
+              firstAttemptIncorrect: true
+            }
+          };
+          updateQuestionStates(deckName, updatedStates);
+          return updatedStates;
+        });
+
+        setReport(prevReport => ({
+          ...prevReport,
+          hintsUsed: prevReport.hintsUsed + 1,
+        }));
+      } else {
+        setHint('Error: No response from model');
+      }
+    } catch (error) {
+      setHint(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+      saveProgress();
+    }
+  };
+
+
+
+>>>>>>> Stashed changes
   const generateReportContent = () => (
     <>
         <p>Hints Used: {report.hintsUsed}</p>
