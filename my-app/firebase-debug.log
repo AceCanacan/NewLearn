@@ -1,0 +1,26 @@
+[debug] [2024-07-20T03:23:04.251Z] ----------------------------------------------------------------------
+[debug] [2024-07-20T03:23:04.253Z] Command:       /opt/homebrew/Cellar/node/20.6.0/bin/node /opt/homebrew/bin/firebase init
+[debug] [2024-07-20T03:23:04.253Z] CLI Version:   13.13.3
+[debug] [2024-07-20T03:23:04.253Z] Platform:      darwin
+[debug] [2024-07-20T03:23:04.253Z] Node Version:  v20.6.0
+[debug] [2024-07-20T03:23:04.253Z] Time:          Sat Jul 20 2024 11:23:04 GMT+0800 (Philippine Standard Time)
+[debug] [2024-07-20T03:23:04.253Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-07-20T03:23:04.254Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2024-07-20T03:23:04.270Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-07-20T03:23:04.270Z] > authorizing via signed-in user (acecanacanjr@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/acecanacan/Developer/quiz_ai_project/my-app
+
+[debug] [2024-07-20T03:23:04.770Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2024-07-20T03:23:04.771Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2024-07-20T03:23:49.467Z] Error: read EIO
+    at TTY.onStreamRead (node:internal/stream_base_commons:217:20)
