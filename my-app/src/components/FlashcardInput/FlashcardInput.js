@@ -1,43 +1,72 @@
-// FlashcardInput.js
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { collection, getDocs, setDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../../firebase/firebase'; // Adjust the path as needed
+import { onAuthStateChanged } from 'firebase/auth'
 import './FlashcardInput.css';
 
-// Utility functions for local storage operations
-const loadFromLocalStorage = (key, defaultValue) => {
-  const storedValue = localStorage.getItem(key);
-  return storedValue ? JSON.parse(storedValue) : defaultValue;
+// Utility functions for Firestore operations
+const loadFromFirestore = async (docPath, defaultValue) => {
+  try {
+    const docSnap = await getDoc(doc(db, docPath));
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      console.warn(`No such document at: ${docPath}`);
+      return defaultValue;
+    }
+  } catch (error) {
+    console.error(`Error loading data from Firestore document: ${docPath}`, error);
+    return defaultValue;
+  }
+};
+const saveToFirestore = async (docPath, value) => {
+  try {
+    console.log(`Saving data to Firestore document: ${docPath}`, value);
+    await setDoc(doc(db, docPath), value);
+    console.log(`Data saved to Firestore document: ${docPath}`);
+  } catch (error) {
+    console.error(`Error saving data to Firestore document: ${docPath}`, error);
+  }
+};
+const removeFromFirestore = async (docPath) => {
+  try {
+    console.log(`Removing document from Firestore: ${docPath}`);
+    await deleteDoc(doc(db, docPath));
+    console.log(`Document removed from Firestore: ${docPath}`);
+  } catch (error) {
+    console.error(`Error removing document from Firestore: ${docPath}`, error);
+  }
 };
 
-const saveToLocalStorage = (key, value) => {
-  localStorage.setItem(key, JSON.stringify(value));
+const loadDeckFlashcards = async (userId, deckName) => {
+  console.log(`Loading flashcards for user: ${userId}, deck: ${deckName}`);
+  const deckData = await loadFromFirestore(`users/${userId}/decks/${deckName}`, { flashcards: [] });
+  const flashcards = deckData.flashcards || [];
+  console.log(`Flashcards successfully loaded for user: ${userId}, deck: ${deckName}`, flashcards);
+  return flashcards;
 };
 
-const removeFromLocalStorage = (key) => {
-  localStorage.removeItem(key);
+
+const saveDeckFlashcards = async (userId, deckName, flashcards) => {
+  const deckData = { flashcards };
+  console.log(`Preparing to save flashcards for user: ${userId}, deck: ${deckName}`, deckData);
+  await saveToFirestore(`users/${userId}/decks/${deckName}`, deckData);
+  console.log(`Flashcards successfully saved for user: ${userId}, deck: ${deckName}`, deckData);
 };
 
-const loadDeckFlashcards = (deckName) => {
-  return loadFromLocalStorage(deckName, []);
+
+const removeDeckFlashcards = async (userId, deckName) => {
+  console.log(`Removing flashcards for user: ${userId}, deck: ${deckName}`);
+  await removeFromFirestore(`users/${userId}/decks`, deckName);
+  console.log(`Flashcards removed for user: ${userId}, deck: ${deckName}`);
 };
 
-const saveDeckFlashcards = (deckName, flashcards) => {
-  saveToLocalStorage(deckName, flashcards);
-  const decks = loadFromLocalStorage('decks', {});
-  decks[deckName] = flashcards.length;
-  saveToLocalStorage('decks', decks);
-};
-
-const removeDeckFlashcards = (deckName) => {
-  removeFromLocalStorage(deckName);
-  const decks = loadFromLocalStorage('decks', {});
-  delete decks[deckName];
-  saveToLocalStorage('decks', decks);
-};
 
 function FlashcardInput() {
   const { deckName } = useParams();
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
 
   // Flashcard-related state
   const [flashcards, setFlashcards] = useState([]);
@@ -49,7 +78,7 @@ function FlashcardInput() {
 
   // Test-related state
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [shuffleEnabled, setShuffleEnabled] = useState(loadFromLocalStorage(`${deckName}-shuffleEnabled`, false));
+  const [shuffleEnabled, setShuffleEnabled] = useState(false); // Assuming default as false
   const [testState, setTestState] = useState({
     shuffledFlashcards: [],
     currentCardIndex: 0,
@@ -76,114 +105,149 @@ function FlashcardInput() {
     testInProgress: false,
   });
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        console.log('User signed in:', currentUser);
+      } else {
+        setUser(null);
+        console.log('User signed out');
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   // Load flashcards and test progress
   useEffect(() => {
-    const storedFlashcards = loadDeckFlashcards(deckName);
-    setFlashcards(storedFlashcards);
-
-    const testProgress = loadFromLocalStorage(`${deckName}-testInProgress`, false);
-    setTestState((prevState) => ({ ...prevState, testInProgress: testProgress }));
-  }, [deckName]);
-
-  // Save shuffleEnabled to local storage
+    const fetchFlashcards = async () => {
+      if (user) {
+        const storedFlashcards = await loadDeckFlashcards(user.uid, deckName);
+        setFlashcards(storedFlashcards);
+  
+        const testProgress = await loadFromFirestore(`users/${user.uid}/decks/${deckName}-test`, { testInProgress: false });
+        setTestState((prevState) => ({ ...prevState, ...testProgress }));
+      }
+    };
+  
+    if (user) {
+      fetchFlashcards();
+    }
+  }, [deckName, user]);
+  
+  // Save shuffleEnabled to Firestore
   useEffect(() => {
-    saveToLocalStorage(`${deckName}-shuffleEnabled`, shuffleEnabled);
-  }, [shuffleEnabled, deckName]);
+    const saveShuffleEnabled = async () => {
+      if (user) {
+        await saveToFirestore(`users/${user.uid}/settings/${deckName}`, { shuffleEnabled });
 
-  const startOver = () => {
-    const keysToRemove = [
-      `${deckName}-shuffled`,
-      `${deckName}-currentIndex`,
-      `${deckName}-correctAnswers`,
-      `${deckName}-correctlyAnsweredQuestions`,
-      `${deckName}-hintUsed`,
-      `${deckName}-typedAnswer`,
-      `${deckName}-wasCorrect`,
-      `${deckName}-comparisonResult`,
-      `${deckName}-feedback`,
-      `${deckName}-showAnswer`,
-      `${deckName}-isRecording`,
-      `${deckName}-lastCorrectAnswer`,
-      `${deckName}-showFeedback`,
-      `${deckName}-isFeedbackLoading`,
-      `${deckName}-hasFeedbackBeenProvided`,
-      `${deckName}-newAnswerProvided`,
-      `${deckName}-finished`,
-      `${deckName}-typingMode`,
-      `${deckName}-score`,
-      `${deckName}-hintsUsed`,
-      `${deckName}-wrongAttempts`,
-      `${deckName}-feedbacks`,
-      `${deckName}-showFeedbacks`,
-      `${deckName}-feedbackButtonDisabled`,
-      `${deckName}-questionStates`,
-      `${deckName}-sendButtonDisabled`,
-      `${deckName}-testInProgress`,
-    ];
+      }
+    };
+    saveShuffleEnabled();
+  }, [shuffleEnabled, deckName, user]);
+  
 
-    keysToRemove.forEach(removeFromLocalStorage);
-
-    setShowDisclaimer(false);
-    setTestState({
-      shuffledFlashcards: [],
-      currentCardIndex: 0,
-      correctlyAnsweredQuestions: new Set(),
-      correctAnswers: 0,
-      hintUsed: false,
-      typedAnswer: '',
-      wasCorrect: false,
-      comparisonResult: '',
-      feedback: '',
-      showAnswer: false,
-      isRecording: false,
-      lastCorrectAnswer: '',
-      showFeedback: false,
-      isFeedbackLoading: false,
-      hasFeedbackBeenProvided: false,
-      newAnswerProvided: false,
-      finished: false,
-      typingMode: false,
-      score: 0,
-      hintsUsed: 0,
-      wrongAttempts: 0,
-      questionStates: {},
-      testInProgress: false,
-    });
-
-    const storedFlashcards = loadDeckFlashcards(deckName);
-    setFlashcards(storedFlashcards);
-    setTestState((prevState) => ({ ...prevState, shuffledFlashcards: storedFlashcards }));
-    saveToLocalStorage(`${deckName}-shuffled`, storedFlashcards);
-    saveToLocalStorage(`${deckName}-currentIndex`, 0);
-
-    navigate(`/test/${deckName}`);
+  const startOver = async () => {
+    if (user) {
+      const keysToRemove = [
+        `${deckName}-shuffled`,
+        `${deckName}-currentIndex`,
+        `${deckName}-correctAnswers`,
+        `${deckName}-correctlyAnsweredQuestions`,
+        `${deckName}-hintUsed`,
+        `${deckName}-typedAnswer`,
+        `${deckName}-wasCorrect`,
+        `${deckName}-comparisonResult`,
+        `${deckName}-feedback`,
+        `${deckName}-showAnswer`,
+        `${deckName}-isRecording`,
+        `${deckName}-lastCorrectAnswer`,
+        `${deckName}-showFeedback`,
+        `${deckName}-isFeedbackLoading`,
+        `${deckName}-hasFeedbackBeenProvided`,
+        `${deckName}-newAnswerProvided`,
+        `${deckName}-finished`,
+        `${deckName}-typingMode`,
+        `${deckName}-score`,
+        `${deckName}-hintsUsed`,
+        `${deckName}-wrongAttempts`,
+        `${deckName}-feedbacks`,
+        `${deckName}-showFeedbacks`,
+        `${deckName}-feedbackButtonDisabled`,
+        `${deckName}-questionStates`,
+        `${deckName}-sendButtonDisabled`,
+        `${deckName}-testInProgress`,
+      ];
+  
+      for (const key of keysToRemove) {
+        await removeFromFirestore(`users/${user.uid}/settings`, key);
+      }
+  
+      setShowDisclaimer(false);
+      setTestState({
+        shuffledFlashcards: [],
+        currentCardIndex: 0,
+        correctlyAnsweredQuestions: new Set(),
+        correctAnswers: 0,
+        hintUsed: false,
+        typedAnswer: '',
+        wasCorrect: false,
+        comparisonResult: '',
+        feedback: '',
+        showAnswer: false,
+        isRecording: false,
+        lastCorrectAnswer: '',
+        showFeedback: false,
+        isFeedbackLoading: false,
+        hasFeedbackBeenProvided: false,
+        newAnswerProvided: false,
+        finished: false,
+        typingMode: false,
+        score: 0,
+        hintsUsed: 0,
+        wrongAttempts: 0,
+        questionStates: {},
+        testInProgress: false,
+      });
+  
+      const storedFlashcards = await loadDeckFlashcards(user.uid, deckName);
+      setFlashcards(storedFlashcards);
+      setTestState((prevState) => ({ ...prevState, shuffledFlashcards: storedFlashcards }));
+  
+      await saveToFirestore(`users/${user.uid}/settings`, `${deckName}-shuffled`, { shuffled: storedFlashcards });
+      await saveToFirestore(`users/${user.uid}/settings`, `${deckName}-currentIndex`, { currentIndex: 0 });
+  
+      navigate(`/test/${deckName}`);
+    }
   };
+  
 
-  const continueTest = () => {
+  const continueTest = async () => {
     setShowDisclaimer(false);
-    const storedFlashcards = loadDeckFlashcards(deckName);
-    const storedShuffled = loadFromLocalStorage(`${deckName}-shuffled`, storedFlashcards);
-    const storedCurrentIndex = loadFromLocalStorage(`${deckName}-currentIndex`, 0);
-    const storedCorrectlyAnsweredQuestions = new Set(loadFromLocalStorage(`${deckName}-correctlyAnsweredQuestions`, []));
-    const storedCorrectAnswers = loadFromLocalStorage(`${deckName}-correctAnswers`, 0);
-    const storedHintUsed = loadFromLocalStorage(`${deckName}-hintUsed`, false);
-    const storedTypedAnswer = loadFromLocalStorage(`${deckName}-typedAnswer`, '');
-    const storedWasCorrect = loadFromLocalStorage(`${deckName}-wasCorrect`, false);
-    const storedComparisonResult = loadFromLocalStorage(`${deckName}-comparisonResult`, '');
-    const storedFeedback = loadFromLocalStorage(`${deckName}-feedback`, '');
-    const storedShowAnswer = loadFromLocalStorage(`${deckName}-showAnswer`, false);
-    const storedIsRecording = loadFromLocalStorage(`${deckName}-isRecording`, false);
-    const storedLastCorrectAnswer = loadFromLocalStorage(`${deckName}-lastCorrectAnswer`, '');
-    const storedShowFeedback = loadFromLocalStorage(`${deckName}-showFeedback`, false);
-    const storedIsFeedbackLoading = loadFromLocalStorage(`${deckName}-isFeedbackLoading`, false);
-    const storedHasFeedbackBeenProvided = loadFromLocalStorage(`${deckName}-hasFeedbackBeenProvided`, false);
-    const storedNewAnswerProvided = loadFromLocalStorage(`${deckName}-newAnswerProvided`, false);
-    const storedFinished = loadFromLocalStorage(`${deckName}-finished`, false);
-    const storedTypingMode = loadFromLocalStorage(`${deckName}-typingMode`, false);
-    const storedScore = loadFromLocalStorage(`${deckName}-score`, 0);
-    const storedHintsUsed = loadFromLocalStorage(`${deckName}-hintsUsed`, 0);
-    const storedWrongAttempts = loadFromLocalStorage(`${deckName}-wrongAttempts`, 0);
-    const storedQuestionStates = loadFromLocalStorage(`${deckName}-questionStates`, {});
+
+    const storedFlashcards = await loadDeckFlashcards(deckName);
+    const storedShuffled = await loadFromFirestore(`${deckName}-shuffled`, storedFlashcards);
+    const storedCurrentIndex = await loadFromFirestore(`${deckName}-currentIndex`, 0);
+    const storedCorrectlyAnsweredQuestions = new Set(await loadFromFirestore(`${deckName}-correctlyAnsweredQuestions`, []));
+    const storedCorrectAnswers = await loadFromFirestore(`${deckName}-correctAnswers`, 0);
+    const storedHintUsed = await loadFromFirestore(`${deckName}-hintUsed`, false);
+    const storedTypedAnswer = await loadFromFirestore(`${deckName}-typedAnswer`, '');
+    const storedWasCorrect = await loadFromFirestore(`${deckName}-wasCorrect`, false);
+    const storedComparisonResult = await loadFromFirestore(`${deckName}-comparisonResult`, '');
+    const storedFeedback = await loadFromFirestore(`${deckName}-feedback`, '');
+    const storedShowAnswer = await loadFromFirestore(`${deckName}-showAnswer`, false);
+    const storedIsRecording = await loadFromFirestore(`${deckName}-isRecording`, false);
+    const storedLastCorrectAnswer = await loadFromFirestore(`${deckName}-lastCorrectAnswer`, '');
+    const storedShowFeedback = await loadFromFirestore(`${deckName}-showFeedback`, false);
+    const storedIsFeedbackLoading = await loadFromFirestore(`${deckName}-isFeedbackLoading`, false);
+    const storedHasFeedbackBeenProvided = await loadFromFirestore(`${deckName}-hasFeedbackBeenProvided`, false);
+    const storedNewAnswerProvided = await loadFromFirestore(`${deckName}-newAnswerProvided`, false);
+    const storedFinished = await loadFromFirestore(`${deckName}-finished`, false);
+    const storedTypingMode = await loadFromFirestore(`${deckName}-typingMode`, false);
+    const storedScore = await loadFromFirestore(`${deckName}-score`, 0);
+    const storedHintsUsed = await loadFromFirestore(`${deckName}-hintsUsed`, 0);
+    const storedWrongAttempts = await loadFromFirestore(`${deckName}-wrongAttempts`, 0);
+    const storedQuestionStates = await loadFromFirestore(`${deckName}-questionStates`, {});
 
     setFlashcards(storedFlashcards);
     setTestState((prevState) => ({
@@ -216,34 +280,19 @@ function FlashcardInput() {
     navigate(`/test/${deckName}`);
   };
 
-  const handleTestYourself = () => {
+  const handleTestYourself = async () => {
     if (shuffleEnabled) {
       const shuffled = shuffleArray(flashcards);
-      saveToLocalStorage(`${deckName}-shuffled`, shuffled);
+      await saveToFirestore('settings', `${deckName}-shuffled`, { shuffled });
       setTestState((prevState) => ({ ...prevState, shuffledFlashcards: shuffled }));
     } else {
-      saveToLocalStorage(`${deckName}-shuffled`, flashcards);
+      await saveToFirestore('settings', `${deckName}-shuffled`, { shuffled: flashcards });
       setTestState((prevState) => ({ ...prevState, shuffledFlashcards: flashcards }));
     }
+    await saveToFirestore('settings', `${deckName}-currentIndex`, { currentIndex: 0 });
     setTestState((prevState) => ({ ...prevState, currentCardIndex: 0 }));
     navigate(`/test/${deckName}`);
   };
-
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
 
   const shuffleArray = (array) => {
     const shuffledArray = [...array];
@@ -255,21 +304,25 @@ function FlashcardInput() {
   };
 
   const handleSave = () => {
-    saveDeckFlashcards(deckName, flashcards);
-    setEditIndex(null);
+    if (user) {
+      saveDeckFlashcards(user.uid, deckName, flashcards);
+      setEditIndex(null);
+    }
   };
+  
 
   const handleEdit = (index) => {
     setEditIndex(index);
   };
 
   const handleDelete = (index) => {
-    if (window.confirm('Are you sure you want to delete this flashcard? This action cannot be undone.')) {
+    if (user && window.confirm('Are you sure you want to delete this flashcard? This action cannot be undone.')) {
       const newFlashcards = flashcards.filter((_, i) => i !== index);
       setFlashcards(newFlashcards);
-      saveDeckFlashcards(deckName, newFlashcards);
+      saveDeckFlashcards(user.uid, deckName, newFlashcards);
     }
   };
+  
 
   const handleRenameDeck = () => {
     if (newDeckName && newDeckName !== deckName) {
@@ -299,8 +352,10 @@ function FlashcardInput() {
     const newFlashcards = [...flashcards];
     newFlashcards[index][field] = value;
     setFlashcards(newFlashcards);
-    saveDeckFlashcards(deckName, newFlashcards);
+    // Remove the saveDeckFlashcards call from here
   };
+
+
 
   return (
     <div className="flashcard-input">
