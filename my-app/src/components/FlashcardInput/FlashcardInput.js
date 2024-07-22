@@ -7,17 +7,19 @@ import './FlashcardInput.css';
 
 // Utility functions for Firestore operations
 const loadFromFirestore = async (docPath, defaultValue) => {
+  console.log("Loading data from Firestore document:", docPath);
   try {
     const docRef = doc(db, ...docPath.split('/'));
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
+      console.log("Document data:", docSnap.data());
       return docSnap.data();
     } else {
-      console.warn(`No such document at: ${docPath}`);
+      console.warn("No such document at:", docPath);
       return defaultValue;
     }
   } catch (error) {
-    console.error(`Error loading data from Firestore document: ${docPath}`, error);
+    console.error("Error loading data from Firestore document:", docPath, error);
     return defaultValue;
   }
 };
@@ -45,13 +47,13 @@ const removeFromFirestore = async (docPath) => {
 };
 
 const loadDeckFlashcards = async (userId, deckName) => {
-  console.log(`Loading flashcards for user: ${userId}, deck: ${deckName}`);
-  const deckData = await loadFromFirestore(`users/${userId}/decks/${deckName}`, { flashcards: [] });
+  const docPath = `users/${userId}/decks/${deckName}`;
+  console.log("Loading flashcards for user:", userId, "deck:", deckName);
+  const deckData = await loadFromFirestore(docPath, { flashcards: [] });
   const flashcards = deckData.flashcards || [];
-  console.log(`Flashcards successfully loaded for user: ${userId}, deck: ${deckName}`, flashcards);
+  console.log("Flashcards successfully loaded:", flashcards);
   return flashcards;
 };
-
 
 const saveDeckFlashcards = async (userId, deckName, flashcards) => {
   const deckData = { flashcards };
@@ -120,17 +122,26 @@ function FlashcardInput() {
         console.log('User signed out');
       }
     });
+
     return () => unsubscribe();
   }, []);
 
-  // Load flashcards and test progress
   useEffect(() => {
     const fetchFlashcards = async () => {
       if (user) {
+        console.log("User ID:", user.uid);
+        console.log("Deck Name:", deckName);
+  
+        // Fetch flashcards
         const storedFlashcards = await loadDeckFlashcards(user.uid, deckName);
+        console.log("Fetched Flashcards:", storedFlashcards);
         setFlashcards(storedFlashcards);
   
-        const testProgress = await loadFromFirestore(`users/${user.uid}/decks/${deckName}-test`, { testInProgress: false });
+        // Fetch test progress
+        const testProgressPath = `users/${user.uid}/decks/${deckName}-test`;
+        console.log("Fetching test progress from:", testProgressPath);
+        const testProgress = await loadFromFirestore(testProgressPath, { testInProgress: false });
+        console.log("Fetched Test Progress:", testProgress);
         setTestState((prevState) => ({ ...prevState, ...testProgress }));
       }
     };
@@ -139,6 +150,7 @@ function FlashcardInput() {
       fetchFlashcards();
     }
   }, [deckName, user]);
+  
   
   // Save shuffleEnabled to Firestore
   useEffect(() => {
