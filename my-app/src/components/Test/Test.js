@@ -1,17 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import './Test.css';
+import { collection, getDocs, setDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../../firebase/firebase'; // Adjust the path as needed
+import { onAuthStateChanged } from 'firebase/auth';
 
-
-
-// Helper function to shuffle an array
-const shuffleArray = (array) => {
-  let shuffledArray = array.slice();
-  for (let i = shuffledArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+// Utility functions for Firestore operations
+const loadFromFirestore = async (docPath, defaultValue) => {
+  try {
+    const docRef = doc(db, ...docPath.split('/'));
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      console.warn(`No such document at: ${docPath}`);
+      return defaultValue;
+    }
+  } catch (error) {
+    console.error(`Error loading data from Firestore document: ${docPath}`, error);
+    return defaultValue;
   }
-  return shuffledArray;
+};
+
+const saveToFirestore = async (docPath, value) => {
+  try {
+    const docRef = doc(db, ...docPath.split('/'));
+    console.log(`Saving data to Firestore document: ${docPath}`, value);
+    await setDoc(docRef, value);
+    console.log(`Data saved to Firestore document: ${docPath}`);
+  } catch (error) {
+    console.error(`Error saving data to Firestore document: ${docPath}`, error);
+  }
+};
+
+const removeFromFirestore = async (docPath) => {
+  try {
+    const docRef = doc(db, ...docPath.split('/'));
+    console.log(`Removing document from Firestore: ${docPath}`);
+    await deleteDoc(docRef);
+    console.log(`Document removed from Firestore: ${docPath}`);
+  } catch (error) {
+    console.error(`Error removing document from Firestore: ${docPath}`, error);
+  }
 };
 
 const Test = () => {
@@ -49,107 +79,101 @@ const Test = () => {
   const [feedbackButtonDisabled, setFeedbackButtonDisabled] = useState({});
   const [questionStates, setQuestionStates] = useState({});
   const [sendButtonDisabled, setSendButtonDisabled] = useState(false);
-
-  const [report, setReport] = useState({
-    hintsUsed: 0,
-    answersShown: 0,
-    multipleAttempts: 0,
-    answeredPerfectly: 0,
-  });
-
-  const HINT_DEDUCTION = 25;
-  const WRONG_ATTEMPT_DEDUCTION = 10;
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const storedFlashcards = loadFromLocalStorage(deckName, []);
-    const storedShuffled = loadFromLocalStorage(`${deckName}-shuffled`, storedFlashcards);
-    const storedCurrentIndex = loadFromLocalStorage(`${deckName}-currentIndex`, 0);
-    const storedCorrectlyAnsweredQuestions = new Set(loadFromLocalStorage(`${deckName}-correctlyAnsweredQuestions`, []));
-    const storedCorrectAnswers = loadFromLocalStorage(`${deckName}-correctAnswers`, 0);
-    const storedHintUsed = loadFromLocalStorage(`${deckName}-hintUsed`, false);
-    const storedHint = loadFromLocalStorage(`${deckName}-hint`, '');
-    const storedTypedAnswer = loadFromLocalStorage(`${deckName}-typedAnswer`, '');
-    const storedWasCorrect = loadFromLocalStorage(`${deckName}-wasCorrect`, false);
-    const storedComparisonResult = loadFromLocalStorage(`${deckName}-comparisonResult`, '');
-    const storedFeedback = loadFromLocalStorage(`${deckName}-feedback`, '');
-    const storedShowAnswer = loadFromLocalStorage(`${deckName}-showAnswer`, false);
-    const storedIsRecording = loadFromLocalStorage(`${deckName}-isRecording`, false);
-    const storedLastCorrectAnswer = loadFromLocalStorage(`${deckName}-lastCorrectAnswer`, '');
-    const storedShowFeedback = loadFromLocalStorage(`${deckName}-showFeedback`, false);
-    const storedIsFeedbackLoading = loadFromLocalStorage(`${deckName}-isFeedbackLoading`, false);
-    const storedHasFeedbackBeenProvided = loadFromLocalStorage(`${deckName}-hasFeedbackBeenProvided`, false);
-    const storedNewAnswerProvided = loadFromLocalStorage(`${deckName}-newAnswerProvided`, false);
-    const storedFinished = loadFromLocalStorage(`${deckName}-finished`, false);
-    const storedTypingMode = loadFromLocalStorage(`${deckName}-typingMode`, false);
-    const storedScore = loadFromLocalStorage(`${deckName}-score`, 0);
-    const storedHintsUsed = loadFromLocalStorage(`${deckName}-hintsUsed`, 0);
-    const storedWrongAttempts = loadFromLocalStorage(`${deckName}-wrongAttempts`, 0);
-    const storedFeedbacks = loadFromLocalStorage(`${deckName}-feedbacks`, {});
-    const storedShowFeedbacks = loadFromLocalStorage(`${deckName}-showFeedbacks`, {});
-    const storedFeedbackButtonDisabled = loadFromLocalStorage(`${deckName}-feedbackButtonDisabled`, {});
-    const storedQuestionStates = loadFromLocalStorage(`${deckName}-questionStates`, {});
-    const storedSendButtonDisabled = loadFromLocalStorage(`${deckName}-sendButtonDisabled`, false);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        console.log('User signed in:', currentUser);
+      } else {
+        setUser(null);
+        console.log('User signed out');
+      }
+    });
+  
+    return () => unsubscribe();
+  }, []);
 
-    setFlashcards(storedFlashcards);
-    setShuffledFlashcards(storedShuffled);
-    setCurrentCardIndex(storedCurrentIndex);
-    setCorrectlyAnsweredQuestions(storedCorrectlyAnsweredQuestions);
-    setCorrectAnswers(storedCorrectAnswers);
-    setHintUsed(storedHintUsed);
-    setHint(storedHint);
-    setTypedAnswer(storedTypedAnswer);
-    setWasCorrect(storedWasCorrect);
-    setComparisonResult(storedComparisonResult);
-    setFeedback(storedFeedback);
-    setShowAnswer(storedShowAnswer);
-    setIsRecording(storedIsRecording);
-    setLastCorrectAnswer(storedLastCorrectAnswer);
-    setShowFeedback(storedShowFeedback);
-    setIsFeedbackLoading(storedIsFeedbackLoading);
-    setHasFeedbackBeenProvided(storedHasFeedbackBeenProvided);
-    setNewAnswerProvided(storedNewAnswerProvided);
-    setFinished(storedFinished);
-    setTypingMode(storedTypingMode);
-    setScore(storedScore);
-    setHintsUsed(storedHintsUsed);
-    setWrongAttempts(storedWrongAttempts);
-    setFeedbacks(storedFeedbacks);
-    setShowFeedbacks(storedShowFeedbacks);
-    setFeedbackButtonDisabled(storedFeedbackButtonDisabled);
-    setQuestionStates(storedQuestionStates);
-    loadQuestionState(storedCurrentIndex);
-    setTypedAnswer(storedTypedAnswer);
-    setSendButtonDisabled(storedSendButtonDisabled);
+  useEffect(() => {
+    const fetchFirestoreData = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+  
+      const docRef = (suffix) => `users/${user.uid}/settings/${deckName}-${suffix}`;
+  
+      try {
+        const storedFlashcards = await loadFromFirestore(`users/${user.uid}/decks/${deckName}`, []);
+        console.log("Stored Flashcards:", storedFlashcards); // Add this line
+        const storedShuffled = await loadFromFirestore(docRef('shuffled'), storedFlashcards);
+        const storedCurrentIndex = await loadFromFirestore(docRef('currentIndex'), 0);
+        const storedCorrectlyAnsweredQuestions = new Set(await loadFromFirestore(docRef('correctlyAnsweredQuestions'), []));
+        const storedCorrectAnswers = await loadFromFirestore(docRef('correctAnswers'), 0);
+        const storedHintUsed = await loadFromFirestore(docRef('hintUsed'), false);
+        const storedHint = await loadFromFirestore(docRef('hint'), '');
+        const storedTypedAnswer = await loadFromFirestore(docRef('typedAnswer'), '');
+        const storedWasCorrect = await loadFromFirestore(docRef('wasCorrect'), false);
+        const storedComparisonResult = await loadFromFirestore(docRef('comparisonResult'), '');
+        const storedFeedback = await loadFromFirestore(docRef('feedback'), '');
+        const storedShowAnswer = await loadFromFirestore(docRef('showAnswer'), false);
+        const storedIsRecording = await loadFromFirestore(docRef('isRecording'), false);
+        const storedLastCorrectAnswer = await loadFromFirestore(docRef('lastCorrectAnswer'), '');
+        const storedShowFeedback = await loadFromFirestore(docRef('showFeedback'), false);
+        const storedIsFeedbackLoading = await loadFromFirestore(docRef('isFeedbackLoading'), false);
+        const storedHasFeedbackBeenProvided = await loadFromFirestore(docRef('hasFeedbackBeenProvided'), false);
+        const storedNewAnswerProvided = await loadFromFirestore(docRef('newAnswerProvided'), false);
+        const storedFinished = await loadFromFirestore(docRef('finished'), false);
+        const storedTypingMode = await loadFromFirestore(docRef('typingMode'), false);
+        const storedScore = await loadFromFirestore(docRef('score'), 0);
+        const storedHintsUsed = await loadFromFirestore(docRef('hintsUsed'), 0);
+        const storedWrongAttempts = await loadFromFirestore(docRef('wrongAttempts'), 0);
+        const storedFeedbacks = await loadFromFirestore(docRef('feedbacks'), {});
+        const storedShowFeedbacks = await loadFromFirestore(docRef('showFeedbacks'), {});
+        const storedFeedbackButtonDisabled = await loadFromFirestore(docRef('feedbackButtonDisabled'), {});
+        const storedQuestionStates = await loadFromFirestore(docRef('questionStates'), {});
+        const storedSendButtonDisabled = await loadFromFirestore(docRef('sendButtonDisabled'), false);
+  
+        setFlashcards(storedFlashcards);
+        setShuffledFlashcards(storedShuffled);
+        setCurrentCardIndex(storedCurrentIndex);
+        setCorrectlyAnsweredQuestions(storedCorrectlyAnsweredQuestions);
+        setCorrectAnswers(storedCorrectAnswers);
+        setHintUsed(storedHintUsed);
+        setHint(storedHint);
+        setTypedAnswer(storedTypedAnswer);
+        setWasCorrect(storedWasCorrect);
+        setComparisonResult(storedComparisonResult);
+        setFeedback(storedFeedback);
+        setShowAnswer(storedShowAnswer);
+        setIsRecording(storedIsRecording);
+        setLastCorrectAnswer(storedLastCorrectAnswer);
+        setShowFeedback(storedShowFeedback);
+        setIsFeedbackLoading(storedIsFeedbackLoading);
+        setHasFeedbackBeenProvided(storedHasFeedbackBeenProvided);
+        setNewAnswerProvided(storedNewAnswerProvided);
+        setFinished(storedFinished);
+        setTypingMode(storedTypingMode);
+        setScore(storedScore);
+        setHintsUsed(storedHintsUsed);
+        setWrongAttempts(storedWrongAttempts);
+        setFeedbacks(storedFeedbacks);
+        setShowFeedbacks(storedShowFeedbacks);
+        setFeedbackButtonDisabled(storedFeedbackButtonDisabled);
+        setQuestionStates(storedQuestionStates);
+        setSendButtonDisabled(storedSendButtonDisabled);
+        setFlashcards(storedFlashcards);
+        console.log("Flashcards state after set:", storedFlashcards); // Add this line
+      } catch (error) {
+        console.error("Error fetching data: ", error);
+      }
+    };
+  
+    if (user && deckName) {
+      fetchFirestoreData();
+    }
+  }, [user, deckName]);
+  
 
-  }, [deckName, location.pathname, navigate]);
-
-
-
-    // Utility functions for local storage operations
-  const loadFromLocalStorage = (key, defaultValue) => {
-    const storedValue = localStorage.getItem(key);
-    return storedValue ? JSON.parse(storedValue) : defaultValue;
-  };
-
-  const saveToLocalStorage = (key, value) => {
-    localStorage.setItem(key, JSON.stringify(value));
-  };
-
-  const removeFromLocalStorage = (key) => {
-    localStorage.removeItem(key);
-  };
-
-  const updateQuestionStates = (deckName, questionStates) => {
-    saveToLocalStorage(`${deckName}-questionStates`, questionStates);
-  };
-
-  const updateCorrectlyAnsweredQuestions = (deckName, correctlyAnsweredQuestions) => {
-    saveToLocalStorage(`${deckName}-correctlyAnsweredQuestions`, [...correctlyAnsweredQuestions]);
-  };
-
-  const loadTypedAnswer = (deckName, index) => {
-    return loadFromLocalStorage(`$${deckName}-typedAnswer-$${index}`, '');
-  };
 
 
   const localStorageKeys = {
@@ -182,9 +206,9 @@ const Test = () => {
   };
 
 
-  const saveProgress = () => {
+  const saveProgress = async () => {
     console.log("saveProgress called");
-  
+    
     const dataToSave = {
       currentCardIndex,
       correctAnswers,
@@ -214,49 +238,63 @@ const Test = () => {
       testInProgress: true
     };
   
-    // Save progress data to local storage
-    saveMultipleToLocalStorage(deckName, dataToSave, currentCardIndex);
-  
+    // Save progress data to Firestore
+    await saveToFirestore(`users/${user.uid}/settings/${deckName}-progress`, dataToSave);
+    
     console.log("Progress saved");
   };
+  
 
-  const resetState = () => {
-    Object.keys(localStorageKeys).forEach(key => {
+  const resetState = async () => {
+    Object.keys(localStorageKeys).forEach(async key => {
       const setterFunction = `set${key.charAt(0).toUpperCase() + key.slice(1)}`;
       if (typeof window[setterFunction] === 'function') {
         window[setterFunction](localStorageKeys[key]);
       }
     });
+  
+    await removeFromFirestore(`users/${user.uid}/settings/${deckName}-progress`);
   };
 
-  const saveMultipleToLocalStorage = (deckName, data, currentCardIndex) => {
-    Object.keys(data).forEach(key => {
-      localStorage.setItem(`${deckName}-${key}`, JSON.stringify(data[key]));
-    });
-    localStorage.setItem(`$${deckName}-typedAnswer-$${currentCardIndex}`, JSON.stringify(data['typedAnswer']));
-  };
-
-  const removeMultipleFromLocalStorage = (deckName) => {
-    Object.keys(localStorageKeys).forEach(key => removeFromLocalStorage(`${deckName}-${key}`));
+  const saveMultipleToFirestore = async (deckName, data, currentCardIndex) => {
+    await saveToFirestore(`users/${user.uid}/settings/${deckName}-progress`, data);
+    await saveToFirestore(`users/${user.uid}/settings/${deckName}-typedAnswer-${currentCardIndex}`, { typedAnswer: data.typedAnswer });
   };
   
-  const saveProgressAndNavigate = () => {
-    saveProgress();
+  const removeMultipleFromFirestore = async (deckName) => {
+    await removeFromFirestore(`users/${user.uid}/settings/${deckName}-progress`);
+    
+    shuffledFlashcards.forEach(async (_, index) => {
+      await removeFromFirestore(`users/${user.uid}/settings/${deckName}-typedAnswer-${index}`);
+    });
+  };
+
+  const updateQuestionStates = async (deckName, questionStates) => {
+    await saveToFirestore(`users/${user.uid}/settings/${deckName}-questionStates`, questionStates);
+  };
+  
+  const updateCorrectlyAnsweredQuestions = async (deckName, correctlyAnsweredQuestions) => {
+    await saveToFirestore(`users/${user.uid}/settings/${deckName}-correctlyAnsweredQuestions`, [...correctlyAnsweredQuestions]);
+  };
+
+  const loadTypedAnswer = async (deckName, index) => {
+    const data = await loadFromFirestore(`users/${user.uid}/settings/${deckName}-typedAnswer-${index}`, { typedAnswer: '' });
+    return data.typedAnswer;
+  };
+  
+
+  const saveProgressAndNavigate = async () => {
+    await saveProgress();
+    navigate(`/deck/${deckName}`);
+  };
+  
+  const wipeProgressAndNavigate = async () => {
+    await removeMultipleFromFirestore(deckName);
     navigate(`/deck/${deckName}`);
   };
 
-  const wipeProgressAndNavigate = () => {
-    removeMultipleFromLocalStorage(deckName);
-  
-    shuffledFlashcards.forEach((_, index) => {
-      removeFromLocalStorage(`$${deckName}-typedAnswer-$${index}`);
-    });
-  
-    navigate(`/deck/${deckName}`);
-  };
 
-
-  const handleFinish = () => {
+  const handleFinish = async () => {
     if (correctlyAnsweredQuestions.size === shuffledFlashcards.length) {
       const finalScore = calculateFinalScore();
       const scoreEntry = {
@@ -273,22 +311,23 @@ const Test = () => {
       setFinished(true);
   
       // Save the final score with details
-      const storedScores = loadFromLocalStorage('scores', {});
+      const storedScores = await loadFromFirestore(`users/${user.uid}/settings/scores`, {});
       const updatedScores = {
         ...storedScores,
         [deckName]: [...(storedScores[deckName] || []), scoreEntry]
       };
-      saveToLocalStorage('scores', updatedScores);
+      await saveToFirestore(`users/${user.uid}/settings/scores`, updatedScores);
   
-      // Clear related local storage items
-      Object.keys(localStorageKeys).forEach(key => removeFromLocalStorage(`${deckName}-${key}`));
-  
+      // Clear related Firestore items
+      await removeFromFirestore(`users/${user.uid}/settings/${deckName}-progress`);
+      await removeFromFirestore(`users/${user.uid}/settings/${deckName}-typedAnswer-${currentCardIndex}`);
+      
       generateReportContent();
     } else {
       alert("You need to answer all questions correctly before finishing the test.");
     }
   };
-
+  
   const questionKeysSliceIndices = {
     start: 8,
     end: 17
@@ -305,48 +344,48 @@ const Test = () => {
     });
   };
   
-  const loadQuestionState = (index) => {
+  const loadQuestionState = async (index) => {
     const state = questionStates[index];
     const questionKeys = Object.keys(localStorageKeys).slice(questionKeysSliceIndices.start, questionKeysSliceIndices.end);
     const defaultValues = { hintsUsed: 0, wrongAttempts: 0 };
   
     if (state) {
       resetKeys(questionKeys, state, defaultValues);
-      setTypedAnswer(loadFromLocalStorage(`$${deckName}-typedAnswer-$${index}`, ''));
+      setTypedAnswer(await loadTypedAnswer(deckName, index));
     } else {
       resetKeys(questionKeys, null, defaultValues);
       setTypedAnswer('');
     }
-  };
+  };  
   
-  const preserveCurrentQuestionState = () => {
-    const currentQuestionState = {};
-    const questionKeys = Object.keys(localStorageKeys).slice(questionKeysSliceIndices.start, questionKeysSliceIndices.end);
+const preserveCurrentQuestionState = async () => {
+  const currentQuestionState = {};
+  const questionKeys = Object.keys(localStorageKeys).slice(questionKeysSliceIndices.start, questionKeysSliceIndices.end);
+
+  questionKeys.forEach(key => {
+    currentQuestionState[key] = window[key];
+  });
+
+  const updatedQuestionStates = { ...questionStates, [currentCardIndex]: currentQuestionState };
+  setQuestionStates(updatedQuestionStates);
+  await saveToFirestore(`users/${user.uid}/settings/${deckName}-questionStates`, updatedQuestionStates);
+};
+
+  const retakeTest = async () => {
+    await removeMultipleFromFirestore(deckName);
   
-    questionKeys.forEach(key => {
-      currentQuestionState[key] = window[key];
-    });
-  
-    const updatedQuestionStates = { ...questionStates, [currentCardIndex]: currentQuestionState };
-    setQuestionStates(updatedQuestionStates);
-    saveToLocalStorage(`${deckName}-questionStates`, updatedQuestionStates);
-  };
-  
-  const retakeTest = () => {
-    removeMultipleFromLocalStorage(deckName);
-  
-    flashcards.forEach((_, index) => {
-      removeFromLocalStorage(`$${deckName}-typedAnswer-$${index}`);
-      removeFromLocalStorage(`${deckName}-feedbackButtonDisabled-${index}`);
-      removeFromLocalStorage(`${deckName}-showFeedbacks-${index}`);
-      removeFromLocalStorage(`${deckName}-questionStates-${index}`);
+    flashcards.forEach(async (_, index) => {
+      await removeFromFirestore(`users/${user.uid}/settings/${deckName}-typedAnswer-${index}`);
+      await removeFromFirestore(`users/${user.uid}/settings/${deckName}-feedbackButtonDisabled-${index}`);
+      await removeFromFirestore(`users/${user.uid}/settings/${deckName}-showFeedbacks-${index}`);
+      await removeFromFirestore(`users/${user.uid}/settings/${deckName}-questionStates-${index}`);
     });
   
     resetState();
     setFlashcards([]);
     setShuffledFlashcards([]);
   
-    const storedFlashcards = loadFromLocalStorage(deckName, []);
+    const storedFlashcards = await loadFromFirestore(`users/${user.uid}/decks/${deckName}`, []);
     const shuffled = shuffleArray(storedFlashcards);
     setFlashcards(storedFlashcards);
     setShuffledFlashcards(shuffled);
@@ -356,10 +395,11 @@ const Test = () => {
       setLastCorrectAnswer('');
     }, 0);
   
-    saveProgress();
+    await saveProgress();
     setCurrentCardIndex(0);
-    loadQuestionState(0);
-    };
+    await loadQuestionState(0);
+  };
+  
 
 // with backend ^^^^
 // with backend ^^^^
@@ -377,6 +417,25 @@ const Test = () => {
 // with backend ^^^^
 // with backend ^^^^
 
+  const shuffleArray = (array) => {
+    let shuffledArray = array.slice();
+    for (let i = shuffledArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+    }
+    return shuffledArray;
+  };
+  
+    const [report, setReport] = useState({
+      hintsUsed: 0,
+      answersShown: 0,
+      multipleAttempts: 0,
+      answeredPerfectly: 0,
+    });
+  
+    const HINT_DEDUCTION = 25;
+    const WRONG_ATTEMPT_DEDUCTION = 10;
+  
 
 const navigateToCard = (index) => {
   preserveCurrentQuestionState();
@@ -823,10 +882,10 @@ return (
         Done
       </button>
     )}
-    {shuffledFlashcards.length > 0 ? (
+    {flashcards.length > 0 ? ( // Check flashcards length here
       finished ? (
         <div className="completion-message">
-          <h2>Way to go! You've reviewed all {totalCards} cards.</h2>
+          <h2>Way to go! You've reviewed all {shuffledFlashcards.length} cards.</h2>
           <div className="score-display">
             {generateReportContent()}
           </div>
@@ -843,50 +902,49 @@ return (
             {showAnswer && (
               <p><strong>A:</strong> {shuffledFlashcards[currentCardIndex].answer}</p>
             )}
-<div className="flashcard-buttons">
-  <button className="btn btn-secondary" onClick={() => setTypingMode(!typingMode)}>
-    {typingMode ? 'Voice Mode' : 'Type Mode'}
-  </button>
-  {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
-    <button className="btn btn-primary" onClick={startRecording}>Start</button>
-  )}
-  {typingMode && (
-    <>
-      <input
-        type="text"
-        value={typedAnswer}
-        onChange={(e) => {
-          setTypedAnswer(e.target.value);
-          localStorage.setItem(`$${deckName}-typedAnswer-$${currentCardIndex}`, e.target.value);
-        }}
-        placeholder="Type your answer here"
-      />
-      {renderSendButton()}
-    </>
-  )}
-  {!typingMode && isRecording && (
-    <button className="btn btn-danger" onClick={finishRecording}>Finish</button>
-  )}
-  {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
-    <button className="btn btn-primary" onClick={startRecording}>Try Again</button>
-  )}
-  {comparisonResult !== 'Correct' && !showAnswer && (
-    <button
-      className="btn btn-secondary"
-      onClick={getHint} 
-      disabled={hintUsed || questionStates[currentCardIndex]?.hintUsed}
-    >
-      Get Hint
-    </button>
-  )}
-  <button
-    className="btn btn-warning"
-    onClick={handleShowAnswer}
-  >
-    Show Answer
-  </button>
-</div>
-
+            <div className="flashcard-buttons">
+              <button className="btn btn-secondary" onClick={() => setTypingMode(!typingMode)}>
+                {typingMode ? 'Voice Mode' : 'Type Mode'}
+              </button>
+              {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
+                <button className="btn btn-primary" onClick={startRecording}>Start</button>
+              )}
+              {typingMode && (
+                <>
+                  <input
+                    type="text"
+                    value={typedAnswer}
+                    onChange={(e) => {
+                      setTypedAnswer(e.target.value);
+                      localStorage.setItem(`$${deckName}-typedAnswer-$${currentCardIndex}`, e.target.value);
+                    }}
+                    placeholder="Type your answer here"
+                  />
+                  {renderSendButton()}
+                </>
+              )}
+              {!typingMode && isRecording && (
+                <button className="btn btn-danger" onClick={finishRecording}>Finish</button>
+              )}
+              {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
+                <button className="btn btn-primary" onClick={startRecording}>Try Again</button>
+              )}
+              {comparisonResult !== 'Correct' && !showAnswer && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={getHint} 
+                  disabled={hintUsed || questionStates[currentCardIndex]?.hintUsed}
+                >
+                  Get Hint
+                </button>
+              )}
+              <button
+                className="btn btn-warning"
+                onClick={handleShowAnswer}
+              >
+                Show Answer
+              </button>
+            </div>
             {(hint || questionStates[currentCardIndex]?.hint) && (
               <p className="hint"><strong>Hint:</strong> {hint || questionStates[currentCardIndex]?.hint}</p>
             )}
@@ -904,16 +962,16 @@ return (
                 ) : (
                   <button className="btn btn-success" onClick={handleFinish}>Finish</button>
                 )}
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: true }));
-                      provideFeedback();
-                    }}
-                    disabled={isFeedbackLoading || (feedbackButtonDisabled[currentCardIndex] && hasFeedbackBeenProvided[currentCardIndex])}
-                  >
-                    {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
-                  </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowFeedbacks(prev => ({ ...prev, [currentCardIndex]: true }));
+                    provideFeedback();
+                  }}
+                  disabled={isFeedbackLoading || (feedbackButtonDisabled[currentCardIndex] && hasFeedbackBeenProvided[currentCardIndex])}
+                >
+                  {isFeedbackLoading ? 'Loading...' : 'Get Feedback'}
+                </button>
                 {showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
                   <div className="feedback-modal">
                     <p>{feedbacks[currentCardIndex]}</p>
@@ -924,28 +982,27 @@ return (
           </div>
           <div className="progress-tracker">
             <div className="progress-bar-container">
-              <div className="progress-bar" style={{ width: `${(correctlyAnsweredQuestions.size / totalCards) * 100}%` }}></div>
+              <div className="progress-bar" style={{ width: `${(correctlyAnsweredQuestions.size / shuffledFlashcards.length) * 100}%` }}></div>
             </div>
-            <p>{correctlyAnsweredQuestions.size} out of {totalCards} completed</p>
+            <p>{correctlyAnsweredQuestions.size} out of {shuffledFlashcards.length} completed</p>
           </div>
         </>
       )
     ) : (
       <p>No flashcards available in this deck.</p>
     )}
-{showSaveProgressModal && (
-  <div className="modal">
-    <div className="modal-content">
-      <p>Would you like to save your progress or wipe it?</p>
-      <button className="btn btn-primary" onClick={saveProgressAndNavigate}>Save Progress</button>
-      <button className="btn btn-secondary" onClick={wipeProgressAndNavigate}>Wipe Progress</button>
-      <button className="btn btn-danger" onClick={() => setShowSaveProgressModal(false)}>Cancel</button>
-    </div>
+    {showSaveProgressModal && (
+      <div className="modal">
+        <div className="modal-content">
+          <p>Would you like to save your progress or wipe it?</p>
+          <button className="btn btn-primary" onClick={saveProgressAndNavigate}>Save Progress</button>
+          <button className="btn btn-secondary" onClick={wipeProgressAndNavigate}>Wipe Progress</button>
+          <button className="btn btn-danger" onClick={() => setShowSaveProgressModal(false)}>Cancel</button>
+        </div>
+      </div>
+    )}
   </div>
-)}
-  </div>
-);  };
-  
-  
+);
+};
 
 export default Test;
