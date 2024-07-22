@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { collection, doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../../firebase/firebase'; // Ensure this path is correct
+import { onAuthStateChanged } from 'firebase/auth';
 import './Review.css';
+
 
 const Review = () => {
   const { deckName } = useParams();
@@ -18,11 +22,41 @@ const Review = () => {
   const [wasCorrect, setWasCorrect] = useState(false);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions] = useState(new Set());
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const storedFlashcards = JSON.parse(localStorage.getItem(deckName)) || [];
-    setFlashcards(storedFlashcards);
-  }, [deckName]);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        console.log('User signed in:', currentUser);
+      } else {
+        setUser(null);
+        console.log('User signed out');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const fetchFlashcards = async () => {
+      if (user) {
+        setIsLoading(true);
+        const flashcardsDocRef = doc(db, `users/${user.uid}/decks`, deckName);
+        const flashcardsDoc = await getDoc(flashcardsDocRef);
+
+        if (flashcardsDoc.exists()) {
+          const flashcardsData = flashcardsDoc.data().flashcards || [];
+          setFlashcards(flashcardsData);
+        } else {
+          console.error('No such document!');
+        }
+        setIsLoading(false);
+      }
+    };
+
+    fetchFlashcards();
+  }, [user, deckName]);
 
   const startRecording = async (setIsRecording, setMediaRecorder, processRecording) => {
     setIsRecording(true);

@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { collection, setDoc, doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../../firebase/firebase'; // Ensure this path is correct
+import { onAuthStateChanged } from 'firebase/auth';
 import './QuizMaker.css';
 
 const QuizMaker = () => {
@@ -10,28 +13,55 @@ const QuizMaker = () => {
   const [customInput, setCustomInput] = useState('');
   const [selectedSuggestions, setSelectedSuggestions] = useState(new Set());
   const [confirmed, setConfirmed] = useState(false);
+  const [user, setUser] = useState(null);
   const { deckName } = useParams();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        console.log('User signed in:', currentUser);
+      } else {
+        setUser(null);
+        console.log('User signed out');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   
   const handleGenerate = async () => {
-    if (localStorage.getItem(`${deckName}-generated`) === 'true') {
+    if (!user) {
+      alert('You need to be signed in to generate questions.');
+      return;
+    }
+
+    const deckDocRef = doc(db, `users/${user.uid}/decks`, deckName);
+    const deckDoc = await getDoc(deckDocRef);
+
+    if (deckDoc.exists() && deckDoc.data().generated) {
       alert('You have already generated questions for this deck.');
       return;
     }
 
 
-  const saveGeneratedQuestions = (generatedQuestions) => {
-    const limitedQuestions = generatedQuestions.slice(0, 10);
-    const flashcards = limitedQuestions.map(q => ({ question: q.question, answer: q.answer }));
-    localStorage.setItem(deckName, JSON.stringify(flashcards));
-    const decks = JSON.parse(localStorage.getItem('decks')) || {};
-    decks[deckName] = flashcards.length;
-    localStorage.setItem('decks', JSON.stringify(decks));
-    localStorage.setItem(`${deckName}-generated`, 'true');
-  };
+    const saveGeneratedQuestions = async (generatedQuestions) => {
+      const limitedQuestions = generatedQuestions.slice(0, 10);
+      const flashcards = limitedQuestions.map(q => ({ question: q.question, answer: q.answer }));
 
+      try {
+        await setDoc(deckDocRef, {
+          flashcards: flashcards,
+          generated: true,
+        }, { merge: true });
+        alert('Questions generated and saved successfully.');
+      } catch (error) {
+        console.error('Error saving generated questions:', error);
+        alert('Failed to save generated questions.');
+      }
+    };
 // with backend ^^^^
 // with backend ^^^^
 // with backend ^^^^
