@@ -8,7 +8,8 @@ import './FlashcardInput.css';
 // Utility functions for Firestore operations
 const loadFromFirestore = async (docPath, defaultValue) => {
   try {
-    const docSnap = await getDoc(doc(db, docPath));
+    const docRef = doc(db, ...docPath.split('/'));
+    const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
@@ -20,19 +21,23 @@ const loadFromFirestore = async (docPath, defaultValue) => {
     return defaultValue;
   }
 };
+
 const saveToFirestore = async (docPath, value) => {
   try {
+    const docRef = doc(db, ...docPath.split('/'));
     console.log(`Saving data to Firestore document: ${docPath}`, value);
-    await setDoc(doc(db, docPath), value);
+    await setDoc(docRef, value);
     console.log(`Data saved to Firestore document: ${docPath}`);
   } catch (error) {
     console.error(`Error saving data to Firestore document: ${docPath}`, error);
   }
 };
+
 const removeFromFirestore = async (docPath) => {
   try {
+    const docRef = doc(db, ...docPath.split('/'));
     console.log(`Removing document from Firestore: ${docPath}`);
-    await deleteDoc(doc(db, docPath));
+    await deleteDoc(docRef);
     console.log(`Document removed from Firestore: ${docPath}`);
   } catch (error) {
     console.error(`Error removing document from Firestore: ${docPath}`, error);
@@ -58,7 +63,7 @@ const saveDeckFlashcards = async (userId, deckName, flashcards) => {
 
 const removeDeckFlashcards = async (userId, deckName) => {
   console.log(`Removing flashcards for user: ${userId}, deck: ${deckName}`);
-  await removeFromFirestore(`users/${userId}/decks`, deckName);
+  await removeFromFirestore(`users/${userId}/decks/${deckName}`);
   console.log(`Flashcards removed for user: ${userId}, deck: ${deckName}`);
 };
 
@@ -140,11 +145,11 @@ function FlashcardInput() {
     const saveShuffleEnabled = async () => {
       if (user) {
         await saveToFirestore(`users/${user.uid}/settings/${deckName}`, { shuffleEnabled });
-
       }
     };
     saveShuffleEnabled();
   }, [shuffleEnabled, deckName, user]);
+  
    
 
   const startOver = async () => {
@@ -308,8 +313,7 @@ function FlashcardInput() {
       saveDeckFlashcards(user.uid, deckName, flashcards);
       setEditIndex(null);
     }
-  };
-  
+  };  
 
   const handleEdit = (index) => {
     setEditIndex(index);
@@ -324,19 +328,20 @@ function FlashcardInput() {
   };
   
 
-  const handleRenameDeck = () => {
-    if (newDeckName && newDeckName !== deckName) {
-      const flashcards = loadDeckFlashcards(deckName);
-      removeDeckFlashcards(deckName);
-      saveDeckFlashcards(newDeckName, flashcards);
+  const handleRenameDeck = async () => {
+    if (newDeckName && newDeckName !== deckName && user) {
+      const flashcards = await loadDeckFlashcards(user.uid, deckName);
+      await removeDeckFlashcards(user.uid, deckName);
+      await saveDeckFlashcards(user.uid, newDeckName, flashcards);
       setIsEditingDeck(false);
       navigate(`/deck/${newDeckName}`);
     }
   };
+  
 
-  const handleDeleteDeck = () => {
-    if (window.confirm('Are you sure you want to delete this deck? This action cannot be undone.')) {
-      removeDeckFlashcards(deckName);
+  const handleDeleteDeck = async () => {
+    if (window.confirm('Are you sure you want to delete this deck? This action cannot be undone.') && user) {
+      await removeDeckFlashcards(user.uid, deckName);
       navigate('/');
     }
   };
@@ -344,9 +349,12 @@ function FlashcardInput() {
   const handleAddFlashcard = () => {
     const newFlashcards = [...flashcards, { question: '', answer: '' }];
     setFlashcards(newFlashcards);
+    if (user) {
+      saveDeckFlashcards(user.uid, deckName, newFlashcards);
+    }
     setEditIndex(newFlashcards.length - 1);
-    saveDeckFlashcards(deckName, newFlashcards);
   };
+  
 
   const handleInputChange = (index, field, value) => {
     const newFlashcards = [...flashcards];
