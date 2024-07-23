@@ -103,9 +103,11 @@ const Test = () => {
       const docRef = (suffix) => `users/${user.uid}/settings/${deckName}-${suffix}`;
   
       try {
-        const storedFlashcards = await loadFromFirestore(`users/${user.uid}/decks/${deckName}`, []);
-        console.log("Stored Flashcards:", storedFlashcards); // Add this line
-        const storedShuffled = await loadFromFirestore(docRef('shuffled'), storedFlashcards);
+        const storedFlashcards = await loadFromFirestore(`users/${user.uid}/decks/${deckName}`, {flashcards: []});
+        console.log("Stored Flashcards:", storedFlashcards);
+        setFlashcards(storedFlashcards.flashcards);
+        const storedShuffled = await loadFromFirestore(docRef('shuffled'), storedFlashcards.flashcards);
+        setShuffledFlashcards(storedShuffled);
         const storedCurrentIndex = await loadFromFirestore(docRef('currentIndex'), 0);
         const storedCorrectlyAnsweredQuestions = new Set(await loadFromFirestore(docRef('correctlyAnsweredQuestions'), []));
         const storedCorrectAnswers = await loadFromFirestore(docRef('correctAnswers'), 0);
@@ -133,7 +135,7 @@ const Test = () => {
         const storedQuestionStates = await loadFromFirestore(docRef('questionStates'), {});
         const storedSendButtonDisabled = await loadFromFirestore(docRef('sendButtonDisabled'), false);
   
-        setFlashcards(storedFlashcards);
+        setFlashcards(storedFlashcards.flashcards);
         setShuffledFlashcards(storedShuffled);
         setCurrentCardIndex(storedCurrentIndex);
         setCorrectlyAnsweredQuestions(storedCorrectlyAnsweredQuestions);
@@ -551,7 +553,7 @@ const navigateToCard = (index) => {
       }
 
     } catch (error) {
-      setComparisonResult(`Error: ${error.message}`);
+      console.error("Error fetching data: ", error);
     } finally {
       setIsLoading(false);
       saveProgress();
@@ -852,7 +854,6 @@ const navigateToCard = (index) => {
     }
   };
   
-const totalCards = flashcards.length;
 
 const NavigationBar = ({ totalCards, currentCardIndex, navigateToCard }) => (
   <div className="navigation-bar">
@@ -882,7 +883,9 @@ return (
         Done
       </button>
     )}
-    {flashcards.length > 0 ? ( // Check flashcards length here
+    {isLoading ? (
+      <p>Loading flashcards...</p>
+    ) : shuffledFlashcards.length > 0 ? (
       finished ? (
         <div className="completion-message">
           <h2>Way to go! You've reviewed all {shuffledFlashcards.length} cards.</h2>
