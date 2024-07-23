@@ -138,11 +138,16 @@ function FlashcardInput() {
         setFlashcards(storedFlashcards);
   
         // Fetch test progress
-        const testProgressPath = `users/${user.uid}/decks/${deckName}-test`;
+        const testProgressPath = `users/${user.uid}/settings/${deckName}-progress`;
         console.log("Fetching test progress from:", testProgressPath);
         const testProgress = await loadFromFirestore(testProgressPath, { testInProgress: false });
         console.log("Fetched Test Progress:", testProgress);
         setTestState((prevState) => ({ ...prevState, ...testProgress }));
+  
+        // Show disclaimer if there is previous progress
+        if (testProgress.testInProgress) {
+          setShowDisclaimer(true);
+        }
       }
     };
   

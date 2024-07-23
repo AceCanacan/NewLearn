@@ -94,20 +94,19 @@ const Test = () => {
   
     return () => unsubscribe();
   }, []);
-
   useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+  
+    const docRef = (suffix) => `users/${user.uid}/settings/${deckName}-${suffix}`;
+  
     const fetchFirestoreData = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-  
-      const docRef = (suffix) => `users/${user.uid}/settings/${deckName}-${suffix}`;
-  
       try {
         const storedFlashcards = await loadFromFirestore(`users/${user.uid}/decks/${deckName}`, {flashcards: []});
         console.log("Stored Flashcards:", storedFlashcards);
         setFlashcards(storedFlashcards.flashcards);
+  
         const storedShuffled = await loadFromFirestore(docRef('shuffled'), storedFlashcards.flashcards);
-        setShuffledFlashcards(storedShuffled);
         const storedCurrentIndex = await loadFromFirestore(docRef('currentIndex'), 0);
         const storedCorrectlyAnsweredQuestions = new Set(await loadFromFirestore(docRef('correctlyAnsweredQuestions'), []));
         const storedCorrectAnswers = await loadFromFirestore(docRef('correctAnswers'), 0);
@@ -135,7 +134,6 @@ const Test = () => {
         const storedQuestionStates = await loadFromFirestore(docRef('questionStates'), {});
         const storedSendButtonDisabled = await loadFromFirestore(docRef('sendButtonDisabled'), false);
   
-        setFlashcards(storedFlashcards.flashcards);
         setShuffledFlashcards(storedShuffled);
         setCurrentCardIndex(storedCurrentIndex);
         setCorrectlyAnsweredQuestions(storedCorrectlyAnsweredQuestions);
@@ -163,16 +161,45 @@ const Test = () => {
         setFeedbackButtonDisabled(storedFeedbackButtonDisabled);
         setQuestionStates(storedQuestionStates);
         setSendButtonDisabled(storedSendButtonDisabled);
-        setFlashcards(storedFlashcards);
-        console.log("Flashcards state after set:", storedFlashcards); // Add this line
       } catch (error) {
         console.error("Error fetching data: ", error);
       }
     };
   
-    if (user && deckName) {
-      fetchFirestoreData();
-    }
+    const loadSessionStorageData = () => {
+      const sessionData = sessionStorage.getItem('progressData');
+      if (sessionData) {
+        const data = JSON.parse(sessionData);
+        setCurrentCardIndex(data.currentCardIndex || 0);
+        setCorrectAnswers(data.correctAnswers || 0);
+        setCorrectlyAnsweredQuestions(new Set(data.correctlyAnsweredQuestions || []));
+        setHintUsed(data.hintUsed || false);
+        setTypedAnswer(data.typedAnswer || '');
+        setWasCorrect(data.wasCorrect || false);
+        setComparisonResult(data.comparisonResult || '');
+        setFeedback(data.feedback || '');
+        setShowAnswer(data.showAnswer || false);
+        setIsRecording(data.isRecording || false);
+        setLastCorrectAnswer(data.lastCorrectAnswer || '');
+        setShowFeedback(data.showFeedback || false);
+        setIsFeedbackLoading(data.isFeedbackLoading || false);
+        setHasFeedbackBeenProvided(data.hasFeedbackBeenProvided || false);
+        setNewAnswerProvided(data.newAnswerProvided || false);
+        setFinished(data.finished || false);
+        setTypingMode(data.typingMode || false);
+        setScore(data.score || 0);
+        setHintsUsed(data.hintsUsed || 0);
+        setWrongAttempts(data.wrongAttempts || 0);
+        setFeedbackButtonDisabled(data.feedbackButtonDisabled || {});
+        setFeedbacks(data.feedbacks || {});
+        setShowFeedbacks(data.showFeedbacks || {});
+        setQuestionStates(data.questionStates || {});
+        setSendButtonDisabled(data.sendButtonDisabled || false);
+      }
+    };
+  
+    fetchFirestoreData();
+    loadSessionStorageData();
   }, [user, deckName]);
   
 
@@ -208,7 +235,7 @@ const Test = () => {
   };
 
 
-  const saveProgress = async () => {
+  const saveProgress = () => {
     console.log("saveProgress called");
     
     const dataToSave = {
@@ -239,11 +266,11 @@ const Test = () => {
       sendButtonDisabled,
       testInProgress: true
     };
-  
-    // Save progress data to Firestore
-    await saveToFirestore(`users/${user.uid}/settings/${deckName}-progress`, dataToSave);
     
-    console.log("Progress saved");
+    // Save data to sessionStorage
+    sessionStorage.setItem('progressData', JSON.stringify(dataToSave));
+    
+    console.log("Progress saved to sessionStorage");
   };
   
 
@@ -258,10 +285,6 @@ const Test = () => {
     await removeFromFirestore(`users/${user.uid}/settings/${deckName}-progress`);
   };
 
-  const saveMultipleToFirestore = async (deckName, data, currentCardIndex) => {
-    await saveToFirestore(`users/${user.uid}/settings/${deckName}-progress`, data);
-    await saveToFirestore(`users/${user.uid}/settings/${deckName}-typedAnswer-${currentCardIndex}`, { typedAnswer: data.typedAnswer });
-  };
   
   const removeMultipleFromFirestore = async (deckName) => {
     await removeFromFirestore(`users/${user.uid}/settings/${deckName}-progress`);
@@ -286,7 +309,26 @@ const Test = () => {
   
 
   const saveProgressAndNavigate = async () => {
-    await saveProgress();
+    const user = auth.currentUser;
+    if (!user) return;
+  
+    const progressData = sessionStorage.getItem('progressData');
+    
+    if (progressData) {
+      const dataToSave = JSON.parse(progressData);
+      
+      try {
+        // Save progress data to Firestore
+        await setDoc(doc(db, `users/${user.uid}/settings/${deckName}-progress`), dataToSave);
+        console.log("Progress saved to Firestore");
+      } catch (error) {
+        console.error("Error saving progress to Firestore: ", error);
+      }
+    } else {
+      console.log("No progress data in sessionStorage");
+    }
+    
+    // Navigate to the desired route
     navigate(`/deck/${deckName}`);
   };
   
@@ -450,115 +492,115 @@ const navigateToCard = (index) => {
   saveProgress();
 };
 
-  const compareQuestion = async (userQuestion) => {
-    const originalQuestion = shuffledFlashcards[currentCardIndex].question;
-    const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
-    const userAnswer = typingMode ? typedAnswer : userQuestion;
+const compareQuestion = async (userQuestion) => {
+  const originalQuestion = shuffledFlashcards[currentCardIndex].question;
+  const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
+  const userAnswer = typingMode ? typedAnswer : userQuestion;
 
-    const messages = [
-      { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
-      { role: 'user', content: `Original Question: ${originalQuestion}` },
-      { role: 'user', content: `Original Answer: ${originalAnswer}` },
-      { role: 'user', content: `User Answer: ${userAnswer}` },
-      { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
-    ];
+  const messages = [
+    { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
+    { role: 'user', content: `Original Question: ${originalQuestion}` },
+    { role: 'user', content: `Original Answer: ${originalAnswer}` },
+    { role: 'user', content: `User Answer: ${userAnswer}` },
+    { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
+  ];
 
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: messages,
-          max_tokens: 10
-        })
-      });
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: messages,
+        max_tokens: 10
+      })
+    });
 
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-      }
+    if (!response.ok) {
+      const errorDetail = await response.json();
+      throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+    }
 
-      const data = await response.json();
-      const choice = data.choices[0];
-      const result = choice.message.content.trim().replace('.', '').toLowerCase();
+    const data = await response.json();
+    const choice = data.choices[0];
+    const result = choice.message.content.trim().replace('.', '').toLowerCase();
 
-      const currentQuestionState = questionStates[currentCardIndex] || { attempts: 0, correct: false, hintUsed: false, skipped: false, multipleAttempts: false, firstAttemptIncorrect: false };
-      const isFirstAttempt = currentQuestionState.attempts === 0;
-      const isFirstAttemptIncorrect = isFirstAttempt && result === 'no';
+    const currentQuestionState = questionStates[currentCardIndex] || { attempts: 0, correct: false, hintUsed: false, skipped: false, multipleAttempts: false, firstAttemptIncorrect: false };
+    const isFirstAttempt = currentQuestionState.attempts === 0;
+    const isFirstAttemptIncorrect = isFirstAttempt && result === 'no';
 
-      const updatedQuestionState = {
-        ...currentQuestionState,
-        attempts: currentQuestionState.attempts + 1,
-        correct: result === 'yes',
-        hintUsed: false,
-        hint: '',
-        multipleAttempts: currentQuestionState.attempts > 0 || result === 'no',
-        firstAttemptIncorrect: isFirstAttemptIncorrect || currentQuestionState.firstAttemptIncorrect
+    const updatedQuestionState = {
+      ...currentQuestionState,
+      attempts: currentQuestionState.attempts + 1,
+      correct: result === 'yes',
+      hintUsed: false,
+      hint: '',
+      multipleAttempts: currentQuestionState.attempts > 0 || result === 'no',
+      firstAttemptIncorrect: isFirstAttemptIncorrect || currentQuestionState.firstAttemptIncorrect
+    };
+
+    setQuestionStates(prevStates => {
+      const updatedStates = {
+        ...prevStates,
+        [currentCardIndex]: updatedQuestionState
       };
 
-      setQuestionStates(prevStates => {
-        const updatedStates = {
-          ...prevStates,
-          [currentCardIndex]: updatedQuestionState
-        };
+      updateQuestionStates(deckName, updatedStates);
+      return updatedStates;
+    });
 
-        updateQuestionStates(deckName, updatedStates);
-        return updatedStates;
+    if (result === 'yes') {
+      setCorrectlyAnsweredQuestions(prevQuestions => {
+        const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
+        updateCorrectlyAnsweredQuestions(deckName, updatedQuestions);
+        return updatedQuestions;
       });
 
-      if (result === 'yes') {
-        setCorrectlyAnsweredQuestions(prevQuestions => {
-          const updatedQuestions = new Set(prevQuestions).add(currentCardIndex);
-          updateCorrectlyAnsweredQuestions(deckName, updatedQuestions);
-          return updatedQuestions;
-        });
+      updateScore(true);
+      setComparisonResult('Correct');
+      setWasCorrect(true);
+      setNewAnswerProvided(true);
+      setHasFeedbackBeenProvided(prev => ({
+        ...prev,
+        [currentCardIndex]: false
+      }));
+      setLastCorrectAnswer(userAnswer);
 
-        updateScore(true);
-        setComparisonResult('Correct');
-        setWasCorrect(true);
-        setNewAnswerProvided(true);
-        setHasFeedbackBeenProvided(prev => ({
-          ...prev,
-          [currentCardIndex]: false
-        }));
-        setLastCorrectAnswer(userAnswer);
+      setReport(prevReport => {
+        const updatedReport = { ...prevReport };
+        if (!updatedQuestionState.firstAttemptIncorrect) {
+          updatedReport.answeredPerfectly += 1;
+        }
+        return updatedReport;
+      });
 
-        setReport(prevReport => {
-          const updatedReport = { ...prevReport };
-          if (!updatedQuestionState.firstAttemptIncorrect) {
-            updatedReport.answeredPerfectly += 1;
-          }
-          return updatedReport;
-        });
+      setSendButtonDisabled(prev => ({
+        ...prev,
+        [currentCardIndex]: true
+      }));
 
-        setSendButtonDisabled(prev => ({
-          ...prev,
-          [currentCardIndex]: true
-        }));
+      setHintUsed(false);
+      setHint('');
+    } else {
+      updateScore(false);
+      setComparisonResult('Incorrect');
 
-        setHintUsed(false);
-        setHint('');
-      } else {
-        updateScore(false);
-        setComparisonResult('Incorrect');
-
-        setReport(prevReport => ({
-          ...prevReport,
-          multipleAttempts: currentQuestionState.attempts === 0 ? prevReport.multipleAttempts + 1 : prevReport.multipleAttempts,
-        }));
-      }
-
-    } catch (error) {
-      console.error("Error fetching data: ", error);
-    } finally {
-      setIsLoading(false);
-      saveProgress();
+      setReport(prevReport => ({
+        ...prevReport,
+        multipleAttempts: currentQuestionState.attempts === 0 ? prevReport.multipleAttempts + 1 : prevReport.multipleAttempts,
+      }));
     }
-  };
+
+  } catch (error) {
+    console.error("Error fetching data: ", error);
+  } finally {
+    setIsLoading(false);
+    saveProgress(); // Ensure this captures the latest state after all updates
+  }
+};
 
   const handleShowAnswer = () => {
     if (!showAnswer) {
