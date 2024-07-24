@@ -13,7 +13,6 @@ const loadFromFirestore = async (docPath, defaultValue) => {
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
-      console.warn(`No such document at: ${docPath}`);
       return defaultValue;
     }
   } catch (error) {
@@ -49,7 +48,6 @@ const Test = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [flashcards, setFlashcards] = useState([]);
-  const [shuffledFlashcards, setShuffledFlashcards] = useState([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -103,8 +101,7 @@ const Test = () => {
     const fetchFirestoreData = async () => {
       try {
         const storedFlashcards = await loadFromFirestore(`users/${user.uid}/decks/${deckName}`, {flashcards: []});
-        console.log("Stored Flashcards:", storedFlashcards);
-        setFlashcards(storedFlashcards.flashcards);
+        
   
         const storedShuffled = await loadFromFirestore(docRef('shuffled'), storedFlashcards.flashcards);
         const storedCurrentIndex = await loadFromFirestore(docRef('currentIndex'), 0);
@@ -133,8 +130,7 @@ const Test = () => {
         const storedFeedbackButtonDisabled = await loadFromFirestore(docRef('feedbackButtonDisabled'), {});
         const storedQuestionStates = await loadFromFirestore(docRef('questionStates'), {});
         const storedSendButtonDisabled = await loadFromFirestore(docRef('sendButtonDisabled'), false);
-  
-        setShuffledFlashcards(storedShuffled);
+        setFlashcards(storedFlashcards.flashcards);
         setCurrentCardIndex(storedCurrentIndex);
         setCorrectlyAnsweredQuestions(storedCorrectlyAnsweredQuestions);
         setCorrectAnswers(storedCorrectAnswers);
@@ -161,6 +157,9 @@ const Test = () => {
         setFeedbackButtonDisabled(storedFeedbackButtonDisabled);
         setQuestionStates(storedQuestionStates);
         setSendButtonDisabled(storedSendButtonDisabled);
+
+
+
       } catch (error) {
         console.error("Error fetching data: ", error);
       }
@@ -239,6 +238,7 @@ const Test = () => {
     console.log("saveProgress called");
     
     const dataToSave = {
+      flashcards: flashcards,
       currentCardIndex,
       correctAnswers,
       correctlyAnsweredQuestions: [...correctlyAnsweredQuestions],
@@ -289,7 +289,7 @@ const Test = () => {
   const removeMultipleFromFirestore = async (deckName) => {
     await removeFromFirestore(`users/${user.uid}/settings/${deckName}-progress`);
     
-    shuffledFlashcards.forEach(async (_, index) => {
+    flashcards.forEach(async (_, index) => {
       await removeFromFirestore(`users/${user.uid}/settings/${deckName}-typedAnswer-${index}`);
     });
   };
@@ -333,13 +333,29 @@ const Test = () => {
   };
   
   const wipeProgressAndNavigate = async () => {
-    await removeMultipleFromFirestore(deckName);
-    navigate(`/deck/${deckName}`);
+    try {
+      // Attempt to remove multiple items from Firestore
+      await removeMultipleFromFirestore(deckName);
+  
+      // Check if shuffledFlashcards is defined and is an array
+      if (Array.isArray(flashcards) && flashcards.length > 0) {
+        for (let i = 0; i < flashcards.length; i++) {
+          await removeFromFirestore(`users/${user.uid}/settings/${deckName}-typedAnswer-${i}`);
+        }
+      }
+  
+      // Navigate to the specified route
+      navigate(`/deck/${deckName}`);
+    } catch (error) {
+      console.error("Error wiping progress and navigating:", error);
+      // Handle the error (optional)
+      navigate(`/deck/${deckName}`); // Ensure navigation happens even if there is an error
+    }
   };
 
 
   const handleFinish = async () => {
-    if (correctlyAnsweredQuestions.size === shuffledFlashcards.length) {
+    if (correctlyAnsweredQuestions.size === flashcards.length) {
       const finalScore = calculateFinalScore();
       const scoreEntry = {
         score: finalScore,
@@ -427,12 +443,9 @@ const preserveCurrentQuestionState = async () => {
   
     resetState();
     setFlashcards([]);
-    setShuffledFlashcards([]);
   
     const storedFlashcards = await loadFromFirestore(`users/${user.uid}/decks/${deckName}`, []);
-    const shuffled = shuffleArray(storedFlashcards);
     setFlashcards(storedFlashcards);
-    setShuffledFlashcards(shuffled);
   
     setTimeout(() => {
       resetState();
@@ -461,14 +474,6 @@ const preserveCurrentQuestionState = async () => {
 // with backend ^^^^
 // with backend ^^^^
 
-  const shuffleArray = (array) => {
-    let shuffledArray = array.slice();
-    for (let i = shuffledArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
-    }
-    return shuffledArray;
-  };
   
     const [report, setReport] = useState({
       hintsUsed: 0,
@@ -493,9 +498,14 @@ const navigateToCard = (index) => {
 };
 
 const compareQuestion = async (userQuestion) => {
-  const originalQuestion = shuffledFlashcards[currentCardIndex].question;
-  const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
+  if (!flashcards[currentCardIndex]) {
+    console.error("Flashcard not found for current index:", currentCardIndex);
+    return;
+  }
+  const originalQuestion = flashcards[currentCardIndex].question;
+  const originalAnswer = flashcards[currentCardIndex].answer;
   const userAnswer = typingMode ? typedAnswer : userQuestion;
+  
 
   const messages = [
     { role: 'system', content: 'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".' },
@@ -636,8 +646,8 @@ const compareQuestion = async (userQuestion) => {
 
     setIsLoading(true);
     setHint('');
-    const originalQuestion = shuffledFlashcards[currentCardIndex].question;
-    const originalAnswer = shuffledFlashcards[currentCardIndex].answer;
+    const originalQuestion = flashcards[currentCardIndex].question;
+    const originalAnswer = flashcards[currentCardIndex].answer;
 
     const messages = [
       { role: 'system', content: 'You are a helpful assistant.' },
@@ -744,7 +754,7 @@ const compareQuestion = async (userQuestion) => {
     let nextIndex = currentCardIndex;
   
     do {
-      nextIndex = (nextIndex + 1) % shuffledFlashcards.length;
+      nextIndex = (nextIndex + 1) % flashcards.length;
     } while (correctlyAnsweredQuestions.has(nextIndex) && nextIndex !== currentCardIndex);
   
     setCurrentCardIndex(nextIndex);
@@ -841,8 +851,8 @@ const compareQuestion = async (userQuestion) => {
 
     const messages = [
       { role: 'system', content: 'You are a helpful assistant.' },
-      { role: 'user', content: `Original Question: ${shuffledFlashcards[currentCardIndex].question}` },
-      { role: 'user', content: `Original Answer: ${shuffledFlashcards[currentCardIndex].answer}` },
+      { role: 'user', content: `Original Question: ${flashcards[currentCardIndex].question}` },
+      { role: 'user', content: `Original Answer: ${flashcards[currentCardIndex].answer}` },
       { role: 'user', content: 'The user\'s answer was correct. Provide praise and suggestions for improvement.' },
       { role: 'user', content: `User's Correct Answer: ${lastCorrectAnswer}` }
     ];
@@ -914,11 +924,11 @@ const NavigationBar = ({ totalCards, currentCardIndex, navigateToCard }) => (
 
 return (
   <div className="test-yourself">
-    <NavigationBar
-      totalCards={shuffledFlashcards.length}
-      currentCardIndex={currentCardIndex}
-      navigateToCard={navigateToCard}
-    />
+      <NavigationBar
+        totalCards={flashcards.length}
+        currentCardIndex={currentCardIndex}
+        navigateToCard={navigateToCard}
+      />
     <h3>{deckName}</h3>
     {!finished && (
       <button className="btn btn-secondary" onClick={handleDone}>
@@ -927,10 +937,10 @@ return (
     )}
     {isLoading ? (
       <p>Loading flashcards...</p>
-    ) : shuffledFlashcards.length > 0 ? (
+    ) : flashcards.length > 0 ? (
       finished ? (
         <div className="completion-message">
-          <h2>Way to go! You've reviewed all {shuffledFlashcards.length} cards.</h2>
+          <h2>Way to go! You've reviewed all {flashcards.length} cards.</h2>
           <div className="score-display">
             {generateReportContent()}
           </div>
@@ -943,9 +953,9 @@ return (
       ) : (
         <>
           <div className="flashcard">
-            <p><strong>Q:</strong> {shuffledFlashcards[currentCardIndex].question}</p>
+            <p><strong>Q:</strong> {flashcards[currentCardIndex].question}</p>
             {showAnswer && (
-              <p><strong>A:</strong> {shuffledFlashcards[currentCardIndex].answer}</p>
+              <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
             )}
             <div className="flashcard-buttons">
               <button className="btn btn-secondary" onClick={() => setTypingMode(!typingMode)}>
@@ -1002,7 +1012,7 @@ return (
             )}
             {(showAnswer || wasCorrect || correctlyAnsweredQuestions.has(currentCardIndex)) && (
               <>
-                {currentCardIndex < shuffledFlashcards.length - 1 ? (
+                {currentCardIndex < flashcards.length - 1 ? (
                   <button className="btn btn-primary" onClick={handleNextCard}>Next</button>
                 ) : (
                   <button className="btn btn-success" onClick={handleFinish}>Finish</button>
@@ -1027,9 +1037,9 @@ return (
           </div>
           <div className="progress-tracker">
             <div className="progress-bar-container">
-              <div className="progress-bar" style={{ width: `${(correctlyAnsweredQuestions.size / shuffledFlashcards.length) * 100}%` }}></div>
+              <div className="progress-bar" style={{ width: `${(correctlyAnsweredQuestions.size / flashcards.length) * 100}%` }}></div>
             </div>
-            <p>{correctlyAnsweredQuestions.size} out of {shuffledFlashcards.length} completed</p>
+            <p>{correctlyAnsweredQuestions.size} out of {flashcards.length} completed</p>
           </div>
         </>
       )

@@ -15,7 +15,6 @@ const loadFromFirestore = async (docPath, defaultValue) => {
       console.log("Document data:", docSnap.data());
       return docSnap.data();
     } else {
-      console.warn("No such document at:", docPath);
       return defaultValue;
     }
   } catch (error) {
@@ -85,7 +84,6 @@ function FlashcardInput() {
 
   // Test-related state
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [shuffleEnabled, setShuffleEnabled] = useState(false); // Assuming default as false
   const [testState, setTestState] = useState({
     shuffledFlashcards: [],
     currentCardIndex: 0,
@@ -156,17 +154,7 @@ function FlashcardInput() {
     }
   }, [deckName, user]);
   
-  
-  // Save shuffleEnabled to Firestore
-  useEffect(() => {
-    const saveShuffleEnabled = async () => {
-      if (user) {
-        await saveToFirestore(`users/${user.uid}/settings/${deckName}`, { shuffleEnabled });
-      }
-    };
-    saveShuffleEnabled();
-  }, [shuffleEnabled, deckName, user]);
-  
+
    
 
   const startOver = async () => {
@@ -303,26 +291,11 @@ function FlashcardInput() {
   };
 
   const handleTestYourself = async () => {
-    if (shuffleEnabled) {
-      const shuffled = shuffleArray(flashcards);
-      await saveToFirestore('settings', `${deckName}-shuffled`, { shuffled });
-      setTestState((prevState) => ({ ...prevState, shuffledFlashcards: shuffled }));
-    } else {
-      await saveToFirestore('settings', `${deckName}-shuffled`, { shuffled: flashcards });
-      setTestState((prevState) => ({ ...prevState, shuffledFlashcards: flashcards }));
-    }
+    await saveToFirestore('settings', `${deckName}-shuffled`, { shuffled: flashcards });
+    setTestState((prevState) => ({ ...prevState, shuffledFlashcards: flashcards }));
     await saveToFirestore('settings', `${deckName}-currentIndex`, { currentIndex: 0 });
     setTestState((prevState) => ({ ...prevState, currentCardIndex: 0 }));
     navigate(`/test/${deckName}`);
-  };
-
-  const shuffleArray = (array) => {
-    const shuffledArray = [...array];
-    for (let i = shuffledArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
-    }
-    return shuffledArray;
   };
 
   const handleSave = () => {
@@ -405,14 +378,6 @@ function FlashcardInput() {
             <button onClick={() => setIsEditingDeck(false)}>Cancel</button>
           </>
         )}
-        <label>
-          <input 
-            type="checkbox" 
-            checked={shuffleEnabled} 
-            onChange={(e) => setShuffleEnabled(e.target.checked)} 
-          />
-          Shuffle Cards
-        </label>
       </div>
 
       {(showDisclaimer || testState.testInProgress) ? (
