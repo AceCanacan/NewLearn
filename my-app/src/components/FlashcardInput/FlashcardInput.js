@@ -74,33 +74,6 @@ function FlashcardInput() {
   const [isEditingDeck, setIsEditingDeck] = useState(false);
 
 
-  // Test-related state
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [testState, setTestState] = useState({
-    shuffledFlashcards: [],
-    currentCardIndex: 0,
-    correctlyAnsweredQuestions: new Set(),
-    correctAnswers: 0,
-    hintUsed: false,
-    typedAnswer: '',
-    wasCorrect: false,
-    comparisonResult: '',
-    feedback: '',
-    showAnswer: false,
-    isRecording: false,
-    lastCorrectAnswer: '',
-    showFeedback: false,
-    isFeedbackLoading: false,
-    hasFeedbackBeenProvided: false,
-    newAnswerProvided: false,
-    finished: false,
-    typingMode: false,
-    score: 0,
-    hintsUsed: 0,
-    wrongAttempts: 0,
-    questionStates: {},
-    testInProgress: false,
-  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -128,16 +101,7 @@ function FlashcardInput() {
         setFlashcards(storedFlashcards);
   
         // Fetch test progress
-        const testProgressPath = `users/${user.uid}/settings/${deckName}-progress`;
-        // console.log("Fetching test progress from:", testProgressPath);
-        const testProgress = await loadFromFirestore(testProgressPath, { testInProgress: false });
         
-        if (testProgress.testInProgress) {
-          // console.log("There is existing progress");
-          setShowDisclaimer(true);
-        }
-  
-        setTestState((prevState) => ({ ...prevState, ...testProgress }));
       }
     };
   
@@ -145,18 +109,11 @@ function FlashcardInput() {
       fetchFlashcards();
     }
   }, [deckName, user]);
-  
-  
-
-   
-
 
 
   const handleTestYourself = async () => {
     await saveToFirestore('settings', `${deckName}-shuffled`, { shuffled: flashcards });
-    setTestState((prevState) => ({ ...prevState, shuffledFlashcards: flashcards }));
     await saveToFirestore('settings', `${deckName}-currentIndex`, { currentIndex: 0 });
-    setTestState((prevState) => ({ ...prevState, currentCardIndex: 0 }));
     navigate(`/test/${deckName}`);
   };
 
@@ -230,6 +187,8 @@ function FlashcardInput() {
           newDeckName
         )}
       </h3>
+      <button onClick={() => navigate('/')}>Back</button>
+
       <div className="deck-actions">
         <button onClick={isEditingDeck ? handleRenameDeck : () => setIsEditingDeck(true)}>
           {isEditingDeck ? 'Save' : 'Edit Deck'}

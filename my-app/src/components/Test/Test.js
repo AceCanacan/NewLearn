@@ -74,8 +74,7 @@ const Test = () => {
   const [questionStates, setQuestionStates] = useState({});
   const [sendButtonDisabled, setSendButtonDisabled] = useState(false);
   const [user, setUser] = useState(null);
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [hasStoredProgress, setHasStoredProgress] = useState(false);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -100,10 +99,6 @@ const Test = () => {
 
 
   
-
-
-
-
 
 
 
@@ -228,41 +223,6 @@ useEffect(() => {
   checkForProgress();
 }, [user, deckName]);
   
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-  
-
 
 
 

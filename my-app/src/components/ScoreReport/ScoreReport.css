@@ -1,29 +1,56 @@
 .score-report {
-    padding: 20px;
-    background-color: #f9f9f9;
-  }
-  
-  .score-report h2 {
-    margin-bottom: 20px;
-  }
-  
-  .score-report ul {
-    list-style: none;
-    padding: 0;
-  }
-  
-  .score-report li {
-    margin-bottom: 10px;
-  }
-  
-  .score-report a {
-    display: inline-block;
-    margin-top: 20px;
-    text-decoration: none;
-    color: #007bff;
-  }
-  
-  .score-report a:hover {
-    text-decoration: underline;
-  }
-  
+  padding: 20px;
+  background-color: #f9f9f9;
+  font-family: Arial, sans-serif;
+}
+
+.score-report h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.score-report ul {
+  list-style: none;
+  padding: 0;
+}
+
+.score-report li {
+  margin-bottom: 20px;
+}
+
+.score-report .score-entry {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.score-report .score-entry p {
+  margin: 10px 0;
+  font-size: 16px;
+  color: #555;
+}
+
+.score-report .score-entry ul {
+  list-style: none;
+  padding: 0;
+}
+
+.score-report .score-entry ul li {
+  margin: 5px 0;
+}
+
+.score-report a {
+  display: inline-block;
+  margin-top: 20px;
+  text-decoration: none;
+  color: #007bff;
+  font-size: 16px;
+}
+
+.score-report a:hover {
+  text-decoration: underline;
+}

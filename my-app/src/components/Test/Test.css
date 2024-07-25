@@ -1,3 +1,5 @@
+/* TestYourselfComponent.css */
+
 /* Container for the test component */
 .test-yourself {
   max-width: 800px;
@@ -16,7 +18,7 @@
 }
 
 /* Flashcard styling */
-.flashcard {
+.test-yourself .flashcard {
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -26,7 +28,7 @@
   text-align: left;
 }
 
-.flashcard p {
+.test-yourself .flashcard p {
   margin: 0;
   padding: 10px 0;
   font-size: 1.2em;

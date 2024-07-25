@@ -1,16 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { auth,db} from '../../firebase/firebase'; // Ensure these Firestore functions are correctly imported
 import './ScoreReport.css';
+import {  doc, getDoc } from 'firebase/firestore';
+
+const loadFromFirestore = async (docPath, defaultValue) => {
+  try {
+    const docRef = doc(db, ...docPath.split('/'));
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      return defaultValue;
+    }
+  } catch (error) {
+    console.error(`Error loading data from Firestore document: ${docPath}`, error);
+    return defaultValue;
+  }
+};
+
 
 const ScoreReport = () => {
   const { deckName } = useParams();
   const [scores, setScores] = useState([]);
 
   useEffect(() => {
-    const storedScores = JSON.parse(localStorage.getItem('scores') || '{}');
-    if (storedScores[deckName]) {
-      setScores(storedScores[deckName]);
-    }
+    const fetchScores = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const storedScores = await loadFromFirestore(`users/${user.uid}/settings/scores`, {});
+        if (storedScores[deckName]) {
+          setScores(storedScores[deckName]);
+        }
+      }
+    };
+    fetchScores();
   }, [deckName]);
 
   return (
