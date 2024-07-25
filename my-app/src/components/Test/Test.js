@@ -74,6 +74,8 @@ const Test = () => {
   const [questionStates, setQuestionStates] = useState({});
   const [sendButtonDisabled, setSendButtonDisabled] = useState(false);
   const [user, setUser] = useState(null);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [hasStoredProgress, setHasStoredProgress] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -91,152 +93,175 @@ const Test = () => {
 
 
 
-  useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
+
+
+
+
+
+
   
-    const docRef = (suffix) => `users/${user.uid}/settings/${deckName}-${suffix}`;
-  
-    const fetchFirestoreData = async () => {
-      try {
-        // Fetch stored progress and await the promise
-        const storedProgress = await loadFromFirestore(docRef('progress'), null);
-  
-        // Fetch each piece of data
-        const storedFlashcards = await loadFromFirestore(`users/${user.uid}/decks/${deckName}`, { flashcards: [] });
-        const storedCurrentIndex = await loadFromFirestore(docRef('currentIndex'), 0);
-        const storedCorrectlyAnsweredQuestions = new Set(await loadFromFirestore(docRef('correctlyAnsweredQuestions'), []));
-        const storedCorrectAnswers = await loadFromFirestore(docRef('correctAnswers'), 0);
-        const storedHintUsed = await loadFromFirestore(docRef('hintUsed'), false);
-        const storedHint = await loadFromFirestore(docRef('hint'), '');
-        const storedTypedAnswer = await loadFromFirestore(docRef('typedAnswer'), '');
-        const storedWasCorrect = await loadFromFirestore(docRef('wasCorrect'), false);
-        const storedComparisonResult = await loadFromFirestore(docRef('comparisonResult'), '');
-        const storedFeedback = await loadFromFirestore(docRef('feedback'), '');
-        const storedShowAnswer = await loadFromFirestore(docRef('showAnswer'), false);
-        const storedIsRecording = await loadFromFirestore(docRef('isRecording'), false);
-        const storedLastCorrectAnswer = await loadFromFirestore(docRef('lastCorrectAnswer'), '');
-        const storedShowFeedback = await loadFromFirestore(docRef('showFeedback'), false);
-        const storedIsFeedbackLoading = await loadFromFirestore(docRef('isFeedbackLoading'), false);
-        const storedHasFeedbackBeenProvided = await loadFromFirestore(docRef('hasFeedbackBeenProvided'), false);
-        const storedNewAnswerProvided = await loadFromFirestore(docRef('newAnswerProvided'), false);
-        const storedFinished = await loadFromFirestore(docRef('finished'), false);
-        const storedTypingMode = await loadFromFirestore(docRef('typingMode'), false);
-        const storedScore = await loadFromFirestore(docRef('score'), 0);
-        const storedHintsUsed = await loadFromFirestore(docRef('hintsUsed'), 0);
-        const storedWrongAttempts = await loadFromFirestore(docRef('wrongAttempts'), 0);
-        const storedFeedbacks = await loadFromFirestore(docRef('feedbacks'), {});
-        const storedShowFeedbacks = await loadFromFirestore(docRef('showFeedbacks'), {});
-        const storedFeedbackButtonDisabled = await loadFromFirestore(docRef('feedbackButtonDisabled'), {});
-        const storedQuestionStates = await loadFromFirestore(docRef('questionStates'), {});
-        const storedSendButtonDisabled = await loadFromFirestore(docRef('sendButtonDisabled'), false);
-  
-  
-        if (storedProgress) {
-          // Use the stored progress data
-          setFlashcards(storedProgress.flashcards);
-          setCurrentCardIndex(storedProgress.currentCardIndex);
-          setCorrectlyAnsweredQuestions(new Set(storedProgress.correctlyAnsweredQuestions));
-          setCorrectAnswers(storedProgress.correctAnswers);
-          setHintUsed(storedProgress.hintUsed);
-          setHint(storedProgress.hint);
-          setTypedAnswer(storedProgress.typedAnswer);
-          setWasCorrect(storedProgress.wasCorrect);
-          setComparisonResult(storedProgress.comparisonResult);
-          setFeedback(storedProgress.feedback);
-          setShowAnswer(storedProgress.showAnswer);
-          setIsRecording(storedProgress.isRecording);
-          setLastCorrectAnswer(storedProgress.lastCorrectAnswer);
-          setShowFeedback(storedProgress.showFeedback);
-          setIsFeedbackLoading(storedProgress.isFeedbackLoading);
-          setHasFeedbackBeenProvided(storedProgress.hasFeedbackBeenProvided);
-          setNewAnswerProvided(storedProgress.newAnswerProvided);
-          setFinished(storedProgress.finished);
-          setTypingMode(storedProgress.typingMode);
-          setScore(storedProgress.score);
-          setHintsUsed(storedProgress.hintsUsed);
-          setWrongAttempts(storedProgress.wrongAttempts);
-          setFeedbacks(storedProgress.feedbacks);
-          setShowFeedbacks(storedProgress.showFeedbacks);
-          setFeedbackButtonDisabled(storedProgress.feedbackButtonDisabled);
-          setQuestionStates(storedProgress.questionStates);
-          setSendButtonDisabled(storedProgress.sendButtonDisabled);
-        } else {
-          // Use the individually loaded items
-          setFlashcards(storedFlashcards.flashcards);
-          setCurrentCardIndex(storedCurrentIndex);
-          setCorrectlyAnsweredQuestions(storedCorrectlyAnsweredQuestions);
-          setCorrectAnswers(storedCorrectAnswers);
-          setHintUsed(storedHintUsed);
-          setHint(storedHint);
-          setTypedAnswer(storedTypedAnswer);
-          setWasCorrect(storedWasCorrect);
-          setComparisonResult(storedComparisonResult);
-          setFeedback(storedFeedback);
-          setShowAnswer(storedShowAnswer);
-          setIsRecording(storedIsRecording);
-          setLastCorrectAnswer(storedLastCorrectAnswer);
-          setShowFeedback(storedShowFeedback);
-          setIsFeedbackLoading(storedIsFeedbackLoading);
-          setHasFeedbackBeenProvided(storedHasFeedbackBeenProvided);
-          setNewAnswerProvided(storedNewAnswerProvided);
-          setFinished(storedFinished);
-          setTypingMode(storedTypingMode);
-          setScore(storedScore);
-          setHintsUsed(storedHintsUsed);
-          setWrongAttempts(storedWrongAttempts);
-          setFeedbacks(storedFeedbacks);
-          setShowFeedbacks(storedShowFeedbacks);
-          setFeedbackButtonDisabled(storedFeedbackButtonDisabled);
-          setQuestionStates(storedQuestionStates);
-          setSendButtonDisabled(storedSendButtonDisabled);
-        }
-  
-        setCurrentCardIndex(0);
-  
-      } catch (error) {
-        console.error("Error fetching data: ", error);
+
+
+
+
+
+
+
+
+
+useEffect(() => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const docRef = (suffix) => `users/${user.uid}/settings/${deckName}-${suffix}`;
+
+  const checkForProgress = async () => {
+    const storedProgress = await loadFromFirestore(docRef('progress'), null);
+    if (storedProgress) {
+      const userDecision = window.confirm("Previous progress detected. Delete it and start over?");
+      if (userDecision) {
+        // User chose to delete progress
+        await deleteAllProgress();
+        initializeNewTest();
+      } else {
+        // User chose to keep progress
+        loadExistingProgress();
       }
-    };
+    } else {
+      // No progress, start a new test
+      initializeNewTest();
+    }
+  };
+
+  const deleteAllProgress = async () => {
+    // Clear session storage
+    sessionStorage.clear();
+
+    // Clear all Firestore data related to this test
+    const keysToRemove = [
+      'progress', 'currentIndex', 'correctlyAnsweredQuestions', 'correctAnswers',
+      'hintUsed', 'hint', 'typedAnswer', 'wasCorrect', 'comparisonResult',
+      'feedback', 'showAnswer', 'isRecording', 'lastCorrectAnswer',
+      'showFeedback', 'isFeedbackLoading', 'hasFeedbackBeenProvided',
+      'newAnswerProvided', 'finished', 'typingMode', 'score', 'hintsUsed',
+      'wrongAttempts', 'feedbacks', 'showFeedbacks', 'feedbackButtonDisabled',
+      'questionStates', 'sendButtonDisabled'
+    ];
+
+    for (const key of keysToRemove) {
+      await removeFromFirestore(`users/${user.uid}/settings`, `${deckName}-${key}`);
+    }
+  };
+
+  const initializeNewTest = async () => {
+    // Fetch fresh flashcards
+    const freshFlashcards = await loadFromFirestore(`users/${user.uid}/decks/${deckName}`, { flashcards: [] });
+    
+    // Set all state variables to their initial values
+    setFlashcards(freshFlashcards.flashcards);
+    setCurrentCardIndex(0);
+    setCorrectlyAnsweredQuestions(new Set());
+    setCorrectAnswers(0);
+    setHintUsed(false);
+    setHint('');
+    setTypedAnswer('');
+    setWasCorrect(false);
+    setComparisonResult('');
+    setFeedback('');
+    setShowAnswer(false);
+    setIsRecording(false);
+    setLastCorrectAnswer('');
+    setShowFeedback(false);
+    setIsFeedbackLoading(false);
+    setHasFeedbackBeenProvided(false);
+    setNewAnswerProvided(false);
+    setFinished(false);
+    setTypingMode(false);
+    setScore(0);
+    setHintsUsed(0);
+    setWrongAttempts(0);
+    setFeedbacks({});
+    setShowFeedbacks({});
+    setFeedbackButtonDisabled({});
+    setQuestionStates({});
+    setSendButtonDisabled(false);
+  };
+
+  const loadExistingProgress = async () => {
+    // Load progress from Firestore
+    const progress = await loadFromFirestore(docRef('progress'), null);
+    if (progress) {
+      // Set all state variables from the stored progress
+      setFlashcards(progress.flashcards);
+      setCurrentCardIndex(progress.currentCardIndex);
+      setCorrectlyAnsweredQuestions(new Set(progress.correctlyAnsweredQuestions));
+      setCorrectAnswers(progress.correctAnswers);
+      setHintUsed(progress.hintUsed);
+      setHint(progress.hint);
+      setTypedAnswer(progress.typedAnswer);
+      setWasCorrect(progress.wasCorrect);
+      setComparisonResult(progress.comparisonResult);
+      setFeedback(progress.feedback);
+      setShowAnswer(progress.showAnswer);
+      setIsRecording(progress.isRecording);
+      setLastCorrectAnswer(progress.lastCorrectAnswer);
+      setShowFeedback(progress.showFeedback);
+      setIsFeedbackLoading(progress.isFeedbackLoading);
+      setHasFeedbackBeenProvided(progress.hasFeedbackBeenProvided);
+      setNewAnswerProvided(progress.newAnswerProvided);
+      setFinished(progress.finished);
+      setTypingMode(progress.typingMode);
+      setScore(progress.score);
+      setHintsUsed(progress.hintsUsed);
+      setWrongAttempts(progress.wrongAttempts);
+      setFeedbacks(progress.feedbacks);
+      setShowFeedbacks(progress.showFeedbacks);
+      setFeedbackButtonDisabled(progress.feedbackButtonDisabled);
+      setQuestionStates(progress.questionStates);
+      setSendButtonDisabled(progress.sendButtonDisabled);
+    } else {
+      // If no progress found, initialize a new test
+      initializeNewTest();
+    }
+  };
+
+  checkForProgress();
+}, [user, deckName]);
   
-    const loadSessionStorageData = () => {
-      const sessionData = sessionStorage.getItem('progressData');
-      if (sessionData) {
-        const data = JSON.parse(sessionData);
-        setCurrentCardIndex(data.currentCardIndex || 0);
-        setCorrectAnswers(data.correctAnswers || 0);
-        setCorrectlyAnsweredQuestions(new Set(data.correctlyAnsweredQuestions || []));
-        setHintUsed(data.hintUsed || false);
-        setTypedAnswer(data.typedAnswer || '');
-        setWasCorrect(data.wasCorrect || false);
-        setComparisonResult(data.comparisonResult || '');
-        setFeedback(data.feedback || '');
-        setShowAnswer(data.showAnswer || false);
-        setIsRecording(data.isRecording || false);
-        setLastCorrectAnswer(data.lastCorrectAnswer || '');
-        setShowFeedback(data.showFeedback || false);
-        setIsFeedbackLoading(data.isFeedbackLoading || false);
-        setHasFeedbackBeenProvided(data.hasFeedbackBeenProvided || false);
-        setNewAnswerProvided(data.newAnswerProvided || false);
-        setFinished(data.finished || false);
-        setTypingMode(data.typingMode || false);
-        setScore(data.score || 0);
-        setHintsUsed(data.hintsUsed || 0);
-        setWrongAttempts(data.wrongAttempts || 0);
-        setFeedbackButtonDisabled(data.feedbackButtonDisabled || {});
-        setFeedbacks(data.feedbacks || {});
-        setShowFeedbacks(data.showFeedbacks || {});
-        setQuestionStates(data.questionStates || {});
-        setSendButtonDisabled(data.sendButtonDisabled || false);
-      }
-    };
+
+
+
+
+
+
+
+
+
   
-    fetchFirestoreData();
-    loadSessionStorageData();
-  }, [user, deckName]);
 
 
 
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+  
 
 
 
@@ -538,16 +563,24 @@ const preserveCurrentQuestionState = async () => {
     const WRONG_ATTEMPT_DEDUCTION = 10;
   
 
-const navigateToCard = (index) => {
-  preserveCurrentQuestionState();
-  setCurrentCardIndex(index);
-  loadQuestionState(index);
-  const storedTypedAnswer = loadTypedAnswer(deckName, index);
-  setTypedAnswer(storedTypedAnswer);
-  setWasCorrect(false); // Reset wasCorrect state
-  setComparisonResult(''); // Reset comparisonResult state
-  saveProgress();
-};
+    const navigateToCard = async (index) => {
+      // Preserve the current question state
+      await preserveCurrentQuestionState();
+      
+      // Save progress to session storage
+      sessionStorage.setItem('progressData', JSON.stringify(dataToSave));
+      
+      // Set the new current card index and load the question state
+      setCurrentCardIndex(index);
+      await loadQuestionState(index);
+      setTypedAnswer(await loadTypedAnswer(deckName, index));
+      setWasCorrect(false); // Reset wasCorrect state
+      setComparisonResult(''); // Reset comparisonResult state
+      
+      // Save progress
+      saveProgress();
+    };
+    
 
 const compareQuestion = async (userQuestion) => {
   if (!flashcards[currentCardIndex]) {
@@ -962,19 +995,20 @@ const compareQuestion = async (userQuestion) => {
   };
   
 
-const NavigationBar = ({ totalCards, currentCardIndex, navigateToCard }) => (
-  <div className="navigation-bar">
-    {Array.from({ length: totalCards }).map((_, index) => (
-      <button
-        key={index}
-        className={`nav-button ${index === currentCardIndex ? 'active' : ''}`}
-        onClick={() => navigateToCard(index)}
-      >
-        {index + 1}
-      </button>
-    ))}
-  </div>
-);
+  const NavigationBar = ({ totalCards, currentCardIndex, navigateToCard }) => (
+    <div className="navigation-bar">
+      {Array.from({ length: totalCards }).map((_, index) => (
+        <button
+          key={index}
+          className={`nav-button ${index === currentCardIndex ? 'active' : ''}`}
+          onClick={() => navigateToCard(index)}
+        >
+          {index + 1}
+        </button>
+      ))}
+    </div>
+  );
+  
 
 
 return (
@@ -1103,9 +1137,8 @@ return (
     {showSaveProgressModal && (
       <div className="modal">
         <div className="modal-content">
-          <p>Would you like to save your progress or wipe it?</p>
-          <button className="btn btn-primary" onClick={saveProgressAndNavigate}>Save Progress</button>
-          <button className="btn btn-secondary" onClick={wipeProgressAndNavigate}>Wipe Progress</button>
+          <p>Are you sure you want to leave?</p>
+          <button className="btn btn-primary" onClick={saveProgressAndNavigate}>Leave and Save</button>
           <button className="btn btn-danger" onClick={() => setShowSaveProgressModal(false)}>Cancel</button>
         </div>
       </div>

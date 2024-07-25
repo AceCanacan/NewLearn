@@ -73,6 +73,7 @@ function FlashcardInput() {
   const [newDeckName, setNewDeckName] = useState(deckName);
   const [isEditingDeck, setIsEditingDeck] = useState(false);
 
+
   // Test-related state
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [testState, setTestState] = useState({
@@ -149,138 +150,7 @@ function FlashcardInput() {
 
    
 
-  const startOver = async () => {
-    if (user) {
-      const keysToRemove = [
-        `${deckName}-shuffled`,
-        `${deckName}-currentIndex`,
-        `${deckName}-correctAnswers`,
-        `${deckName}-correctlyAnsweredQuestions`,
-        `${deckName}-hintUsed`,
-        `${deckName}-typedAnswer`,
-        `${deckName}-wasCorrect`,
-        `${deckName}-comparisonResult`,
-        `${deckName}-feedback`,
-        `${deckName}-showAnswer`,
-        `${deckName}-isRecording`,
-        `${deckName}-lastCorrectAnswer`,
-        `${deckName}-showFeedback`,
-        `${deckName}-isFeedbackLoading`,
-        `${deckName}-hasFeedbackBeenProvided`,
-        `${deckName}-newAnswerProvided`,
-        `${deckName}-finished`,
-        `${deckName}-typingMode`,
-        `${deckName}-score`,
-        `${deckName}-hintsUsed`,
-        `${deckName}-wrongAttempts`,
-        `${deckName}-feedbacks`,
-        `${deckName}-showFeedbacks`,
-        `${deckName}-feedbackButtonDisabled`,
-        `${deckName}-questionStates`,
-        `${deckName}-sendButtonDisabled`,
-        `${deckName}-testInProgress`,
-      ];
-  
-      for (const key of keysToRemove) {
-        await removeFromFirestore(`users/${user.uid}/settings`, key);
-      }
-  
-      setShowDisclaimer(false);
-      setTestState({
-        shuffledFlashcards: [],
-        currentCardIndex: 0,
-        correctlyAnsweredQuestions: new Set(),
-        correctAnswers: 0,
-        hintUsed: false,
-        typedAnswer: '',
-        wasCorrect: false,
-        comparisonResult: '',
-        feedback: '',
-        showAnswer: false,
-        isRecording: false,
-        lastCorrectAnswer: '',
-        showFeedback: false,
-        isFeedbackLoading: false,
-        hasFeedbackBeenProvided: false,
-        newAnswerProvided: false,
-        finished: false,
-        typingMode: false,
-        score: 0,
-        hintsUsed: 0,
-        wrongAttempts: 0,
-        questionStates: {},
-        testInProgress: false,
-      });
-  
-      const storedFlashcards = await loadDeckFlashcards(user.uid, deckName);
-      setFlashcards(storedFlashcards);
-      setTestState((prevState) => ({ ...prevState, shuffledFlashcards: storedFlashcards }));
-  
-      await saveToFirestore(`users/${user.uid}/settings`, `${deckName}-shuffled`, { shuffled: storedFlashcards });
-      await saveToFirestore(`users/${user.uid}/settings`, `${deckName}-currentIndex`, { currentIndex: 0 });
-  
-      navigate(`/test/${deckName}`);
-    }
-  };
-  
 
-  const continueTest = async () => {
-    setShowDisclaimer(false);
-
-    const storedFlashcards = await loadDeckFlashcards(deckName);
-    const storedShuffled = await loadFromFirestore(`${deckName}-shuffled`, storedFlashcards);
-    const storedCurrentIndex = await loadFromFirestore(`${deckName}-currentIndex`, 0);
-    const storedCorrectlyAnsweredQuestions = new Set(await loadFromFirestore(`${deckName}-correctlyAnsweredQuestions`, []));
-    const storedCorrectAnswers = await loadFromFirestore(`${deckName}-correctAnswers`, 0);
-    const storedHintUsed = await loadFromFirestore(`${deckName}-hintUsed`, false);
-    const storedTypedAnswer = await loadFromFirestore(`${deckName}-typedAnswer`, '');
-    const storedWasCorrect = await loadFromFirestore(`${deckName}-wasCorrect`, false);
-    const storedComparisonResult = await loadFromFirestore(`${deckName}-comparisonResult`, '');
-    const storedFeedback = await loadFromFirestore(`${deckName}-feedback`, '');
-    const storedShowAnswer = await loadFromFirestore(`${deckName}-showAnswer`, false);
-    const storedIsRecording = await loadFromFirestore(`${deckName}-isRecording`, false);
-    const storedLastCorrectAnswer = await loadFromFirestore(`${deckName}-lastCorrectAnswer`, '');
-    const storedShowFeedback = await loadFromFirestore(`${deckName}-showFeedback`, false);
-    const storedIsFeedbackLoading = await loadFromFirestore(`${deckName}-isFeedbackLoading`, false);
-    const storedHasFeedbackBeenProvided = await loadFromFirestore(`${deckName}-hasFeedbackBeenProvided`, false);
-    const storedNewAnswerProvided = await loadFromFirestore(`${deckName}-newAnswerProvided`, false);
-    const storedFinished = await loadFromFirestore(`${deckName}-finished`, false);
-    const storedTypingMode = await loadFromFirestore(`${deckName}-typingMode`, false);
-    const storedScore = await loadFromFirestore(`${deckName}-score`, 0);
-    const storedHintsUsed = await loadFromFirestore(`${deckName}-hintsUsed`, 0);
-    const storedWrongAttempts = await loadFromFirestore(`${deckName}-wrongAttempts`, 0);
-    const storedQuestionStates = await loadFromFirestore(`${deckName}-questionStates`, {});
-
-    setFlashcards(storedFlashcards);
-    setTestState((prevState) => ({
-      ...prevState,
-      shuffledFlashcards: storedShuffled,
-      currentCardIndex: storedCurrentIndex,
-      correctlyAnsweredQuestions: storedCorrectlyAnsweredQuestions,
-      correctAnswers: storedCorrectAnswers,
-      hintUsed: storedHintUsed,
-      typedAnswer: storedTypedAnswer,
-      wasCorrect: storedWasCorrect,
-      comparisonResult: storedComparisonResult,
-      feedback: storedFeedback,
-      showAnswer: storedShowAnswer,
-      isRecording: storedIsRecording,
-      lastCorrectAnswer: storedLastCorrectAnswer,
-      showFeedback: storedShowFeedback,
-      isFeedbackLoading: storedIsFeedbackLoading,
-      hasFeedbackBeenProvided: storedHasFeedbackBeenProvided,
-      newAnswerProvided: storedNewAnswerProvided,
-      finished: storedFinished,
-      typingMode: storedTypingMode,
-      score: storedScore,
-      hintsUsed: storedHintsUsed,
-      wrongAttempts: storedWrongAttempts,
-      questionStates: storedQuestionStates,
-      testInProgress: false,
-    }));
-
-    navigate(`/test/${deckName}`);
-  };
 
   const handleTestYourself = async () => {
     await saveToFirestore('settings', `${deckName}-shuffled`, { shuffled: flashcards });
@@ -372,32 +242,24 @@ function FlashcardInput() {
         )}
       </div>
 
-      {(showDisclaimer || testState.testInProgress) ? (
-        <div className="disclaimer-modal">
-          <p>You have a test in progress. Would you like to continue or start over?</p>
-          <button onClick={startOver}>Start Over</button>
-          <button onClick={continueTest}>Continue</button>
-        </div>
-      ) : (
-        <>
-          <Link to={`/test/${deckName}`} className="test-link">
-            <button onClick={handleTestYourself}>Test Yourself</button>
-          </Link>
-          <Link to={`/review/${deckName}`} className="test-link">
-            <button>Review</button>
-          </Link>
-          <Link to={`/score-report/${deckName}`} className="test-link">
-            <button>View Scores</button>
-          </Link>
-          <button className="test-link" onClick={() => {
-            if (localStorage.getItem(`${deckName}-generated`) === 'true') {
-              alert('You have already used the QuizMaker feature for this deck.');
-            } else {
-              navigate(`/quizmaker/${deckName}`);
-            }
-          }}>Go to QuizMaker</button>
-        </>
-      )}
+      <>
+  <Link to={`/test/${deckName}`} className="test-link">
+    <button onClick={handleTestYourself}>Test Yourself</button>
+  </Link>
+  <Link to={`/review/${deckName}`} className="test-link">
+    <button>Review</button>
+  </Link>
+  <Link to={`/score-report/${deckName}`} className="test-link">
+    <button>View Scores</button>
+  </Link>
+  <button className="test-link" onClick={() => {
+    if (localStorage.getItem(`${deckName}-generated`) === 'true') {
+      alert('You have already used the QuizMaker feature for this deck.');
+    } else {
+      navigate(`/quizmaker/${deckName}`);
+    }
+  }}>Go to QuizMaker</button>
+</>
 
       <div className="flashcard-list">
         {flashcards.map((flashcard, index) => (
