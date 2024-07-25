@@ -1,24 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { collection, getDocs, setDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import {  setDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/firebase'; // Adjust the path as needed
 import { onAuthStateChanged } from 'firebase/auth'
 import './FlashcardInput.css';
 
 // Utility functions for Firestore operations
 const loadFromFirestore = async (docPath, defaultValue) => {
-  console.log("Loading data from Firestore document:", docPath);
   try {
     const docRef = doc(db, ...docPath.split('/'));
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      console.log("Document data:", docSnap.data());
       return docSnap.data();
     } else {
       return defaultValue;
     }
   } catch (error) {
-    console.error("Error loading data from Firestore document:", docPath, error);
     return defaultValue;
   }
 };
@@ -26,46 +23,40 @@ const loadFromFirestore = async (docPath, defaultValue) => {
 const saveToFirestore = async (docPath, value) => {
   try {
     const docRef = doc(db, ...docPath.split('/'));
-    console.log(`Saving data to Firestore document: ${docPath}`, value);
     await setDoc(docRef, value);
-    console.log(`Data saved to Firestore document: ${docPath}`);
   } catch (error) {
-    console.error(`Error saving data to Firestore document: ${docPath}`, error);
   }
 };
 
 const removeFromFirestore = async (docPath) => {
   try {
     const docRef = doc(db, ...docPath.split('/'));
-    console.log(`Removing document from Firestore: ${docPath}`);
     await deleteDoc(docRef);
-    console.log(`Document removed from Firestore: ${docPath}`);
   } catch (error) {
-    console.error(`Error removing document from Firestore: ${docPath}`, error);
   }
 };
 
 const loadDeckFlashcards = async (userId, deckName) => {
   const docPath = `users/${userId}/decks/${deckName}`;
-  console.log("Loading flashcards for user:", userId, "deck:", deckName);
+  // console.log("Loading flashcards for user:", userId, "deck:", deckName);
   const deckData = await loadFromFirestore(docPath, { flashcards: [] });
   const flashcards = deckData.flashcards || [];
-  console.log("Flashcards successfully loaded:", flashcards);
+  // console.log("Flashcards successfully loaded:", flashcards);
   return flashcards;
 };
 
 const saveDeckFlashcards = async (userId, deckName, flashcards) => {
   const deckData = { flashcards };
-  console.log(`Preparing to save flashcards for user: ${userId}, deck: ${deckName}`, deckData);
+  // console.log(`Preparing to save flashcards for user: ${userId}, deck: ${deckName}`, deckData);
   await saveToFirestore(`users/${userId}/decks/${deckName}`, deckData);
-  console.log(`Flashcards successfully saved for user: ${userId}, deck: ${deckName}`, deckData);
+  // console.log(`Flashcards successfully saved for user: ${userId}, deck: ${deckName}`, deckData);
 };
 
 
 const removeDeckFlashcards = async (userId, deckName) => {
-  console.log(`Removing flashcards for user: ${userId}, deck: ${deckName}`);
+  // console.log(`Removing flashcards for user: ${userId}, deck: ${deckName}`);
   await removeFromFirestore(`users/${userId}/decks/${deckName}`);
-  console.log(`Flashcards removed for user: ${userId}, deck: ${deckName}`);
+  // console.log(`Flashcards removed for user: ${userId}, deck: ${deckName}`);
 };
 
 
@@ -114,10 +105,10 @@ function FlashcardInput() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        console.log('User signed in:', currentUser);
+        // console.log('User signed in:', currentUser);
       } else {
         setUser(null);
-        console.log('User signed out');
+        // console.log('User signed out');
       }
     });
 
@@ -127,25 +118,25 @@ function FlashcardInput() {
   useEffect(() => {
     const fetchFlashcards = async () => {
       if (user) {
-        console.log("User ID:", user.uid);
-        console.log("Deck Name:", deckName);
+        // console.log("User ID:", user.uid);
+        // console.log("Deck Name:", deckName);
   
         // Fetch flashcards
         const storedFlashcards = await loadDeckFlashcards(user.uid, deckName);
-        console.log("Fetched Flashcards:", storedFlashcards);
+        // console.log("Fetched Flashcards:", storedFlashcards);
         setFlashcards(storedFlashcards);
   
         // Fetch test progress
         const testProgressPath = `users/${user.uid}/settings/${deckName}-progress`;
-        console.log("Fetching test progress from:", testProgressPath);
+        // console.log("Fetching test progress from:", testProgressPath);
         const testProgress = await loadFromFirestore(testProgressPath, { testInProgress: false });
-        console.log("Fetched Test Progress:", testProgress);
-        setTestState((prevState) => ({ ...prevState, ...testProgress }));
-  
-        // Show disclaimer if there is previous progress
+        
         if (testProgress.testInProgress) {
+          // console.log("There is existing progress");
           setShowDisclaimer(true);
         }
+  
+        setTestState((prevState) => ({ ...prevState, ...testProgress }));
       }
     };
   
@@ -153,6 +144,7 @@ function FlashcardInput() {
       fetchFlashcards();
     }
   }, [deckName, user]);
+  
   
 
    
