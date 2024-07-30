@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import {  setDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase/firebase'; // Adjust the path as needed
+import {  setDoc, doc, deleteDoc, getDoc,updateDoc} from 'firebase/firestore';
+import { db, auth } from '../../../firebase/firebase'; // Adjust the path as needed
 import { onAuthStateChanged } from 'firebase/auth'
 import './FlashcardInput.css';
 
@@ -64,44 +64,44 @@ function FlashcardInput() {
   const { deckName } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-
-  // Flashcard-related state
   const [flashcards, setFlashcards] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
-
-  // Deck-related state
   const [newDeckName, setNewDeckName] = useState(deckName);
   const [isEditingDeck, setIsEditingDeck] = useState(false);
+  const [totalFlashcardsCreated, setTotalFlashcardsCreated] = useState(0);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
 
-
+  const MAX_FLASHCARDS = 10;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        // console.log('User signed in:', currentUser);
+        fetchTotalFlashcardsCreated(currentUser.uid);
       } else {
         setUser(null);
-        // console.log('User signed out');
+        setTotalFlashcardsCreated(0);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
+  const fetchTotalFlashcardsCreated = async (userId, deckName) => {
+    const deckDocRef = doc(db, 'users', userId, 'decks', deckName);
+    const deckDoc = await getDoc(deckDocRef);
+    if (deckDoc.exists()) {
+      setTotalFlashcardsCreated(deckDoc.data().totalFlashcardsCreated || 0);
+    } else {
+      await setDoc(deckDocRef, { totalFlashcardsCreated: 0 }, { merge: true });
+    }
+  };
+
   useEffect(() => {
     const fetchFlashcards = async () => {
       if (user) {
-        // console.log("User ID:", user.uid);
-        // console.log("Deck Name:", deckName);
-  
-        // Fetch flashcards
         const storedFlashcards = await loadDeckFlashcards(user.uid, deckName);
-        // console.log("Fetched Flashcards:", storedFlashcards);
         setFlashcards(storedFlashcards);
-  
-        // Fetch test progress
-        
       }
     };
   
@@ -119,10 +119,9 @@ function FlashcardInput() {
 
   const handleSave = () => {
     if (user) {
-      saveDeckFlashcards(user.uid, deckName, flashcards);
-      setEditIndex(null);
+      setShowDisclaimer(true);
     }
-  };  
+  };
 
   const handleEdit = (index) => {
     setEditIndex(index);
@@ -156,14 +155,30 @@ function FlashcardInput() {
   };
 
   const handleAddFlashcard = () => {
+    if (totalFlashcardsCreated >= MAX_FLASHCARDS) {
+      alert(`You have already created ${totalFlashcardsCreated} flashcards in this deck. You cannot create more.`);
+      return;
+    }
     const newFlashcards = [...flashcards, { question: '', answer: '' }];
     setFlashcards(newFlashcards);
-    if (user) {
-      saveDeckFlashcards(user.uid, deckName, newFlashcards);
-    }
     setEditIndex(newFlashcards.length - 1);
   };
-  
+
+  const handleConfirmSave = async () => {
+    if (user) {
+      await saveDeckFlashcards(user.uid, deckName, flashcards);
+      setEditIndex(null);
+      
+      // Update total flashcards created for this deck
+      const deckDocRef = doc(db, 'users', user.uid, 'decks', deckName);
+      const newTotal = flashcards.length;
+      await updateDoc(deckDocRef, { totalFlashcardsCreated: newTotal });
+      setTotalFlashcardsCreated(newTotal);
+      
+      setIsEditingDeck(false);
+      setShowDisclaimer(false);
+    }
+  };
 
   const handleInputChange = (index, field, value) => {
     const newFlashcards = [...flashcards];
@@ -200,7 +215,23 @@ function FlashcardInput() {
           </>
         )}
       </div>
-
+      {showDisclaimer && (
+  <div className="disclaimer-modal">
+    <div className="disclaimer-content">
+      <h3>Disclaimer</h3>
+      <p>
+        You are about to save {flashcards.length} flashcards in this deck.
+        The maximum allowed is {MAX_FLASHCARDS}. Remember, this is an alpha version and 
+        every flashcard you create is permanent and cannot be erased. Choose wisely as your actions 
+        have lasting consequences.
+      </p>
+      <div className="disclaimer-buttons">
+        <button onClick={handleConfirmSave}>Confirm Save</button>
+        <button onClick={() => setShowDisclaimer(false)}>Cancel</button>
+      </div>
+    </div>
+  </div>
+)}
       <>
   <Link to={`/test/${deckName}`} className="test-link">
     <button onClick={handleTestYourself}>Test Yourself</button>
@@ -271,6 +302,7 @@ function FlashcardInput() {
         ))}
       </div>
       <button className="add-button" onClick={handleAddFlashcard}>+ Add Flashcard</button>
+
     </div>
   );
 }

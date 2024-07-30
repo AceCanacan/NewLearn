@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { auth,db} from '../../firebase/firebase'; // Ensure these Firestore functions are correctly imported
+import { auth,db} from '../../../firebase/firebase'; // Ensure these Firestore functions are correctly imported
 import './ScoreReport.css';
 import {  doc, getDoc } from 'firebase/firestore';
 

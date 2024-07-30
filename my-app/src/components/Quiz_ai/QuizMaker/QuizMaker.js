@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { collection, setDoc, doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase/firebase'; // Ensure this path is correct
+import { db, auth } from '../../../firebase/firebase'; // Ensure this path is correct
 import { onAuthStateChanged } from 'firebase/auth';
 import './QuizMaker.css';
 

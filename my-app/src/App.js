@@ -1,13 +1,15 @@
-// src/App.js
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
-import Deck from './components/Home/Deck';
-import FlashcardInput from './components/FlashcardInput/FlashcardInput';
-import TestYourself from './components/Test/Test';
-import Review from './components/Test/Review';
-import ScoreReport from './components/ScoreReport/ScoreReport';
-import QuizMaker from './components/QuizMaker/QuizMaker';
+import Home from './components/Home/Home';
+import Deck from './components/Quiz_ai/Deck/Deck';
+import FlashcardInput from './components/Quiz_ai/FlashcardInput/FlashcardInput';
+import TestYourself from './components/Quiz_ai/Test/Test';
+import Review from './components/Quiz_ai/Test/Review';
+import ScoreReport from './components/Quiz_ai/ScoreReport/ScoreReport';
+import QuizMaker from './components/Quiz_ai/QuizMaker/QuizMaker';
+import Transcribe from './components/Transcribe/transcribe';
+
 import { logFirebaseConfig } from './firebase/firebase';
 import { signUp, signIn, signOutUser, onAuthChange } from './auth';
 
@@ -144,12 +146,15 @@ function App() {
               <h1>Welcome, {user.email}</h1>
               <button onClick={signOutUser}>Sign Out</button>
               <Routes>
-                <Route path="/" element={<Deck />} />
-                <Route path="/deck/:deckName" element={<FlashcardInput />} />
+                <Route path="/" element={<Home />} />
+                <Route path="/deck/:deckName" element={<Deck />} />
+                <Route path="/deck/:deckName/flashcard-input" element={<FlashcardInput />} />
                 <Route path="/test/:deckName" element={<TestYourself />} />
                 <Route path="/review/:deckName" element={<Review />} />
                 <Route path="/score-report/:deckName" element={<ScoreReport />} />
                 <Route path="/quizmaker/:deckName" element={<QuizMaker />} />
+                <Route path="/transcribe" element={<Transcribe />} />
+
               </Routes>
             </>
           ) : (

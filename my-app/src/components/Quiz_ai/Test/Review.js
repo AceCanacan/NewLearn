@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { collection, doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase/firebase'; // Ensure this path is correct
+import { db, auth } from '../../../firebase/firebase'; // Ensure this path is correct
 import { onAuthStateChanged } from 'firebase/auth';
 import './Review.css';
 
