@@ -3,6 +3,31 @@ import ReactMarkdown from 'react-markdown';
 import './transcribe.css';  // Ensure your CSS file includes styles for modal-overlay and modal-content
 import { useNavigate } from 'react-router-dom';
 
+import {  setDoc, doc, getDoc, deleteDoc,collection, getDocs} from 'firebase/firestore';
+import { db, auth } from '../../firebase/firebase';
+
+const loadFromFirestore = async (collectionPath, defaultValue) => {
+    try {
+      const collectionRef = collection(db, ...collectionPath.split('/'));
+      const querySnapshot = await getDocs(collectionRef);
+      const data = querySnapshot.docs.map(doc => doc.data());
+      console.log("Collection data:", data);
+      return data.length ? data : defaultValue;
+    } catch (error) {
+      console.error("Error loading data from Firestore:", error);
+      return defaultValue;
+    }
+  };
+
+const saveToFirestore = async (docPath, value) => {
+  try {
+    const docRef = doc(db, ...docPath.split('/'));
+    await setDoc(docRef, value);
+  } catch (error) {
+  }
+};
+
+
 const SavedTranscriptions = () => {
   const [savedTranscriptions, setSavedTranscriptions] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -12,35 +37,48 @@ const SavedTranscriptions = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedTranscriptions = localStorage.getItem('savedTranscriptions');
-    if (storedTranscriptions) {
-      const parsedTranscriptions = JSON.parse(storedTranscriptions);
-      setSavedTranscriptions(parsedTranscriptions);
-    }
+    const fetchData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const collectionPath = `users/${user.uid}/transcriptions`;
+        const savedData = await loadFromFirestore(collectionPath, []);
+        setSavedTranscriptions(savedData);
+      }
+    };
+    fetchData();
   }, []);
+
+  const handleSaveEdit = async (id) => {
+    const user = auth.currentUser;
+    if (user) {
+      const userDocPath = `users/${user.uid}/transcriptions/${id}`;
+      const updatedTranscriptions = savedTranscriptions.map(transcription =>
+        transcription.id === id ? { ...transcription, text: editText } : transcription
+      );
+      setSavedTranscriptions(updatedTranscriptions);
+      await saveToFirestore(userDocPath, { id, text: editText });
+    }
+    setEditingId(null);
+    setEditText('');
+  };
+  
+  const handleDelete = async (id) => {
+    const user = auth.currentUser;
+    if (user) {
+      const userDocPath = `users/${user.uid}/transcriptions/${id}`;
+      await deleteDoc(doc(db, userDocPath)); // Import and use the deleteDoc function from Firestore
+      
+      const updatedTranscriptions = savedTranscriptions.filter(t => t.id !== id);
+      setSavedTranscriptions(updatedTranscriptions);
+    }
+    setShowDisclaimer(false);
+    setTranscriptionToDelete(null);
+  };
   
   const handleEdit = (id) => {
     const transcription = savedTranscriptions.find(t => t.id === id);
     setEditingId(id);
     setEditText(transcription.text);
-  };
-
-  const handleSaveEdit = (id) => {
-    const updatedTranscriptions = savedTranscriptions.map(transcription =>
-      transcription.id === id ? { ...transcription, text: editText } : transcription
-    );
-    setSavedTranscriptions(updatedTranscriptions);
-    localStorage.setItem('savedTranscriptions', JSON.stringify(updatedTranscriptions));
-    setEditingId(null);
-    setEditText('');
-  };
-
-  const handleDelete = (id) => {
-    const updatedTranscriptions = savedTranscriptions.filter(t => t.id !== id);
-    setSavedTranscriptions(updatedTranscriptions);
-    localStorage.setItem('savedTranscriptions', JSON.stringify(updatedTranscriptions));
-    setShowDisclaimer(false);
-    setTranscriptionToDelete(null);
   };
 
   const showDeleteModal = (id) => {

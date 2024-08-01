@@ -3,6 +3,32 @@ import ReactMarkdown from 'react-markdown';
 import './transcribe.css';
 import { useNavigate } from 'react-router-dom';
 
+import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import { db, auth } from '../../firebase/firebase';
+
+const loadFromFirestore = async (collectionPath, defaultValue) => {
+  try {
+    const collectionRef = collection(db, ...collectionPath.split('/'));
+    const querySnapshot = await getDocs(collectionRef);
+    const data = querySnapshot.docs.map(doc => doc.data());
+    console.log("Collection data:", data);
+    return data.length ? data : defaultValue;
+  } catch (error) {
+    console.error("Error loading data from Firestore:", error);
+    return defaultValue;
+  }
+};
+
+const saveToFirestore = async (docPath, value) => {
+  try {
+    const docRef = doc(db, ...docPath.split('/'));
+    await setDoc(docRef, value, { merge: true });  // Ensure merging to avoid overwriting the entire document
+    console.log("Data saved successfully:", value);
+  } catch (error) {
+    console.error("Error saving data to Firestore:", error);
+  }
+};
+
 function Transcribe() {
   const [file, setFile] = useState(null);
   const [fileType, setFileType] = useState('');
@@ -16,9 +42,44 @@ function Transcribe() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedData = JSON.parse(localStorage.getItem('savedTranscriptions')) || [];
-    setSavedTranscriptions(savedData);
+    const fetchData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const collectionPath = `users/${user.uid}/transcriptions`;
+        console.log("Fetching data from Firestore at path:", collectionPath);
+        const savedData = await loadFromFirestore(collectionPath, []);
+        console.log("Data fetched from Firestore:", savedData);
+        setSavedTranscriptions(savedData);
+      } else {
+        console.log("No user is authenticated.");
+      }
+    };
+    fetchData();
   }, []);
+
+
+
+  const handleSave = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const userDocPath = `users/${user.uid}/transcriptions/${Date.now()}`;
+      const newTranscription = {
+        id: Date.now(),
+        text: result
+      };
+      setSavedTranscriptions([...savedTranscriptions, newTranscription]);
+  
+      console.log("Saving Transcription to Firestore:", newTranscription);
+      await saveToFirestore(userDocPath, newTranscription);
+  
+      console.log("Saved Transcription:", newTranscription);
+  
+      // Load from Firestore to confirm it was saved
+      const savedData = await loadFromFirestore(`users/${user.uid}/transcriptions`, []);
+      console.log("Loaded Transcriptions from Firestore:", savedData);
+    }
+    handleReset();
+  };
 
   const validFileTypes = ['image/png', 'image/jpeg', 'audio/mpeg'];
 
@@ -184,17 +245,7 @@ const handleUpload = async () => {
     return data.choices[0].message.content;
   };
 
-  const handleSave = () => {
-    const newTranscription = {
-      id: Date.now(),  // unique identifier based on timestamp
-      text: result
-    };
-    const updatedTranscriptions = [...savedTranscriptions, newTranscription];
-    setSavedTranscriptions(updatedTranscriptions);
-    localStorage.setItem('savedTranscriptions', JSON.stringify(updatedTranscriptions));
-    
-    handleReset();
-  };
+
   
   const confirmDelete = () => {
     handleReset();
