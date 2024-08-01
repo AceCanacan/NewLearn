@@ -9,6 +9,7 @@ import Review from './components/Quiz_ai/Test/Review';
 import ScoreReport from './components/Quiz_ai/ScoreReport/ScoreReport';
 import QuizMaker from './components/Quiz_ai/QuizMaker/QuizMaker';
 import Transcribe from './components/Transcribe/transcribe';
+import SavedTranscriptions from './components/Transcribe/SavedTranscriptions';
 
 import { logFirebaseConfig } from './firebase/firebase';
 import { signUp, signIn, signOutUser, onAuthChange } from './auth';
@@ -154,7 +155,7 @@ function App() {
                 <Route path="/score-report/:deckName" element={<ScoreReport />} />
                 <Route path="/quizmaker/:deckName" element={<QuizMaker />} />
                 <Route path="/transcribe" element={<Transcribe />} />
-
+                <Route path="/savedtranscriptions" element={<SavedTranscriptions />} />
               </Routes>
             </>
           ) : (

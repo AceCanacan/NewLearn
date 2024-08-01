@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import './transcribe.css';
+import { useNavigate } from 'react-router-dom';
 
 function Transcribe() {
   const [file, setFile] = useState(null);
@@ -8,6 +10,15 @@ function Transcribe() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isFileValid, setIsFileValid] = useState(false);
   const [error, setError] = useState('');
+  const [savedTranscriptions, setSavedTranscriptions] = useState([]);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [ setTranscriptionToDelete] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const savedData = JSON.parse(localStorage.getItem('savedTranscriptions')) || [];
+    setSavedTranscriptions(savedData);
+  }, []);
 
   const validFileTypes = ['image/png', 'image/jpeg', 'audio/mpeg'];
 
@@ -31,10 +42,7 @@ const handleUpload = async () => {
   try {
     let transcribedText = '';
 
-    console.log('Uploading file:', file);
-    console.log('File type:', file.type);
-    console.log('File name:', file.name);
-    console.log('File size:', file.size);
+
 
     if (fileType === 'image') {
       transcribedText = await processImage(file);
@@ -67,15 +75,11 @@ const handleUpload = async () => {
 
   const processImage = async (file) => {
     try {
-      console.log("Starting image processing");
       
       const fileData = await file.arrayBuffer();
       const base64Image = btoa(
         new Uint8Array(fileData).reduce((data, byte) => data + String.fromCharCode(byte), '')
       );
-      console.log("Image converted to base64");
-  
-      console.log("Sending request to OpenAI API");
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -102,12 +106,10 @@ const handleUpload = async () => {
         })
       });
   
-      console.log("Received response from OpenAI API");
       const data = await response.json();
-      console.log("API Response:", data);
+
   
       if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
-        console.log("Successfully extracted content from API response");
         return data.choices[0].message.content;
       } else if (data.error) {
         console.error("API returned an error:", data.error);
@@ -125,16 +127,11 @@ const handleUpload = async () => {
 
   const transcribeAudio = async (audioFile) => {
     try {
-      console.log('Starting audio transcription process');
       
       const formData = new FormData();
       formData.append('file', audioFile);
       formData.append('model', 'whisper-1');
   
-      console.log('FormData created:');
-      for (const pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
   
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
@@ -144,10 +141,7 @@ const handleUpload = async () => {
         body: formData
       });
   
-      console.log('Response received from API:', response);
-  
       const responseData = await response.json();
-      console.log('Response JSON:', responseData);
   
       if (!response.ok) {
         console.error('Error response from API:', responseData);
@@ -190,6 +184,28 @@ const handleUpload = async () => {
     return data.choices[0].message.content;
   };
 
+  const handleSave = () => {
+    const newTranscription = {
+      id: Date.now(),  // unique identifier based on timestamp
+      text: result
+    };
+    const updatedTranscriptions = [...savedTranscriptions, newTranscription];
+    setSavedTranscriptions(updatedTranscriptions);
+    localStorage.setItem('savedTranscriptions', JSON.stringify(updatedTranscriptions));
+    
+    handleReset();
+  };
+  
+  const confirmDelete = () => {
+    handleReset();
+    setShowDisclaimer(false);
+  };
+  
+  const cancelDelete = () => {
+    setShowDisclaimer(false);
+    setTranscriptionToDelete(null);
+  };
+
   const ResultContainer = ({ children }) => (
     <div style={{
       border: '1px solid #ddd',
@@ -202,8 +218,11 @@ const handleUpload = async () => {
     </div>
   );
 
+  
+
   return (
     <div>
+<button onClick={() => navigate('/savedtranscriptions')} style={{ marginTop: '10px' }}>View Saved Transcriptions</button>
       <h2>File Transcription</h2>
       {!result && (
         <>
@@ -230,16 +249,26 @@ const handleUpload = async () => {
       {isProcessing && <p>Processing your file. Please wait...</p>}
       {error && <p style={{color: 'red'}}>{error}</p>}
       {result && (
-        <div>
-  <ResultContainer>
-  <ResultContainer>
-    <h3>Transcription Result:</h3>
-    <ReactMarkdown>{result}</ReactMarkdown>
-    <button onClick={handleReset} style={{ marginTop: '10px' }}>Upload Another File</button>
-  </ResultContainer>
-  </ResultContainer>
-        </div>
-      )}
+          <div>
+            <ResultContainer>
+              <h3>Transcription Result:</h3>
+              <ReactMarkdown>{result}</ReactMarkdown>
+              <button onClick={handleReset} style={{ marginTop: '10px' }}>Upload Another File</button>
+              <button onClick={handleSave} style={{ marginTop: '10px' }}>Save</button> {/* Save button */}
+              <button onClick={() => setShowDisclaimer(true)} style={{ marginTop: '10px', marginLeft: '10px' }}>Delete</button>
+            </ResultContainer>
+            {showDisclaimer && (
+              <div className="modal-overlay">
+                <div className="modal-content">
+                  <p>Are you sure you want to delete this transcription? This action cannot be undone.</p>
+                  <button onClick={confirmDelete} style={{ marginRight: '10px' }}>Yes</button>
+                  <button onClick={cancelDelete}>No</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      
     </div>
   );
 }
