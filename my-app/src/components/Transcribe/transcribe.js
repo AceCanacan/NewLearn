@@ -273,6 +273,7 @@ const handleUpload = async () => {
 
   return (
     <div>
+      <button onClick={() => navigate('/')} style={{ marginBottom: '10px' }}>Back to Home</button>
 <button onClick={() => navigate('/savedtranscriptions')} style={{ marginTop: '10px' }}>View Saved Transcriptions</button>
       <h2>File Transcription</h2>
       {!result && (

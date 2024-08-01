@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './transcribe.css';  // Ensure your CSS file includes styles for modal-overlay and modal-content
 import { useNavigate } from 'react-router-dom';
 
-import {  setDoc, doc, getDoc, deleteDoc,collection, getDocs} from 'firebase/firestore';
+import {  setDoc, doc, deleteDoc,collection, getDocs} from 'firebase/firestore';
 import { db, auth } from '../../firebase/firebase';
 
 const loadFromFirestore = async (collectionPath, defaultValue) => {

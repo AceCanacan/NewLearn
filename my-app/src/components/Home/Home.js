@@ -9,8 +9,12 @@ const Home = () => {
     navigate(`/deck/${deckName}`);
   };
 
-  const goToTranscribe = (deckName) => {
+  const goToTranscribe = () => {
     navigate(`/transcribe`);
+  };
+
+  const goToNotes = (deckName) => {
+    navigate(`/notesmaker`);
   };
 
   return (
@@ -18,6 +22,7 @@ const Home = () => {
       <h1>Home</h1>
       <button onClick={() => goToDeck('math')}>QuizMaker</button>
       <button onClick={() => goToTranscribe()}>TransCriber</button>
+      <button onClick={() => goToNotes()}>Notes</button>
     </div>
   );
 };

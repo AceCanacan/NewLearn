@@ -10,6 +10,7 @@ import ScoreReport from './components/Quiz_ai/ScoreReport/ScoreReport';
 import QuizMaker from './components/Quiz_ai/QuizMaker/QuizMaker';
 import Transcribe from './components/Transcribe/transcribe';
 import SavedTranscriptions from './components/Transcribe/SavedTranscriptions';
+import NotesMaker from './components/NotesMaker/Notes';
 
 import { logFirebaseConfig } from './firebase/firebase';
 import { signUp, signIn, signOutUser, onAuthChange } from './auth';
@@ -156,6 +157,7 @@ function App() {
                 <Route path="/quizmaker/:deckName" element={<QuizMaker />} />
                 <Route path="/transcribe" element={<Transcribe />} />
                 <Route path="/savedtranscriptions" element={<SavedTranscriptions />} />
+                <Route path="/notesmaker" element={<NotesMaker />} />
               </Routes>
             </>
           ) : (
@@ -168,6 +170,7 @@ function App() {
               <button onClick={() => setIsSigningIn(!isSigningIn)}>
                 {isSigningIn ? 'Need to create an account? Sign Up' : 'Already have an account? Sign In'}
               </button>
+              
             </div>
           )}
         </div>
