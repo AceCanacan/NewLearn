@@ -41,7 +41,7 @@ const SavedTranscriptions = () => {
       const user = auth.currentUser;
       if (user) {
         const collectionPath = `users/${user.uid}/transcriptions`;
-        const savedData = await loadFromFirestore(collectionPath, []);
+        const savedData = (await loadFromFirestore(collectionPath, [])).sort((a, b) => b.id - a.id);
         setSavedTranscriptions(savedData);
       }
     };
@@ -93,7 +93,7 @@ const SavedTranscriptions = () => {
 
   return (
     <div>
-      <button onClick={() => navigate('/transcribe')} style={{ marginBottom: '10px' }}>Back to Transcribe</button>
+      <button onClick={() => navigate('/')} style={{ marginBottom: '10px' }}>Home</button>
       <h2>Saved Transcriptions</h2>
       {savedTranscriptions.length === 0 ? (
         <p>No transcriptions saved yet.</p>
@@ -134,7 +134,10 @@ const SavedTranscriptions = () => {
             <button onClick={cancelDelete}>No</button>
           </div>
         </div>
+        
       )}
+<button onClick={() => navigate('/transcribe')} style={{ marginTop: '20px' }}>+</button>
+
     </div>
   );
 };

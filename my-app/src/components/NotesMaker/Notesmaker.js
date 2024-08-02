@@ -256,6 +256,7 @@ const NotesMaker = () => {
     } catch (error) {
       console.error('Error saving note:', error);
     }
+    navigate('/savednotes')
   };
   
   
@@ -324,14 +325,12 @@ const NotesMaker = () => {
 
   return (
     <div className="quizmaker-container">
-      <button onClick={() => navigate('/')} style={{ marginBottom: '10px' }}>Back to Home</button>
-      <button onClick={() => navigate('/savednotes')} style={{ marginBottom: '10px' }}>Notes</button>
+      <button onClick={() => navigate('/savednotes')} style={{ marginBottom: '10px' }}>Back</button>
       {popupContent ? (
         <div className="notes-display">
           <pre>{popupContent}</pre>
           <button onClick={() => saveNotes(popupContent)}>Save</button>
           <button onClick={() => deleteNotes()}>Delete</button>
-          <button onClick={handleReset}>Upload Again</button>
         </div>
       ) : (
         <>

@@ -10,17 +10,17 @@ const Home = () => {
   };
 
   const goToTranscribe = () => {
-    navigate(`/transcribe`);
+    navigate(`/savedtranscriptions`);
   };
 
   const goToNotes = () => {
-    navigate(`/notesmaker`);
+    navigate(`/savednotes`);
   };
 
   return (
     <div>
       <h1>Home</h1>
-      <button onClick={() => goToDeck('math')}>QuizMaker</button>
+      <button onClick={() => goToDeck('home')}>QuizMaker</button>
       <button onClick={() => goToTranscribe()}>TransCriber</button>
       <button onClick={() => goToNotes()}>Notes</button>
     </div>

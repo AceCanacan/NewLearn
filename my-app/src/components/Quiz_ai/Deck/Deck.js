@@ -114,14 +114,15 @@ function Deck() {
       <h2>Recent</h2>
       <button onClick={() => navigate('/')}>Back to Home</button>
       <div className="deck-list">
-        {Object.keys(decks).map((deckName) => (
-          <Link to={`/deck/${deckName}`} key={deckName} className="deck">
-            <h3>{deckName}</h3>
-            <div className="deck-details">
-              <span>{decks[deckName]} terms</span>
-            </div>
-          </Link>
-        ))}
+      {Object.keys(decks).map((deckName) => (
+  <Link to={`/deck/${deckName}/flashcard-input`} key={deckName} className="deck">
+    <h3>{deckName}</h3>
+    <div className="deck-details">
+      <span>{decks[deckName]} terms</span>
+    </div>
+  </Link>
+))}
+
       </div>
       <button 
         className="create-deck-button" 

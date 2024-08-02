@@ -34,7 +34,7 @@ const SavedNotes = () => {
 
   useEffect(() => {
     const loadNotes = async () => {
-      const notes = await loadFromFirestore('savedNotes', []);
+        const notes = (await loadFromFirestore('savedNotes', [])).sort((a, b) => b.id - a.id);
       setSavedNotes(notes);
     };
     loadNotes();
@@ -77,7 +77,7 @@ const SavedNotes = () => {
 
   return (
     <div className="saved-notes-container">
-      <button onClick={() => navigate('/notesmaker')} style={{ marginBottom: '10px' }}>Back</button>
+      <button onClick={() => navigate('/')} style={{ marginBottom: '10px' }}>Home</button>
       <h2>Saved Notes</h2>
       {savedNotes.length === 0 ? (
         <p>No saved notes available.</p>
@@ -119,7 +119,9 @@ const SavedNotes = () => {
           </div>
         </div>
       )}
+      <button onClick={() => navigate('/notesmaker')} style={{ marginTop: '20px' }}>+</button>
     </div>
+    
   );
 
 

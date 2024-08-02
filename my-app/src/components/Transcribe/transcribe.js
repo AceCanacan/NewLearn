@@ -61,16 +61,12 @@ function Transcribe() {
         text: result
       };
       setSavedTranscriptions([...savedTranscriptions, newTranscription]);
-  
       await saveToFirestore(userDocPath, newTranscription);
-  
-  
-      // Load from Firestore to confirm it was saved
-      const savedData = await loadFromFirestore(`users/${user.uid}/transcriptions`, []);
+      handleReset();
+      navigate('/savedtranscriptions');
     }
-    handleReset();
   };
-
+  
   const validFileTypes = ['image/png', 'image/jpeg', 'audio/mpeg'];
 
   const handleFileChange = (e) => {
@@ -261,10 +257,19 @@ const handleUpload = async () => {
 
   
 
+  // Add a prompt to show a disclaimer when navigating away
+const handleNavigateAway = (destination) => {
+  if (!savedTranscriptions.length && !window.confirm("You have unsaved changes. Do you really want to leave?")) {
+    return;
+  }
+  navigate(destination);
+};
+
+
+
   return (
     <div>
-      <button onClick={() => navigate('/')} style={{ marginBottom: '10px' }}>Back to Home</button>
-<button onClick={() => navigate('/savedtranscriptions')} style={{ marginTop: '10px' }}>View Saved Transcriptions</button>
+<button onClick={() => handleNavigateAway('/savedtranscriptions')} style={{ marginTop: '10px' }}>View Saved Transcriptions</button>
       <h2>File Transcription</h2>
       {!result && (
         <>

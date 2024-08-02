@@ -2,12 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 import Home from './components/Home/Home';
+
+
 import Deck from './components/Quiz_ai/Deck/Deck';
 import FlashcardInput from './components/Quiz_ai/FlashcardInput/FlashcardInput';
 import TestYourself from './components/Quiz_ai/Test/Test';
 import Review from './components/Quiz_ai/Test/Review';
 import ScoreReport from './components/Quiz_ai/ScoreReport/ScoreReport';
 import QuizMaker from './components/Quiz_ai/QuizMaker/QuizMaker';
+
+
 import Transcribe from './components/Transcribe/transcribe';
 import SavedTranscriptions from './components/Transcribe/SavedTranscriptions';
 import NotesMaker from './components/NotesMaker/Notesmaker';

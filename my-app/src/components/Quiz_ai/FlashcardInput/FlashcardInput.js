@@ -8,7 +8,7 @@ import './FlashcardInput.css';
 // Utility functions for Firestore operations
 const loadFromFirestore = async (docPath, defaultValue) => {
   try {
-    const docRef = doc(db, ...docPath.split('/'));
+    const docRef = doc(db, docPath);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       return docSnap.data();
@@ -20,9 +20,10 @@ const loadFromFirestore = async (docPath, defaultValue) => {
   }
 };
 
+
 const saveToFirestore = async (docPath, value) => {
   try {
-    const docRef = doc(db, ...docPath.split('/'));
+    const docRef = doc(db, docPath);
     await setDoc(docRef, value);
   } catch (error) {
   }
@@ -30,7 +31,7 @@ const saveToFirestore = async (docPath, value) => {
 
 const removeFromFirestore = async (docPath) => {
   try {
-    const docRef = doc(db, ...docPath.split('/'));
+    const docRef = doc(db, docPath);
     await deleteDoc(docRef);
   } catch (error) {
   }
@@ -38,25 +39,19 @@ const removeFromFirestore = async (docPath) => {
 
 const loadDeckFlashcards = async (userId, deckName) => {
   const docPath = `users/${userId}/decks/${deckName}`;
-  // console.log("Loading flashcards for user:", userId, "deck:", deckName);
   const deckData = await loadFromFirestore(docPath, { flashcards: [] });
   const flashcards = deckData.flashcards || [];
-  // console.log("Flashcards successfully loaded:", flashcards);
   return flashcards;
 };
 
 const saveDeckFlashcards = async (userId, deckName, flashcards) => {
   const deckData = { flashcards };
-  // console.log(`Preparing to save flashcards for user: ${userId}, deck: ${deckName}`, deckData);
   await saveToFirestore(`users/${userId}/decks/${deckName}`, deckData);
-  // console.log(`Flashcards successfully saved for user: ${userId}, deck: ${deckName}`, deckData);
 };
 
 
 const removeDeckFlashcards = async (userId, deckName) => {
-  // console.log(`Removing flashcards for user: ${userId}, deck: ${deckName}`);
   await removeFromFirestore(`users/${userId}/decks/${deckName}`);
-  // console.log(`Flashcards removed for user: ${userId}, deck: ${deckName}`);
 };
 
 
@@ -77,7 +72,8 @@ function FlashcardInput() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        fetchTotalFlashcardsCreated(currentUser.uid);
+        fetchTotalFlashcardsCreated(currentUser.uid, deckName);
+
       } else {
         setUser(null);
         setTotalFlashcardsCreated(0);
@@ -202,7 +198,7 @@ function FlashcardInput() {
           newDeckName
         )}
       </h3>
-      <button onClick={() => navigate('/')}>Back</button>
+      <button onClick={() => navigate('/deck/home')}>Back</button>
 
       <div className="deck-actions">
         <button onClick={isEditingDeck ? handleRenameDeck : () => setIsEditingDeck(true)}>
