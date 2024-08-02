@@ -10,7 +10,8 @@ import ScoreReport from './components/Quiz_ai/ScoreReport/ScoreReport';
 import QuizMaker from './components/Quiz_ai/QuizMaker/QuizMaker';
 import Transcribe from './components/Transcribe/transcribe';
 import SavedTranscriptions from './components/Transcribe/SavedTranscriptions';
-import NotesMaker from './components/NotesMaker/Notes';
+import NotesMaker from './components/NotesMaker/Notesmaker';
+import SavedNotes from './components/NotesMaker/Savednotes';
 
 import { logFirebaseConfig } from './firebase/firebase';
 import { signUp, signIn, signOutUser, onAuthChange } from './auth';
@@ -158,6 +159,7 @@ function App() {
                 <Route path="/transcribe" element={<Transcribe />} />
                 <Route path="/savedtranscriptions" element={<SavedTranscriptions />} />
                 <Route path="/notesmaker" element={<NotesMaker />} />
+                <Route path="/savednotes" element={<SavedNotes />} />
               </Routes>
             </>
           ) : (

@@ -1,9 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { setDoc, doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase/firebase'; // Ensure this path is correct
 import { onAuthStateChanged } from 'firebase/auth';
 import './Notesmaker.css';
+
+import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import { db, auth } from '../../firebase/firebase';
+
+const loadFromFirestore = async (collectionPath, defaultValue) => {
+  try {
+    const collectionRef = collection(db, ...collectionPath.split('/'));
+    const querySnapshot = await getDocs(collectionRef);
+    const data = querySnapshot.docs.map(doc => doc.data());
+    return data.length ? data : defaultValue;
+  } catch (error) {
+    return defaultValue;
+  }
+};
+
+const saveToFirestore = async (docPath, value) => {
+  try {
+    const docRef = doc(db, ...docPath.split('/'));
+    await setDoc(docRef, value, { merge: true });  // Ensure merging to avoid overwriting the entire document
+  } catch (error) {
+  }
+};
+
 
 const NotesMaker = () => {
   const [inputText, setInputText] = useState('');
@@ -15,8 +36,6 @@ const NotesMaker = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [user, setUser] = useState(null);
   const [popupContent, setPopupContent] = useState('');
-
-
 
   const { deckName } = useParams();
   const navigate = useNavigate();
@@ -35,16 +54,6 @@ const NotesMaker = () => {
 
     return () => unsubscribe();
   }, []);
-
-  
-
-
-
-
-
-
-
-
 
 
   const handleGenerate = async () => {
@@ -116,8 +125,6 @@ const NotesMaker = () => {
       if (data.choices && data.choices.length > 0) {
         const notes = data.choices[0].message.content.trim();
         
-        // Save notes to local storage
-        localStorage.setItem('generatedNotes', notes);
   
         // Show pop-up preview
         setPopupContent(notes);
@@ -238,8 +245,29 @@ const NotesMaker = () => {
     }
   };
 
-
-
+  const saveNotes = async (notes) => {
+    const uniqueId = Date.now().toString();
+    const newNote = { id: uniqueId, text: notes };
+  
+    try {
+      await saveToFirestore(`savedNotes/${uniqueId}`, newNote);
+      console.log('Notes saved with ID:', uniqueId);
+      handleReset();
+    } catch (error) {
+      console.error('Error saving note:', error);
+    }
+  };
+  
+  
+  const deleteNotes = () => {
+    setPopupContent('');
+    setConfirmed(false);
+    setInputText('');
+    setSuggestions([]);
+    setCustomSuggestions([]);
+    setSelectedSuggestions(new Set());
+    console.log('Notes deleted and state reverted.');
+  };
 
   
 
@@ -279,72 +307,95 @@ const NotesMaker = () => {
     });
   };
 
+  const handleReset = () => {
+    setInputText('');
+    setIsLoading(false);
+    setSuggestions([]);
+    setCustomSuggestions([]);
+    setCustomInput('');
+    setSelectedSuggestions(new Set());
+    setConfirmed(false);
+    setPopupContent('');
+  };
+  
+
+  
+
 
   return (
     <div className="quizmaker-container">
-      <h2>QuizMaker</h2>
-      <textarea
-        rows="10"
-        cols="50"
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        placeholder="Enter the large body of text here..."
-        disabled={confirmed}
-      ></textarea>
-      {!confirmed && (
-        <button onClick={handleConfirm}>
-          Confirm
-        </button>
-      )}
-      {confirmed && (
+      <button onClick={() => navigate('/')} style={{ marginBottom: '10px' }}>Back to Home</button>
+      <button onClick={() => navigate('/savednotes')} style={{ marginBottom: '10px' }}>Notes</button>
+      {popupContent ? (
+        <div className="notes-display">
+          <pre>{popupContent}</pre>
+          <button onClick={() => saveNotes(popupContent)}>Save</button>
+          <button onClick={() => deleteNotes()}>Delete</button>
+          <button onClick={handleReset}>Upload Again</button>
+        </div>
+      ) : (
         <>
-          <div className="suggestions-container">
-            {suggestions.map(suggestion => (
-              <div
-                key={suggestion.id}
-                className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
-                onClick={() => toggleSuggestion(suggestion.id)}
-              >
-                {suggestion.text}
+          <h2>QuizMaker</h2>
+          <textarea
+            rows="10"
+            cols="50"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Enter the large body of text here..."
+            disabled={confirmed}
+          ></textarea>
+          {!confirmed && (
+            <button onClick={handleConfirm}>
+              Confirm
+            </button>
+          )}
+          {confirmed && (
+            <>
+              <div className="suggestions-container">
+                {suggestions.map(suggestion => (
+                  <div
+                    key={suggestion.id}
+                    className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
+                    onClick={() => toggleSuggestion(suggestion.id)}
+                  >
+                    {suggestion.text}
+                  </div>
+                ))}
+                {customSuggestions.map(suggestion => (
+                  <div
+                    key={suggestion.id}
+                    className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
+                    onClick={() => toggleSuggestion(suggestion.id)}
+                  >
+                    {suggestion.text}
+                    <button onClick={(e) => {
+                      e.stopPropagation();
+                      removeCustomSuggestion(suggestion.id);
+                    }}>X</button>
+                  </div>
+                ))}
               </div>
-            ))}
-            {customSuggestions.map(suggestion => (
-              <div
-                key={suggestion.id}
-                className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
-                onClick={() => toggleSuggestion(suggestion.id)}
-              >
-                {suggestion.text}
-                <button onClick={(e) => {
-                  e.stopPropagation();
-                  removeCustomSuggestion(suggestion.id);
-                }}>X</button>
+              <div className="custom-suggestions">
+                <input
+                  type="text"
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  placeholder="Add your own suggestion"
+                />
+                <button onClick={addCustomSuggestion}>+</button>
               </div>
-            ))}
-          </div>
-          <div className="custom-suggestions">
-            <input
-              type="text"
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value)}
-              placeholder="Add your own suggestion"
-            />
-            <button onClick={addCustomSuggestion}>+</button>
-          </div>
+            </>
+          )}
+          {confirmed && (
+            <button onClick={handleGenerate} disabled={isLoading}>
+              {isLoading ? 'Generating...' : 'Generate Questions'}
+            </button>
+          )}
         </>
       )}
-      {confirmed && (
-        <button onClick={handleGenerate} disabled={isLoading}>
-          {isLoading ? 'Generating...' : 'Generate Questions'}
-        </button>
-      )}
-        {confirmed && (
-        <div className="markdown-display">
-            <pre>{popupContent}</pre>
-        </div>
-        )}
     </div>
   );
+  
   
   };
 

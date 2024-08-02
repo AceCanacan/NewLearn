@@ -13,7 +13,7 @@ const Home = () => {
     navigate(`/transcribe`);
   };
 
-  const goToNotes = (deckName) => {
+  const goToNotes = () => {
     navigate(`/notesmaker`);
   };
 
