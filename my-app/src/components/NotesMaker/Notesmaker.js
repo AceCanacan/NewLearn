@@ -1,21 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import './Notesmaker.css';
 
-import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import { setDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/firebase';
 
-const loadFromFirestore = async (collectionPath, defaultValue) => {
-  try {
-    const collectionRef = collection(db, ...collectionPath.split('/'));
-    const querySnapshot = await getDocs(collectionRef);
-    const data = querySnapshot.docs.map(doc => doc.data());
-    return data.length ? data : defaultValue;
-  } catch (error) {
-    return defaultValue;
-  }
-};
 
 const saveToFirestore = async (docPath, value) => {
   try {
@@ -37,7 +27,6 @@ const NotesMaker = () => {
   const [user, setUser] = useState(null);
   const [popupContent, setPopupContent] = useState('');
 
-  const { deckName } = useParams();
   const navigate = useNavigate();
   
 

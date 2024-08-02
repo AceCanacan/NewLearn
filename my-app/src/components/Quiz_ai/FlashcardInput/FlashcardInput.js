@@ -73,15 +73,14 @@ function FlashcardInput() {
       if (currentUser) {
         setUser(currentUser);
         fetchTotalFlashcardsCreated(currentUser.uid, deckName);
-
       } else {
         setUser(null);
         setTotalFlashcardsCreated(0);
       }
     });
-
+  
     return () => unsubscribe();
-  }, []);
+  }, [deckName]);
 
   const fetchTotalFlashcardsCreated = async (userId, deckName) => {
     const deckDocRef = doc(db, 'users', userId, 'decks', deckName);
@@ -105,6 +104,7 @@ function FlashcardInput() {
       fetchFlashcards();
     }
   }, [deckName, user]);
+  
 
 
   const handleTestYourself = async () => {

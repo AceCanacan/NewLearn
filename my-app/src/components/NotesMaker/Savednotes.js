@@ -6,23 +6,27 @@ import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/firebase';
 
 const loadFromFirestore = async (collectionPath, defaultValue) => {
-  try {
-    const collectionRef = collection(db, ...collectionPath.split('/'));
-    const querySnapshot = await getDocs(collectionRef);
-    const data = querySnapshot.docs.map(doc => doc.data());
-    return data.length ? data : defaultValue;
-  } catch (error) {
-    return defaultValue;
-  }
-};
-
-const saveToFirestore = async (docPath, value) => {
-  try {
-    const docRef = doc(db, ...docPath.split('/'));
-    await setDoc(docRef, value, { merge: true });  // Ensure merging to avoid overwriting the entire document
-  } catch (error) {
-  }
-};
+    try {
+      const user = auth.currentUser;
+      if (!user) return defaultValue;
+      const collectionRef = collection(db, ...collectionPath.split('/'));
+      const querySnapshot = await getDocs(collectionRef);
+      const data = querySnapshot.docs.map(doc => doc.data());
+      return data.length ? data : defaultValue;
+    } catch (error) {
+      return defaultValue;
+    }
+  };
+  
+  const saveToFirestore = async (docPath, value) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      const docRef = doc(db, ...docPath.split('/'));
+      await setDoc(docRef, value, { merge: true });
+    } catch (error) {
+    }
+  };
 
 const SavedNotes = () => {
   const [savedNotes, setSavedNotes] = useState([]);
@@ -34,31 +38,35 @@ const SavedNotes = () => {
 
   useEffect(() => {
     const loadNotes = async () => {
-        const notes = (await loadFromFirestore('savedNotes', [])).sort((a, b) => b.id - a.id);
-      setSavedNotes(notes);
+        const user = auth.currentUser;
+        if (!user) return;
+        const notes = (await loadFromFirestore(`users/${user.uid}/savedNotes`, [])).sort((a, b) => b.id - a.id);
+        setSavedNotes(notes);
     };
     loadNotes();
   }, []);
 
   const handleSaveEdit = async (id) => {
+    const user = auth.currentUser;
+    if (!user) return;
     const updatedNotes = savedNotes.map(note =>
-      note.id === id ? { ...note, text: editText } : note
+        note.id === id ? { ...note, text: editText } : note
     );
     setSavedNotes(updatedNotes);
-    await saveToFirestore(`savedNotes/${id}`, { text: editText });
+    await saveToFirestore(`users/${user.uid}/savedNotes/${id}`, { text: editText });
     setEditingId(null);
     setEditText('');
-  };
+};
 
-    // handleDelete function
     const handleDelete = async (id) => {
+        const user = auth.currentUser;
+        if (!user) return;
         const updatedNotes = savedNotes.filter(note => note.id !== id);
         setSavedNotes(updatedNotes);
-        await saveToFirestore(`savedNotes/${id}`, { text: null });  // Assuming null text means deleted
+        await saveToFirestore(`users/${user.uid}/savedNotes/${id}`, { text: null });
         setShowDisclaimer(false);
         setNoteToDelete(null);
     };
-
   const handleEdit = (id) => {
     const note = savedNotes.find(note => note.id === id);
     setEditingId(id);
