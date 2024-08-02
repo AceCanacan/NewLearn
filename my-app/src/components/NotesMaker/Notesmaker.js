@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import './Notesmaker.css';
 
-import { setDoc, doc } from 'firebase/firestore';
+import { setDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/firebase';
 
 
@@ -12,6 +12,7 @@ const saveToFirestore = async (docPath, value) => {
     const docRef = doc(db, ...docPath.split('/'));
     await setDoc(docRef, value, { merge: true });  // Ensure merging to avoid overwriting the entire document
   } catch (error) {
+    console.error('Error saving to Firestore:', error);
   }
 };
 
@@ -31,16 +32,20 @@ const NotesMaker = () => {
   
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        console.log('User signed in:', currentUser);
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists() && userDoc.data().generationCount >= 3) {
+          alert('You have reached the maximum number of generations.');
+          // Disable the generate button or take necessary action
+        }
       } else {
         setUser(null);
-        console.log('User signed out');
       }
     });
-
+  
     return () => unsubscribe();
   }, []);
 
@@ -61,36 +66,52 @@ const NotesMaker = () => {
       return;
     }
   
-    const userConfirmed = window.confirm('Do you want to proceed with generating notes?');
-  
-    if (!userConfirmed) {
-      return;
-    }
-  
     setIsLoading(true);
   
-    // Combine AI-generated and custom suggestions
-    const allSuggestions = [
-      ...suggestions.filter(suggestion => selectedSuggestions.has(suggestion.id)),
-      ...customSuggestions.filter(suggestion => selectedSuggestions.has(suggestion.id))
-    ];
-    const finalPrompt = allSuggestions.map(suggestion => suggestion.text).join(' ');
-  
-    const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
-      { 
-        role: 'user', 
-        content: `Given this text: "${inputText}". Please create organized notes from the provided text.` 
-      },
-      { 
-        role: 'user', 
-        content: `Include these suggestions: ${finalPrompt} when creating the notes.` 
-      }
-    ];
-  
-    console.log('Messages:', messages); // Log the messages array
-  
     try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      let generationCount = 0;
+  
+      if (userDoc.exists()) {
+        generationCount = userDoc.data().generationCount || 0;
+      }
+  
+      if (generationCount >= 3) {
+        alert('You have reached the maximum number of generations.');
+        setIsLoading(false);
+        return;
+      }
+  
+      const remainingGenerations = 3 - generationCount;
+      const userConfirmed = window.confirm(`You have ${remainingGenerations} generations left. Do you want to proceed with generating notes?`);
+  
+      if (!userConfirmed) {
+        setIsLoading(false);
+        return;
+      }
+  
+      // Combine AI-generated and custom suggestions
+      const allSuggestions = [
+        ...suggestions.filter(suggestion => selectedSuggestions.has(suggestion.id)),
+        ...customSuggestions.filter(suggestion => selectedSuggestions.has(suggestion.id))
+      ];
+      const finalPrompt = allSuggestions.map(suggestion => suggestion.text).join(' ');
+  
+      const messages = [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { 
+          role: 'user', 
+          content: `Given this text: "${inputText}". Please create organized notes from the provided text.` 
+        },
+        { 
+          role: 'user', 
+          content: `Include these suggestions: ${finalPrompt} when creating the notes.` 
+        }
+      ];
+  
+      console.log('Messages:', messages); // Log the messages array
+  
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -113,13 +134,13 @@ const NotesMaker = () => {
   
       if (data.choices && data.choices.length > 0) {
         const notes = data.choices[0].message.content.trim();
-        
-  
-        // Show pop-up preview
         setPopupContent(notes);
       } else {
         alert('Failed to generate notes. Please try again.');
       }
+  
+      await updateDoc(userDocRef, { generationCount: generationCount + 1 });
+  
     } catch (error) {
       console.error('Error generating notes:', error);
       alert('Error generating notes. Please try again.');
@@ -127,6 +148,7 @@ const NotesMaker = () => {
       setIsLoading(false);
     }
   };
+  
   
 
 
@@ -239,14 +261,17 @@ const NotesMaker = () => {
     const newNote = { id: uniqueId, text: notes };
   
     try {
-      await saveToFirestore(`savedNotes/${uniqueId}`, newNote);
+      const user = auth.currentUser;
+      if (!user) return; // Ensure the user is authenticated
+      await saveToFirestore(`users/${user.uid}/savedNotes/${uniqueId}`, newNote); // Save under the user's directory
       console.log('Notes saved with ID:', uniqueId);
       handleReset();
     } catch (error) {
       console.error('Error saving note:', error);
     }
-    navigate('/savednotes')
+    navigate('/savednotes');
   };
+  
   
   
   const deleteNotes = () => {
@@ -328,10 +353,13 @@ const NotesMaker = () => {
             rows="10"
             cols="50"
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={(e) => setInputText(e.target.value.slice(0, 1000))}
             placeholder="Enter the large body of text here..."
             disabled={confirmed}
+            maxLength={1000} // Ensuring the maxlength is set
           ></textarea>
+          <div>{inputText.length}/1000 characters</div>
+
           {!confirmed && (
             <button onClick={handleConfirm}>
               Confirm

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { collection, setDoc, doc, getDoc } from 'firebase/firestore';
+import { setDoc, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../../firebase/firebase'; // Ensure this path is correct
 import { onAuthStateChanged } from 'firebase/auth';
 import './QuizMaker.css';
@@ -126,7 +126,7 @@ const QuizMaker = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
+          model: 'gpt-4o-mini',
           messages: messages,
           max_tokens: 1500
         })
@@ -313,6 +313,7 @@ const QuizMaker = () => {
         placeholder="Enter the large body of text here..."
         disabled={confirmed}
       ></textarea>
+      <div>{inputText.length}/1000 characters</div>
       {!confirmed && (
         <button onClick={handleConfirm}>
           Confirm

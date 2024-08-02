@@ -3,19 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import './transcribe.css';
 import { useNavigate } from 'react-router-dom';
 
-import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import {  setDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/firebase';
 
-const loadFromFirestore = async (collectionPath, defaultValue) => {
-  try {
-    const collectionRef = collection(db, ...collectionPath.split('/'));
-    const querySnapshot = await getDocs(collectionRef);
-    const data = querySnapshot.docs.map(doc => doc.data());
-    return data.length ? data : defaultValue;
-  } catch (error) {
-    return defaultValue;
-  }
-};
 
 const saveToFirestore = async (docPath, value) => {
   try {
@@ -37,25 +27,28 @@ function Transcribe() {
   const [ setTranscriptionToDelete] = useState(null);
   const navigate = useNavigate();
 
+  const [user, setUser] = useState(null);
+  const [generationCount, setGenerationCount] = useState(0);
+
   useEffect(() => {
     const fetchData = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const collectionPath = `users/${user.uid}/transcriptions`;
-        const savedData = await loadFromFirestore(collectionPath, []);
-        setSavedTranscriptions(savedData);
-      } else {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        setUser(currentUser);
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          setGenerationCount(userDoc.data().generationCount || 0);
+        }
       }
     };
     fetchData();
   }, []);
-
-
-
+  
   const handleSave = async () => {
-    const user = auth.currentUser;
-    if (user) {
-      const userDocPath = `users/${user.uid}/transcriptions/${Date.now()}`;
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      const userDocPath = `users/${currentUser.uid}/transcriptions/${Date.now()}`;
       const newTranscription = {
         id: Date.now(),
         text: result
@@ -75,7 +68,7 @@ function Transcribe() {
     if (selectedFile) {
       const fileType = selectedFile.type.split('/')[0];
       setFileType(fileType);
-      setIsFileValid(validFileTypes.includes(selectedFile.type) && selectedFile.size <= 5 * 1024 * 1024);
+      setIsFileValid(validFileTypes.includes(selectedFile.type) && selectedFile.size <= 2 * 1024 * 1024);
       setError('');
     } else {
       setIsFileValid(false);
@@ -83,29 +76,42 @@ function Transcribe() {
     }
   };
 
-const handleUpload = async () => {
-  setIsProcessing(true);
-  setError('');
-  try {
-    let transcribedText = '';
-
-
-
-    if (fileType === 'image') {
-      transcribedText = await processImage(file);
-    } else if (fileType === 'audio') {
-      transcribedText = await processAudio(file);
+  const handleUpload = async () => {
+    if (generationCount >= 3) {
+      alert('You have reached the maximum number of generations.');
+      return;
     }
-
-    const organizedText = await organizeText(transcribedText);
-    setResult(organizedText);
-  } catch (error) {
-    console.error('Error during processing:', error);
-    setError(`An error occurred during processing: ${error.message}`);
-  } finally {
-    setIsProcessing(false);
-  }
-};
+  
+    alert(`You have ${3 - generationCount} transcriptions left. This action cannot be undone.`);
+  
+    setIsProcessing(true);
+    setError('');
+    try {
+      let transcribedText = '';
+  
+      if (fileType === 'image') {
+        transcribedText = await processImage(file);
+      } else if (fileType === 'audio') {
+        transcribedText = await processAudio(file);
+      }
+  
+      const organizedText = await organizeText(transcribedText);
+      setResult(organizedText);
+  
+      // Update the generation count in Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      await updateDoc(userDocRef, { generationCount: generationCount + 1 });
+      setGenerationCount(generationCount + 1);
+  
+    } catch (error) {
+      console.error('Error during processing:', error);
+      setError(`An error occurred during processing: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  
 
 
   const handleReset = () => {
@@ -300,7 +306,6 @@ const handleNavigateAway = (destination) => {
             <ResultContainer>
               <h3>Transcription Result:</h3>
               <ReactMarkdown>{result}</ReactMarkdown>
-              <button onClick={handleReset} style={{ marginTop: '10px' }}>Upload Another File</button>
               <button onClick={handleSave} style={{ marginTop: '10px' }}>Save</button> {/* Save button */}
               <button onClick={() => setShowDisclaimer(true)} style={{ marginTop: '10px', marginLeft: '10px' }}>Delete</button>
             </ResultContainer>
