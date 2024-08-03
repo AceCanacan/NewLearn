@@ -3,14 +3,12 @@ import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from
 import './App.css';
 import Home from './components/Home/Home';
 
-
 import Deck from './components/Quiz_ai/Deck/Deck';
 import FlashcardInput from './components/Quiz_ai/FlashcardInput/FlashcardInput';
 import TestYourself from './components/Quiz_ai/Test/Test';
 import Review from './components/Quiz_ai/Test/Review';
 import ScoreReport from './components/Quiz_ai/ScoreReport/ScoreReport';
 import QuizMaker from './components/Quiz_ai/QuizMaker/QuizMaker';
-
 
 import Transcribe from './components/Transcribe/transcribe';
 import SavedTranscriptions from './components/Transcribe/SavedTranscriptions';
@@ -19,6 +17,8 @@ import SavedNotes from './components/NotesMaker/Savednotes';
 
 import { logFirebaseConfig } from './firebase/firebase';
 import { signUp, signIn, signOutUser, onAuthChange } from './auth';
+
+// ---------------------- Custom Router ----------------------
 
 const CustomRouter = ({ children }) => {
   const navigate = useNavigate();
@@ -89,6 +89,8 @@ const CustomRouter = ({ children }) => {
   return children;
 };
 
+// ---------------------- Auth Form ----------------------
+
 const AuthForm = ({ onSubmit, buttonText }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -112,6 +114,8 @@ const AuthForm = ({ onSubmit, buttonText }) => {
     </form>
   );
 };
+
+// ---------------------- Main App Component ----------------------
 
 function App() {
   const [user, setUser] = useState(null);
@@ -176,7 +180,6 @@ function App() {
               <button onClick={() => setIsSigningIn(!isSigningIn)}>
                 {isSigningIn ? 'Need to create an account? Sign Up' : 'Already have an account? Sign In'}
               </button>
-              
             </div>
           )}
         </div>
