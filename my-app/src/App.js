@@ -100,24 +100,15 @@ function App() {
 
   useEffect(() => {
     logFirebaseConfig();
-  
+
     // Listen for authentication state changes
     const unsubscribe = onAuthChange((currentUser) => {
-      if (currentUser) {
-        if (currentUser.emailVerified) {
-          setUser(currentUser);
-        } else {
-          signOutUser(); // Sign out unverified users
-          alert('Please verify your email to log in.');
-        }
-      } else {
-        setUser(null);
-      }
+      setUser(currentUser);
     });
-  
+
     return () => unsubscribe();
   }, []);
-  
+
   
 
   return (
