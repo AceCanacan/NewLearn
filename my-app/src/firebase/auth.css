@@ -17,7 +17,6 @@
   height: 100%;
   overflow: hidden; /* Prevent scrolling */
 }
-
 .authpage-wrapper {
   background-color: #fff;
   padding: 6.25%; /* Increased percentage padding */
@@ -41,7 +40,7 @@
   border-radius: 12.5px; /* Increased border radius */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
-  width: 100%;
+  width: 60%;
   max-width: 50vw; /* Increased max width */
   box-sizing: border-box; /* Ensures padding doesn't exceed container width */
 }
@@ -75,7 +74,7 @@
   border-radius: 37.5px; /* Increased border radius */
   cursor: pointer;
   font-size: 20px; /* Increased font size */
-  width: 100%;
+  width: 30%;
   box-sizing: border-box;
   margin: 0 auto; /* Centering the button */
   transition: background-color 0.3s ease;
@@ -119,3 +118,29 @@
   margin-top: 10px;
   padding: 0 10px; /* Padding for better alignment */
 }
+
+.fade-enter {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+  }
+  
+  .fade-enter-active {
+    opacity: 1;
+    transition: opacity 300ms;
+  }
+  
+  .fade-exit {
+    opacity: 1;
+    position: absolute;
+    width: 100%;
+  }
+  
+  .fade-exit-active {
+    opacity: 0;
+    transition: opacity 300ms;
+  }
+  
+  .authpage-wrapper, .authpage-form {
+    background-color: #fff2d5; /* Ensure consistent background color */
+  }
