@@ -16,7 +16,7 @@ import NotesMaker from './components/NotesMaker/Notesmaker';
 import SavedNotes from './components/NotesMaker/Savednotes';
 
 import { logFirebaseConfig } from './firebase/firebase';
-import { signUp, signIn, signOutUser, onAuthChange } from './auth';
+import { signOutUser, onAuthChange,AuthPage } from './firebase/auth';
 
 // ---------------------- Custom Router ----------------------
 
@@ -89,64 +89,36 @@ const CustomRouter = ({ children }) => {
   return children;
 };
 
-// ---------------------- Auth Form ----------------------
 
-const AuthForm = ({ onSubmit, buttonText }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(email, password);
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label>Email:</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-      </div>
-      <div>
-        <label>Password:</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-      </div>
-      <button type="submit">{buttonText}</button>
-    </form>
-  );
-};
 
 // ---------------------- Main App Component ----------------------
 
+
 function App() {
   const [user, setUser] = useState(null);
-  const [isSigningIn, setIsSigningIn] = useState(true);
 
   useEffect(() => {
     logFirebaseConfig();
-
+  
     // Listen for authentication state changes
     const unsubscribe = onAuthChange((currentUser) => {
-      setUser(currentUser);
+      if (currentUser) {
+        if (currentUser.emailVerified) {
+          setUser(currentUser);
+        } else {
+          signOutUser(); // Sign out unverified users
+          alert('Please verify your email to log in.');
+        }
+      } else {
+        setUser(null);
+      }
     });
-
+  
     return () => unsubscribe();
   }, []);
-
-  const handleSignUp = async (email, password) => {
-    try {
-      await signUp(email, password);
-    } catch (error) {
-      console.error('Sign up failed:', error);
-    }
-  };
-
-  const handleSignIn = async (email, password) => {
-    try {
-      await signIn(email, password);
-    } catch (error) {
-      console.error('Sign in failed:', error);
-    }
-  };
+  
+  
 
   return (
     <Router>
@@ -171,16 +143,7 @@ function App() {
               </Routes>
             </>
           ) : (
-            <div>
-              <h2>{isSigningIn ? 'Sign In' : 'Sign Up'}</h2>
-              <AuthForm
-                onSubmit={isSigningIn ? handleSignIn : handleSignUp}
-                buttonText={isSigningIn ? 'Sign In' : 'Sign Up'}
-              />
-              <button onClick={() => setIsSigningIn(!isSigningIn)}>
-                {isSigningIn ? 'Need to create an account? Sign Up' : 'Already have an account? Sign In'}
-              </button>
-            </div>
+            <AuthPage setUser={setUser} />
           )}
         </div>
       </CustomRouter>

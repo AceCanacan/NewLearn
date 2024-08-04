@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { auth,db} from '../../../firebase/firebase'; // Ensure these Firestore functions are correctly imported
+import { auth, db } from '../../../firebase/firebase';
 import './ScoreReport.css';
-import {  doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 const loadFromFirestore = async (docPath, defaultValue) => {
   try {
@@ -19,6 +19,20 @@ const loadFromFirestore = async (docPath, defaultValue) => {
   }
 };
 
+const deleteScoreFromFirestore = async (userId, deckName, index) => {
+  const docRef = doc(db, `users/${userId}/settings/scores`);
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    if (data[deckName]) {
+      data[deckName].splice(index, 1); // Remove the score entry at the specified index
+      await updateDoc(docRef, {
+        [deckName]: data[deckName]
+      });
+    }
+  }
+};
 
 const ScoreReport = () => {
   const { deckName } = useParams();
@@ -36,6 +50,14 @@ const ScoreReport = () => {
     };
     fetchScores();
   }, [deckName]);
+
+  const handleDelete = async (index) => {
+    const user = auth.currentUser;
+    if (user) {
+      await deleteScoreFromFirestore(user.uid, deckName, index);
+      setScores((prevScores) => prevScores.filter((_, i) => i !== index));
+    }
+  };
 
   return (
     <div className="score-report">
@@ -56,6 +78,7 @@ const ScoreReport = () => {
                   <li><strong>Multiple Attempts:</strong> {scoreEntry.report.multipleAttempts}</li>
                   <li><strong>Perfectly Answered:</strong> {scoreEntry.report.answeredPerfectly}</li>
                 </ul>
+                <button onClick={() => handleDelete(index)}>Delete</button>
               </div>
             </li>
           ))}

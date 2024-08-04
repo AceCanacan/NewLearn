@@ -1,30 +1,20 @@
-// src/firebase/auth.js
+// src/auth.js
 import React, { useState } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import './Auth.css'; // Import CSS for styling
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail,sendEmailVerification } from 'firebase/auth';
+import { auth, logFirebaseConfig, db } from './firebase';
+import {  doc, getDoc, setDoc } from 'firebase/firestore';
 
-// Initialize services
-const db = getFirestore(app);
-const auth = getAuth(app);
-const storage = getStorage(app);
+import './auth.css';
 
-console.log('Firestore initialized:', db);
-console.log('Auth initialized:', auth);
-console.log('Storage initialized:', storage);
-
-// Log Firebase config (optional)
-const logFirebaseConfig = () => {
-  console.log('Firebase Config:', firebaseConfig);
-};
-
-// Sign up function
 const signUp = async (email, password) => {
   console.log('Attempting to sign up with email:', email);
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
+      email: email,
+      emailVerified: false,
+    });
+    await sendEmailVerification(userCredential.user); // Send email verification
     console.log('Sign up successful:', userCredential.user);
     return userCredential.user;
   } catch (error) {
@@ -33,11 +23,15 @@ const signUp = async (email, password) => {
   }
 };
 
+
 // Sign in function
 const signIn = async (email, password) => {
   console.log('Attempting to sign in with email:', email);
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    if (!userCredential.user.emailVerified) {
+      throw new Error('Email not verified. Please verify your email.');
+    }
     console.log('Sign in successful:', userCredential.user);
     return userCredential.user;
   } catch (error) {
@@ -45,6 +39,7 @@ const signIn = async (email, password) => {
     throw error;
   }
 };
+
 
 // Sign out function
 const signOutUser = async () => {
@@ -61,87 +56,170 @@ const signOutUser = async () => {
 // Listen for auth state changes
 const onAuthChange = (callback) => {
   console.log('Setting up auth state change listener');
-  onAuthStateChanged(auth, (user) => {
-    console.log('Auth state changed:', user);
+  return onAuthStateChanged(auth, (user) => {
     callback(user);
   });
 };
 
+
 // AuthPage component
 const AuthPage = ({ setUser }) => {
+  const [passwordVerification, setPasswordVerification] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [accountCreated, setAccountCreated] = useState(false);
+
 
   console.log('Rendering AuthPage component');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(''); // Reset error message
+// Adjust the handleSubmit function
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError(''); // Reset error message
+  
+  if (!email || !password) {
+    setError('Please fill in both email and password.');
+    return;
+  }
 
-    if (!email || !password) {
-      setError('Please fill in both email and password.');
+  if (!isSigningIn && password !== passwordVerification) {
+    setError('Passwords do not match.');
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    if (isSigningIn) {
+      console.log('Signing in...');
+      const user = await signIn(email, password);
+      setUser(user);
+    } else {
+      console.log('Signing up...');
+      await signUp(email, password);
+      setAccountCreated(true);
+    }
+  } catch (error) {
+    console.error('Authentication failed:', error);
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+  
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError('Please enter your email to reset password.');
       return;
     }
-
-    setLoading(true);
-
     try {
-      let user;
-      if (isSigningIn) {
-        console.log('Signing in...');
-        user = await signIn(email, password);
-      } else {
-        console.log('Signing up...');
-        user = await signUp(email, password);
-      }
-      setUser(user);
+      await sendPasswordResetEmail(auth, email);
+      setError('Password reset email sent.');
     } catch (error) {
-      console.error('Authentication failed:', error);
       setError(error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <h2>{isSigningIn ? 'Sign In' : 'Sign Up'}</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Email:</label>
-          <input 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            required 
-          />
+    <div className="authpage-container">
+    {accountCreated ? (
+      <>
+        <h2 className="authpage-title">Account Created Successfully</h2>
+        <p className="authpage-message">Please check your email to verify your account before logging in.</p>
+        <div className="authpage-button-container">
+          <button onClick={() => {
+            setIsSigningIn(true);
+            setAccountCreated(false);
+          }} className="authpage-auth-button">
+            Proceed to Log In Page
+          </button>
         </div>
-        <div className="form-group">
-          <label>Password:</label>
-          <input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-          />
-        </div>
-        <button type="submit" disabled={loading}>
-          {isSigningIn ? 'Sign In' : 'Sign Up'}
-        </button>
-      </form>
-      {error && <p className="error-message">{error}</p>}
-      <button onClick={() => {
-        console.log('Toggling sign in/sign up mode');
-        setIsSigningIn(!isSigningIn);
-      }} disabled={loading}>
-        {isSigningIn ? 'Need to create an account? Sign Up' : 'Already have an account? Sign In'}
-      </button>
-      {loading && <p>Loading...</p>}
+      </>
+    ) : (
+        <>
+          <h2 className="authpage-title">
+            {isForgotPassword ? 'Reset Password' : (isSigningIn ? 'Welcome to NewLearn!' : 'Sign up')}
+          </h2>
+          <form onSubmit={handleSubmit} className="authpage-form">
+            <div className="authpage-form-group">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="authpage-input"
+                placeholder="Email"
+              />
+            </div>
+            {!isForgotPassword && (
+              <div className="authpage-form-group">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="authpage-input"
+                  placeholder="Password"
+                />
+              </div>
+            )}
+            {!isSigningIn && !isForgotPassword && (
+              <div className="authpage-form-group">
+                <input
+                  type="password"
+                  value={passwordVerification}
+                  onChange={(e) => setPasswordVerification(e.target.value)}
+                  required
+                  className="authpage-input"
+                  placeholder="Verify Password"
+                />
+              </div>
+            )}
+            <div className="authpage-button-container">
+              <button type="submit" disabled={loading} className="authpage-auth-button">
+                {isForgotPassword ? 'Send Reset Email' : (isSigningIn ? 'Log In' : 'Sign Up')}
+              </button>
+            </div>
+          </form>
+          {error && <p className="authpage-error-message">{error}</p>}
+          {!isForgotPassword && (
+            <>
+              <div className="authpage-button-container">
+                <button
+                  onClick={() => {
+                    console.log('Toggling sign in/sign up mode');
+                    setIsSigningIn(!isSigningIn);
+                  }}
+                  disabled={loading}
+                  className="authpage-auth-button-secondary"
+                >
+                  {isSigningIn ? 'New Account' : 'Already have an account? Sign In'}
+                </button>
+              </div>
+            </>
+          )}
+          {isForgotPassword && (
+            <div className="authpage-button-container">
+              <button
+                onClick={() => setIsForgotPassword(false)}
+                disabled={loading}
+                className="authpage-auth-button-secondary"
+              >
+                Back to {isSigningIn ? 'Log In' : 'Sign Up'}
+              </button>
+            </div>
+          )}
+          {loading && <p className="authpage-loading">Loading...</p>}
+        </>
+      )}
     </div>
   );
+  
+  
 };
 
-export { db, auth, storage, logFirebaseConfig, signUp, signIn, signOutUser, onAuthChange, AuthPage };
+export { logFirebaseConfig, signUp, signIn, signOutUser, onAuthChange, AuthPage };

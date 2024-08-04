@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { collection, doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../../firebase/firebase'; // Ensure this path is correct
 import { onAuthStateChanged } from 'firebase/auth';
 import './Review.css';
@@ -19,8 +19,8 @@ const Review = () => {
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [typingMode, setTypingMode] = useState(false);
   const [typedAnswer, setTypedAnswer] = useState('');
-  const [wasCorrect, setWasCorrect] = useState(false);
-  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [ setWasCorrect] = useState(false);
+  const [ setCorrectAnswers] = useState(0);
   const [correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions] = useState(new Set());
   const [user, setUser] = useState(null);
 
@@ -93,7 +93,7 @@ const Review = () => {
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
         },
         body: formData
       });
@@ -128,7 +128,7 @@ const Review = () => {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -211,7 +211,7 @@ const Review = () => {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer sk-proj-0rQJn442QsrpnAURUQfNT3BlbkFJ9U9wAI7IGP112CXY9v3f`,
+          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
