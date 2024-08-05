@@ -1,30 +1,67 @@
-// src/components/Home/Home.js
-import React from 'react';
+import React, { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [currentIndex, setCurrentIndex] = useState(0); // Start with the first card
+  const [slideDirection, setSlideDirection] = useState('');
 
-  const goToDeck = (deckName) => {
-    navigate(`/deck/${deckName}`);
+  const cards = [
+    { title: "Quiz Maker", description: "Automatically create and evaluate personalized quizzes with dynamic questions", route: "/deck/home" },
+    { title: "Transcriber", description: "Convert audio recordings into text automatically", route: "/savedtranscriptions" },
+    { title: "Notes", description: "Save and organize your notes efficiently", route: "/savednotes" }
+  ];
+
+  const goToCard = (index) => {
+    const route = cards[index].route;
+    navigate(route);
   };
 
-  const goToTranscribe = () => {
-    navigate(`/savedtranscriptions`);
-  };
 
-  const goToNotes = () => {
-    navigate(`/savednotes`);
-  };
+  
 
+  const scrollCarousel = (direction) => {
+    let newIndex = currentIndex;
+    if (direction === 'prev') {
+      newIndex = (currentIndex - 1 + cards.length) % cards.length;
+      setSlideDirection('left');
+    } else if (direction === 'next') {
+      newIndex = (currentIndex + 1) % cards.length;
+      setSlideDirection('right');
+    }
+  
+    setTimeout(() => {
+      setSlideDirection('');
+      setCurrentIndex(newIndex);
+      sessionStorage.setItem('currentIndex', newIndex); // Save currentIndex to session storage
+    }, 500);
+  };
+  
+  useEffect(() => {
+    const savedIndex = sessionStorage.getItem('currentIndex');
+    if (savedIndex !== null) {
+      setCurrentIndex(parseInt(savedIndex, 10));
+    }
+  }, []);
+  
   return (
-    <div>
+    <div className="home-container">
       <h1>Home</h1>
-      <button onClick={() => goToDeck('home')}>QuizMaker</button>
-      <button onClick={() => goToTranscribe()}>TransCriber</button>
-      <button onClick={() => goToNotes()}>Notes</button>
+      <div className="card-carousel">
+        <div className={`card ${slideDirection}`} key={currentIndex} onClick={() => goToCard(currentIndex)}>
+          <h2>{cards[currentIndex].title}</h2>
+          <p>{cards[currentIndex].description}</p>
+          <button className="start-button">START</button>
+        </div>
+      </div>
+      <div className="carousel-nav">
+        <button className="nav-button" onClick={() => scrollCarousel('prev')}>&#9664;</button>
+        <button className="nav-button" onClick={() => scrollCarousel('next')}>&#9654;</button>
+      </div>
     </div>
   );
+  
 };
 
 export default Home;

@@ -117,8 +117,6 @@ function App() {
         <div className="App">
           {user ? (
             <>
-              <h1>Welcome, {user.email}</h1>
-              <button onClick={signOutUser}>Sign Out</button>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/deck/:deckName" element={<Deck />} />
