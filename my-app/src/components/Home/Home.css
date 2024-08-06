@@ -49,12 +49,12 @@
 }
 
 .homepage-card.left {
-    transform: translateX(-100%);
+    transform: translate(-3vw, 3vh);
     opacity: 0;
 }
 
 .homepage-card.right {
-    transform: translateX(100%);
+    transform: translate(3vw, -3vh);
     opacity: 0;
 }
 
@@ -161,3 +161,19 @@
         font-size: 14px;
     }
 }
+
+.homepage-card.empty {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #F88C08;
+    width: 40vw;
+    height: 40vw;
+    border-radius: 10px;
+    opacity: 0.5; /* Different opacity to indicate they are placeholders */
+}
+
+.homepage-card.empty.left-card {
+    transform: translate(-3vw, -27vh);
+}
+

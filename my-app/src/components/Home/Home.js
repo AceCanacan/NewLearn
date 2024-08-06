@@ -49,10 +49,12 @@ const Home = () => {
     <div className="home-container">
         <div className="homepage-card-carousel-nav-container">
             <div className="homepage-card-carousel">
+            <div className="homepage-card empty left-card"></div>
                 <div className={`homepage-card ${slideDirection}`} key={currentIndex} onClick={() => goToCard(currentIndex)}>
                     <h2>{cards[currentIndex].title}</h2>
                     <p>{cards[currentIndex].description}</p>
                 </div>
+                
             </div>
             <div className="homepage-carousel-nav">
                 <button className="homepage-nav-button" onClick={() => scrollCarousel('prev')}>&#9664;</button>
