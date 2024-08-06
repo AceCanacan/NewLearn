@@ -47,20 +47,22 @@ const Home = () => {
   
   return (
     <div className="home-container">
-      <h1>Home</h1>
-      <div className="card-carousel">
-        <div className={`card ${slideDirection}`} key={currentIndex} onClick={() => goToCard(currentIndex)}>
-          <h2>{cards[currentIndex].title}</h2>
-          <p>{cards[currentIndex].description}</p>
-          <button className="start-button">START</button>
+        <div className="homepage-card-carousel-nav-container">
+            <div className="homepage-card-carousel">
+                <div className={`homepage-card ${slideDirection}`} key={currentIndex} onClick={() => goToCard(currentIndex)}>
+                    <h2>{cards[currentIndex].title}</h2>
+                    <p>{cards[currentIndex].description}</p>
+                </div>
+            </div>
+            <div className="homepage-carousel-nav">
+                <button className="homepage-nav-button" onClick={() => scrollCarousel('prev')}>&#9664;</button>
+                <button className="homepage-nav-button" onClick={() => scrollCarousel('next')}>&#9654;</button>
+            </div>
         </div>
-      </div>
-      <div className="carousel-nav">
-        <button className="nav-button" onClick={() => scrollCarousel('prev')}>&#9664;</button>
-        <button className="nav-button" onClick={() => scrollCarousel('next')}>&#9654;</button>
-      </div>
     </div>
-  );
+);
+
+
   
 };
 
