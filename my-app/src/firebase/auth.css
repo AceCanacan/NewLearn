@@ -67,7 +67,7 @@
 }
 
 .authpage-auth-button {
-  background-color: #b64607;
+  background-color: #3666fb;
   color: white;
   padding: 12.5px 25px; /* Increased padding */
   border: none;
@@ -81,14 +81,14 @@
 }
 
 .authpage-auth-button:hover {
-  background-color: #9f3d06;
+  background-color: #2851a3;
 }
 
 .authpage-auth-button-secondary {
-    background-color: #fffbeb; /* Lighter background color */
-    color: #451a03; /* Darker text color */
+    background-color: #3666fb; /* Lighter background color */
+    color: white; /* Darker text color */
     padding: 10px 20px; /* Smaller padding */
-    border: 1px solid #451a03; /* Dark outline */
+
     border-radius: 20px; /* Smaller border radius */
     cursor: pointer;
     font-size: 16px; /* Smaller font size */
@@ -99,7 +99,7 @@
   }
   
   .authpage-auth-button-secondary:hover {
-    background-color: #f5ecd2; /* Slightly darker hover background */
+    background-color: #2851a3; /* Slightly darker hover background */
   }
   
 .authpage-auth-button:disabled,

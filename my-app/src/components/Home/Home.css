@@ -25,6 +25,13 @@
     height: 70%; /* Adjusted for better responsiveness */
     width: 100%;
     z-index: 1; /* Ensure carousel is below the navigation */
+    overflow: visible; 
+}
+
+.homepage-card h2, .homepage-card p {
+    width: 100%;
+    text-align: left; /* Ensure both title and description are left-justified */
+    margin: 2% 0; /* Adjust this value to set the space between elements */
 }
 
 .homepage-card {
@@ -33,28 +40,64 @@
     height: 40vw; /* Ensures the card is square */
     max-width: none;
     max-height: none;
-    margin: 0 10px;
-    background-color: #F88C08;
+    margin: 0 2%; /* Responsive margin */
+    background-color: #fdaf22;
     color: white;
-    border-radius: 10px;
-    padding: 20px; /* Adjusted for better responsiveness */
+    border-radius: 2%; /* Responsive border radius */
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start; /* Align items at the top */
     align-items: center;
-    text-align: center;
     transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
-    position: absolute;
+    position: relative;
     opacity: 1;
+    font-size: 3vw; /* Responsive font size */
+    padding: 5%; /* Increase this value to make the internal border bigger */
+    box-sizing: border-box; /* Ensure padding is included in the width and height */
+    z-index: 2; /* Ensure the card is above other elements */
+}
+
+
+.homepage-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow on hover */
+}
+
+
+
+.homepage-card > * {
+    margin-bottom: 2%; /* Adjust this to bring the content closer together */
+}
+
+.homepage-card > *:last-child {
+    margin-bottom: 0; /* Remove margin for the last child element */
+}
+
+.squircle {
+    position: absolute;
+    bottom: 10%;
+    right: 10%;
+    width: 30%; /* Adjust size as needed */
+    height: 30%; /* Adjust size as needed */
+    background-color: #3666FB;
+    border-radius: 15%; /* Ensures a rounded square (squircle) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.squircle .logo {
+    width: 100%; /* Adjust size as needed */
+    height: 100%; /* Adjust size as needed */
+    object-fit: contain;
 }
 
 .homepage-card.left {
-    transform: translate(-3vw, 3vh);
+    transform: translate(-3vw, 6vh);
     opacity: 0;
 }
 
 .homepage-card.right {
-    transform: translate(3vw, -3vh);
+    transform: translate(3vw, -6vh);
     opacity: 0;
 }
 
@@ -64,7 +107,7 @@
 }
 
 .homepage-card p {
-    margin: 20px 0;
+    margin: 2% 0;
     font-size: 1em; /* Adjusted for better responsiveness */
 }
 
@@ -72,8 +115,8 @@
     background-color: #3666FB;
     color: white;
     border: none;
-    border-radius: 5px;
-    padding: 10px 20px; /* Adjusted for better responsiveness */
+    border-radius: 5%;
+    padding: 1% 2%; /* Adjusted for better responsiveness */
     font-size: 1em; /* Adjusted for better responsiveness */
     cursor: pointer;
     transition: background-color 0.3s ease;
@@ -84,96 +127,66 @@
 }
 
 .homepage-carousel-nav {
+    position: absolute; /* Absolute positioning relative to the parent */
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%); /* Center vertically */
     display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 10px; /* Adjusted for better responsiveness */
-    z-index: 3; /* Ensure navigation buttons are above everything */
-    position: relative;
+    justify-content: space-between; /* Ensure buttons are on the left and right */
+    width: 70%; /* Adjust width to bring buttons closer */
+    margin: 0 auto; /* Center the container */
+    z-index: 2; /* Ensure buttons are above the cards */
 }
+
 
 .homepage-nav-button {
     background-color: #3666FB;
     color: white;
     border: none;
     border-radius: 50%; /* Ensures the button is circular */
-    width: 40px; /* Ensures width and height are equal */
-    height: 40px; /* Ensures width and height are equal */
+    width: 3vw; /* Ensures width and height are equal */
+    height: 3vw; /* Ensures width and height are equal */
     padding: 0; /* Ensure no padding affects the dimensions */
     cursor: pointer;
-    font-size: 20px; /* Adjusted for better responsiveness */
+    font-size: 1vw; /* Adjusted for better responsiveness */
     transition: background-color 0.3s ease;
 }
 
-
 .homepage-nav-button:hover {
     background-color: #2851a3;
-}
-
-/* Media Queries for better responsiveness */
-@media (max-width: 768px) {
-    .homepage-card {
-        width: 70vw; /* Ensures the card is square */
-        height: 70vw; /* Ensures the card is square */
-    }
-    .homepage-card h2 {
-        font-size: 1.2em;
-    }
-
-    .homepage-card p {
-        font-size: 0.9em;
-    }
-
-    .homepage-start-button {
-        font-size: 0.9em;
-        padding: 8px 16px;
-    }
-
-    .homepage-nav-button {
-        width: 30px; /* Ensure width and height are equal */
-        height: 30px; /* Ensure width and height are equal */
-    }
-}
-
-@media (max-width: 480px) {
-    .homepage-card {
-        width: 90vw; /* Ensures the card is square */
-        height: 90vw; /* Ensures the card is square */
-        padding: 5px;
-    }
-
-    .homepage-card h2 {
-        font-size: 1em;
-    }
-
-    .homepage-card p {
-        font-size: 0.8em;
-    }
-
-    .homepage-start-button {
-        font-size: 0.8em;
-        padding: 5px 10px;
-    }
-
-    .homepage-nav-button {
-        width: 25px;
-        height: 25px;
-        font-size: 14px;
-    }
 }
 
 .homepage-card.empty {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background-color: #F88C08;
+    background-color: #fdaf22;
     width: 40vw;
     height: 40vw;
-    border-radius: 10px;
-    opacity: 0.5; /* Different opacity to indicate they are placeholders */
+    border-radius: 2%;
+    opacity: 0.2; /* Different opacity to indicate they are placeholders */
 }
 
 .homepage-card.empty.left-card {
-    transform: translate(-3vw, -27vh);
+    transform: translate(-3vw, -30vh);
 }
 
+.logout-button {
+    position: absolute;
+    top: 2%;
+    left: 2%;
+    background-color: #3666FB;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 1% 2%;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    z-index: 3; /* Ensure button is above other elements */
+}
+
+.logout-button:hover {
+    background-color: #2851a3;
+}
