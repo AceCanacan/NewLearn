@@ -85,7 +85,7 @@ const [saveName, setSaveName] = useState('');
   
 
   const handleUpload = async () => {
-    if (generationCount >= 30) {
+    if (generationCount >= 3) {
       alert('You have reached the maximum number of generations.');
       return;
     }
@@ -266,20 +266,44 @@ const [saveName, setSaveName] = useState('');
   };
   
   const confirmSave = async () => {
+    console.log("confirmSave: Initiating save process.");
+    
     const currentUser = auth.currentUser;
+    console.log("confirmSave: Current user:", currentUser);
+    
     if (currentUser && saveName) {
+      console.log("confirmSave: Save name provided:", saveName);
+      
       const userDocPath = `users/${currentUser.uid}/transcriptions/${saveName}`;
+      console.log("confirmSave: Document path constructed:", userDocPath);
+      
       const newTranscription = {
         id: Date.now(),
         text: result
       };
+      console.log("confirmSave: New transcription object:", newTranscription);
+      
       setSavedTranscriptions([...savedTranscriptions, newTranscription]);
+      console.log("confirmSave: Updated saved transcriptions state:", savedTranscriptions);
+      
       await saveToFirestore(userDocPath, newTranscription);
+      console.log("confirmSave: Transcription saved to Firestore.");
+      
       handleReset();
-      setShowSaveDisclaimer(false);  // Hide the save disclaimer
+      console.log("confirmSave: Form reset.");
+      
+      setShowSaveDisclaimer(false);
+      console.log("confirmSave: Save disclaimer hidden.");
+      
       navigate('/savedtranscriptions');
+      console.log("confirmSave: Navigation to /savedtranscriptions completed.");
+
+      
+    } else {
+      console.error("confirmSave: Missing currentUser or saveName.");
     }
   };
+  
   
   
 

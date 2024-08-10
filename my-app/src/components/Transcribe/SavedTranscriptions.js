@@ -1,143 +1,152 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import './transcribe.css';  // Ensure your CSS file includes styles for modal-overlay and modal-content
-import { useNavigate } from 'react-router-dom';
-
-import {  setDoc, doc, deleteDoc,collection, getDocs} from 'firebase/firestore';
+import './st.css';  // Your custom styles
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/firebase';
 
-const loadFromFirestore = async (collectionPath, defaultValue) => {
-    try {
-      const collectionRef = collection(db, ...collectionPath.split('/'));
-      const querySnapshot = await getDocs(collectionRef);
-      const data = querySnapshot.docs.map(doc => doc.data());
-      console.log("Collection data:", data);
-      return data.length ? data : defaultValue;
-    } catch (error) {
-      console.error("Error loading data from Firestore:", error);
+const loadFromFirestore = async (docPath, defaultValue) => {
+  try {
+    const docRef = doc(db, docPath);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
       return defaultValue;
     }
-  };
-
-const saveToFirestore = async (docPath, value) => {
-  try {
-    const docRef = doc(db, ...docPath.split('/'));
-    await setDoc(docRef, value);
   } catch (error) {
+    console.error("Error loading data from Firestore:", error);
+    return defaultValue;
   }
 };
 
+const saveToFirestore = async (docPath, value) => {
+  try {
+    const docRef = doc(db, docPath);
+    await setDoc(docRef, value);
+  } catch (error) {
+    console.error("Error saving data to Firestore:", error);
+  }
+};
+
+const removeFromFirestore = async (docPath) => {
+  try {
+    const docRef = doc(db, docPath);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error("Error deleting data from Firestore:", error);
+  }
+};
 
 const SavedTranscriptions = () => {
   const [savedTranscriptions, setSavedTranscriptions] = useState([]);
-  const [editingId, setEditingId] = useState(null);
+  const [activeTranscription, setActiveTranscription] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [transcriptionToDelete, setTranscriptionToDelete] = useState(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       const user = auth.currentUser;
       if (user) {
         const collectionPath = `users/${user.uid}/transcriptions`;
-        const savedData = (await loadFromFirestore(collectionPath, [])).sort((a, b) => b.id - a.id);
+        const collectionRef = collection(db, collectionPath);
+        const querySnapshot = await getDocs(collectionRef);
+        const savedData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => b.id - a.id);
         setSavedTranscriptions(savedData);
       }
     };
     fetchData();
   }, []);
 
-  const handleSaveEdit = async (id) => {
-    const user = auth.currentUser;
-    if (user) {
-      const userDocPath = `users/${user.uid}/transcriptions/${id}`;
-      const updatedTranscriptions = savedTranscriptions.map(transcription =>
-        transcription.id === id ? { ...transcription, text: editText } : transcription
-      );
-      setSavedTranscriptions(updatedTranscriptions);
-      await saveToFirestore(userDocPath, { id, text: editText });
-    }
-    setEditingId(null);
-    setEditText('');
-  };
-  
-  const handleDelete = async (id) => {
-    const user = auth.currentUser;
-    if (user) {
-      const userDocPath = `users/${user.uid}/transcriptions/${id}`;
-      await deleteDoc(doc(db, userDocPath)); // Import and use the deleteDoc function from Firestore
-      
-      const updatedTranscriptions = savedTranscriptions.filter(t => t.id !== id);
-      setSavedTranscriptions(updatedTranscriptions);
-    }
-    setShowDisclaimer(false);
-    setTranscriptionToDelete(null);
-  };
-  
-  const handleEdit = (id) => {
-    const transcription = savedTranscriptions.find(t => t.id === id);
-    setEditingId(id);
+  const handleTranscriptionClick = (transcription) => {
+    setActiveTranscription(transcription);
     setEditText(transcription.text);
   };
 
-  const showDeleteModal = (id) => {
-    setShowDisclaimer(true);
-    setTranscriptionToDelete(id);
+  const handleEdit = () => {
+    setIsEditing(true);
   };
 
-  const cancelDelete = () => {
-    setShowDisclaimer(false);
-    setTranscriptionToDelete(null);
+  const handleSave = async () => {
+    if (activeTranscription && auth.currentUser) {
+      const docPath = `users/${auth.currentUser.uid}/transcriptions/${activeTranscription.id}`;
+      await saveToFirestore(docPath, { ...activeTranscription, text: editText });
+      setSavedTranscriptions((prev) =>
+        prev.map((t) => (t.id === activeTranscription.id ? { ...t, text: editText } : t))
+      );
+      setIsEditing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (activeTranscription && auth.currentUser) {
+      const docPath = `users/${auth.currentUser.uid}/transcriptions/${activeTranscription.id}`;
+      await removeFromFirestore(docPath);
+      setSavedTranscriptions((prev) => prev.filter((t) => t.id !== activeTranscription.id));
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    setActiveTranscription(null);
+    setIsEditing(false);
   };
 
   return (
     <div>
-      <button onClick={() => navigate('/')} style={{ marginBottom: '10px' }}>Home</button>
-      <h2>Saved Transcriptions</h2>
+      <h2 className="st-title">Saved Transcriptions</h2>
       {savedTranscriptions.length === 0 ? (
-        <p>No transcriptions saved yet.</p>
+        <p className="st-no-transcriptions">No transcriptions saved yet.</p>
       ) : (
-        <ul>
+        <ul className="st-transcriptions-list">
           {savedTranscriptions.map(transcription => (
-            <li key={transcription.id}>
-              <div style={{ border: '1px solid #ddd', padding: '10px', borderRadius: '5px', margin: '10px 0' }}>
-                {editingId === transcription.id ? (
-                  <>
-                    <textarea
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      rows="4"
-                      style={{ width: '100%' }}
-                    />
-                    <button onClick={() => handleSaveEdit(transcription.id)} style={{ marginTop: '10px' }}>Save</button>
-                    <button onClick={() => setEditingId(null)} style={{ marginTop: '10px', marginLeft: '10px' }}>Cancel</button>
-                    <button onClick={() => showDeleteModal(transcription.id)} style={{ marginTop: '10px', marginLeft: '10px' }}>Delete</button>
-                  </>
-                ) : (
-                  <>
-                    <ReactMarkdown>{transcription.text}</ReactMarkdown>
-                    <button onClick={() => handleEdit(transcription.id)} style={{ marginTop: '10px', marginRight: '10px' }}>Edit</button>
-                    <button onClick={() => showDeleteModal(transcription.id)} style={{ marginTop: '10px', marginLeft: '10px' }}>Delete</button>
-                  </>
-                )}
+            <li key={transcription.id} className="st-transcription-item">
+              <div className="st-transcription-container" onClick={() => handleTranscriptionClick(transcription)}>
+                <ReactMarkdown className="st-markdown-content">
+                  {transcription.text.length > 100 
+                    ? transcription.text.substring(0, 100) + "..." 
+                    : transcription.text}
+                </ReactMarkdown>
               </div>
             </li>
           ))}
         </ul>
       )}
-      {showDisclaimer && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <p>Are you sure you want to delete this transcription? This action cannot be undone.</p>
-            <button onClick={() => handleDelete(transcriptionToDelete)} style={{ marginRight: '10px' }}>Yes</button>
-            <button onClick={cancelDelete}>No</button>
+      {activeTranscription && (
+        <div className="st-transcription-modal">
+          <div className="st-modal-content">
+            <button className="st-close-button" onClick={handleClose}>X</button>
+            <h2>{activeTranscription.title}</h2>
+            {isEditing ? (
+              <textarea
+                className="st-textarea"
+                value={editText}
+                rows="20"
+                onChange={(e) => setEditText(e.target.value)}
+                style={{ width: '100%' }}
+              />
+            ) : (
+              <textarea
+                className="st-textarea"
+                value={activeTranscription.text}
+                rows="20"
+                style={{ width: '100%' }}
+                readOnly
+              />
+            )}
+            <div className="st-button-group">
+              {isEditing ? (
+                <>
+                  <button className="st-save-button" onClick={handleSave}>Save</button>
+                  <button className="st-cancel-button" onClick={() => setIsEditing(false)}>Cancel</button>
+                </>
+              ) : (
+                <button className="st-edit-button" onClick={handleEdit}>Edit</button>
+              )}
+              <button className="st-delete-button" onClick={handleDelete}>Delete</button>
+            </div>
           </div>
         </div>
-        
       )}
-<button onClick={() => navigate('/transcribe')} style={{ marginTop: '20px' }}>+</button>
-
     </div>
   );
 };

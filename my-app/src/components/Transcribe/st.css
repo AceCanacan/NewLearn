@@ -1,0 +1,126 @@
+.st-title {
+    font-size: 2em;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.st-no-transcriptions {
+    color: #888;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.st-transcriptions-list {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.st-transcription-item {
+    width: 90%;
+    max-width: 800px;
+    margin: 10px 0;
+    transition: transform 0.3s;
+}
+
+.st-transcription-item:hover {
+    transform: scale(1.02);
+}
+
+.st-transcription-container {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.st-transcription-container:hover {
+    background-color: #f1f1f1;
+}
+
+.st-markdown-content {
+    margin-bottom: 10px;
+    color: #444;
+}
+
+.st-transcription-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.st-modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-align: left;
+}
+
+.st-close-button {
+    background-color: #d9534f;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 8px 12px;
+    font-size: 1em;
+    float: right;
+    margin-bottom: 20px;
+    transition: background-color 0.3s;
+}
+
+.st-close-button:hover {
+    background-color: #c9302c;
+}
+
+.st-textarea {
+    width: 100%;
+    height: 300px;
+    border-radius: 5px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    font-size: 1em;
+    resize: none;
+}
+
+.st-add-transcription {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #5cb85c;
+    border: none;
+    color: white;
+    border-radius: 50%;
+    font-size: 30px;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.st-add-transcription:hover {
+    background-color: #4cae4c;
+    transform: scale(1.1);
+}

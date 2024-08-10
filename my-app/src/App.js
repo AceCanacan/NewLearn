@@ -12,6 +12,7 @@ import QuizMaker from './components/Quiz_ai/QuizMaker/QuizMaker';
 
 import Transcribe from './components/Transcribe/transcribe';
 import SavedTranscriptions from './components/Transcribe/SavedTranscriptions';
+
 import NotesMaker from './components/NotesMaker/Notesmaker';
 import SavedNotes from './components/NotesMaker/Savednotes';
 
