@@ -43,6 +43,8 @@ function Transcribe() {
       }
     };
     fetchData();
+    console.log('API Key:', process.env.REACT_APP_OPENAI_API_KEY);
+
   }, []);
   
   const handleSave = async () => {
@@ -64,17 +66,20 @@ function Transcribe() {
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    setFile(selectedFile);
     if (selectedFile) {
+      setFile(selectedFile);
       const fileType = selectedFile.type.split('/')[0];
       setFileType(fileType);
       setIsFileValid(validFileTypes.includes(selectedFile.type) && selectedFile.size <= 2 * 1024 * 1024);
       setError('');
     } else {
+      setFile(null);
+      setFileType('');
       setIsFileValid(false);
       setError('Please select a file.');
     }
   };
+  
 
   const handleUpload = async () => {
     if (generationCount >= 3) {
@@ -273,56 +278,62 @@ const handleNavigateAway = (destination) => {
 
 
 
-  return (
-    <div>
-<button onClick={() => handleNavigateAway('/savedtranscriptions')} style={{ marginTop: '10px' }}>View Saved Transcriptions</button>
-      <h2>File Transcription</h2>
-      {!result && (
-        <>
-          <input 
-            type="file" 
-            accept=".png,.jpg,.jpeg,.mp3" 
-            onChange={handleFileChange} 
-            disabled={isProcessing}
-          />
-          {file && !isFileValid && (
-            <p style={{color: 'red'}}>
-              File must be a valid type (PNG, JPEG, or MP3) and no larger than 5 MB.
-            </p>
+return (
+  <div>
+    {!file && !result && (
+      <div className="upload-container">
+        <div className="arrow-up-logo">⬆️</div>
+        <div className="text">Drag and drop document here to upload</div>
+        <button className="upload-button" onClick={() => document.getElementById('fileInput').click()}>
+          Select from Device
+        </button>
+        <input id="fileInput" type="file" accept=".png,.jpg,.jpeg,.mp3" onChange={handleFileChange} style={{ display: 'none' }} />
+        <div className="drag-and-drop-text">or drag and drop document here to upload</div>
+      </div>
+    )}
+
+    {file && (
+      <div className="result-container">
+        <div className="preview">
+          {fileType === 'image' ? (
+            <img src={URL.createObjectURL(file)} alt="Uploaded file preview" />
+          ) : (
+            <div className="audio-logo">🎵</div>
           )}
-          <button 
-            onClick={handleUpload} 
-            disabled={isProcessing || !isFileValid}
-            style={{marginTop: '10px', marginBottom: '10px'}}
-          >
-            {isProcessing ? 'Processing...' : 'Upload and Transcribe'}
-          </button>
-        </>
-      )}
-      {isProcessing && <p>Processing your file. Please wait...</p>}
-      {error && <p style={{color: 'red'}}>{error}</p>}
-      {result && (
-          <div>
-            <ResultContainer>
+        </div>
+        <div className="transcription">
+          {result ? (
+            <>
               <h3>Transcription Result:</h3>
               <ReactMarkdown>{result}</ReactMarkdown>
-              <button onClick={handleSave} style={{ marginTop: '10px' }}>Save</button> {/* Save button */}
-              <button onClick={() => setShowDisclaimer(true)} style={{ marginTop: '10px', marginLeft: '10px' }}>Delete</button>
-            </ResultContainer>
-            {showDisclaimer && (
-              <div className="modal-overlay">
-                <div className="modal-content">
-                  <p>Are you sure you want to delete this transcription? This action cannot be undone.</p>
-                  <button onClick={confirmDelete} style={{ marginRight: '10px' }}>Yes</button>
-                  <button onClick={cancelDelete}>No</button>
-                </div>
+              <div className="buttons">
+
               </div>
-            )}
-          </div>
-        )}
-      
-    </div>
-  );
+            </>
+          ) : (
+            <button 
+              className="generate-button" 
+              onClick={handleUpload} 
+              disabled={isProcessing}  /* Disable during processing */
+            >
+              {isProcessing ? 'Loading...' : 'Generate'}
+            </button>
+          )}
+
+        </div>
+
+      </div>
+    )}
+
+    {isProcessing && <p>Processing your file. Please wait...</p>}
+    {error && <p style={{ color: 'red' }}>{error}</p>}
+
+    <button onClick={handleSave}>Save</button>
+                <button onClick={() => setShowDisclaimer(true)}>Delete</button>
+  </div>
+);
+
+
 }
 
 export default Transcribe;
