@@ -26,6 +26,9 @@ function Transcribe() {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [ setTranscriptionToDelete] = useState(null);
   const navigate = useNavigate();
+  const [showSaveDisclaimer, setShowSaveDisclaimer] = useState(false);
+const [saveName, setSaveName] = useState('');
+
 
   const [user, setUser] = useState(null);
   const [generationCount, setGenerationCount] = useState(0);
@@ -82,7 +85,7 @@ function Transcribe() {
   
 
   const handleUpload = async () => {
-    if (generationCount >= 3) {
+    if (generationCount >= 30) {
       alert('You have reached the maximum number of generations.');
       return;
     }
@@ -244,39 +247,41 @@ function Transcribe() {
 
 
   
+  const handleDeleteClick = () => {
+    setShowDisclaimer(true);  // Show the disclaimer when the delete button is clicked
+  };
+  
   const confirmDelete = () => {
+    setResult('');  // Clear the transcription result
+    setShowDisclaimer(false);  // Hide the disclaimer
     handleReset();
-    setShowDisclaimer(false);
   };
   
   const cancelDelete = () => {
-    setShowDisclaimer(false);
-    setTranscriptionToDelete(null);
+    setShowDisclaimer(false);  // Hide the disclaimer without deleting
   };
 
-  const ResultContainer = ({ children }) => (
-    <div style={{
-      border: '1px solid #ddd',
-      padding: '10px',
-      borderRadius: '5px',
-      backgroundColor: '#f9f9f9',
-      marginTop: '10px',
-    }}>
-      {children}
-    </div>
-  );
-
+  const handleSaveClick = () => {
+    setShowSaveDisclaimer(true);  // Show the save disclaimer
+  };
   
-
-  // Add a prompt to show a disclaimer when navigating away
-const handleNavigateAway = (destination) => {
-  if (!savedTranscriptions.length && !window.confirm("You have unsaved changes. Do you really want to leave?")) {
-    return;
-  }
-  navigate(destination);
-};
-
-
+  const confirmSave = async () => {
+    const currentUser = auth.currentUser;
+    if (currentUser && saveName) {
+      const userDocPath = `users/${currentUser.uid}/transcriptions/${saveName}`;
+      const newTranscription = {
+        id: Date.now(),
+        text: result
+      };
+      setSavedTranscriptions([...savedTranscriptions, newTranscription]);
+      await saveToFirestore(userDocPath, newTranscription);
+      handleReset();
+      setShowSaveDisclaimer(false);  // Hide the save disclaimer
+      navigate('/savedtranscriptions');
+    }
+  };
+  
+  
 
 return (
   <div>
@@ -306,9 +311,6 @@ return (
             <>
               <h3>Transcription Result:</h3>
               <ReactMarkdown>{result}</ReactMarkdown>
-              <div className="buttons">
-
-              </div>
             </>
           ) : (
             <button 
@@ -319,19 +321,50 @@ return (
               {isProcessing ? 'Loading...' : 'Generate'}
             </button>
           )}
-
         </div>
+      </div>
+    )}
+
+    {result && (
+      <div className="buttons-container">
+        <button onClick={handleSaveClick}>Save</button>
+
+        <button onClick={handleDeleteClick}>Delete</button>
+
+{showSaveDisclaimer && (
+  <div className="transcribe-disclaimer-overlay">
+    <div className="transcribe-disclaimer-content">
+      <p>Please provide a name for your transcription:</p>
+      <input 
+        type="text" 
+        value={saveName} 
+        onChange={(e) => setSaveName(e.target.value)} 
+        placeholder="Enter name"
+      />
+      <button onClick={confirmSave}>Save</button>
+      <button onClick={() => setShowSaveDisclaimer(false)}>Cancel</button>
+    </div>
+  </div>
+)}
+
+{showDisclaimer && (
+  <div className="transcribe-disclaimer-overlay">
+    <div className="transcribe-disclaimer-content">
+      <p>Are you sure you want to delete this transcription? This action cannot be undone.</p>
+      <button onClick={confirmDelete}>Yes, Delete</button>
+      <button onClick={cancelDelete}>Cancel</button>
+    </div>
+  </div>
+)}
 
       </div>
     )}
 
-    {isProcessing && <p>Processing your file. Please wait...</p>}
     {error && <p style={{ color: 'red' }}>{error}</p>}
-
-    <button onClick={handleSave}>Save</button>
-                <button onClick={() => setShowDisclaimer(true)}>Delete</button>
   </div>
 );
+
+
 
 
 }

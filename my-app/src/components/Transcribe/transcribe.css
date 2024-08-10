@@ -119,3 +119,67 @@
   font-size: 16px;
   margin-right: 10px;
 }
+
+
+/* Ensure the disclaimer is only for the Transcribe component */
+.transcribe-disclaimer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);  /* Darken the background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.transcribe-disclaimer-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+  animation: popUp 0.3s ease-out;
+}
+
+@keyframes popUp {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.transcribe-disclaimer-content p {
+  margin-bottom: 20px;
+  font-size: 1rem;
+  color: #333;
+}
+
+.transcribe-disclaimer-content button {
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.transcribe-disclaimer-content button:last-child {
+  background-color: #6c757d;  /* Grey for cancel button */
+}
+
+.transcribe-disclaimer-content input {
+  width: calc(100% - 22px);
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
