@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import './st.css';  // Your custom styles
+import './savedtranscriptions.css';  // Your custom styles
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/firebase';
+import { useNavigate } from 'react-router-dom';
 
 const loadFromFirestore = async (docPath, defaultValue) => {
   try {
@@ -42,6 +43,7 @@ const SavedTranscriptions = () => {
   const [activeTranscription, setActiveTranscription] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -93,24 +95,37 @@ const SavedTranscriptions = () => {
 
   return (
     <div>
+      <button onClick={() => navigate('/')}>Back to Home</button>
       <h2 className="st-title">Saved Transcriptions</h2>
       {savedTranscriptions.length === 0 ? (
         <p className="st-no-transcriptions">No transcriptions saved yet.</p>
       ) : (
-        <ul className="st-transcriptions-list">
-          {savedTranscriptions.map(transcription => (
-            <li key={transcription.id} className="st-transcription-item">
-              <div className="st-transcription-container" onClick={() => handleTranscriptionClick(transcription)}>
-                <ReactMarkdown className="st-markdown-content">
-                  {transcription.text.length > 100 
-                    ? transcription.text.substring(0, 100) + "..." 
-                    : transcription.text}
-                </ReactMarkdown>
-              </div>
-            </li>
-          ))}
-        </ul>
+<ul className="st-transcriptions-list">
+  {savedTranscriptions.map(transcription => (
+    <li key={transcription.id} className="st-transcription-item">
+      <div className="st-transcription-container" onClick={() => handleTranscriptionClick(transcription)}>
+        <div className="st-transcription-header">
+          {transcription.title}
+        </div>
+        <div className="st-transcription-content">
+          <ReactMarkdown className="st-markdown-content">
+            {transcription.text.length > 100 
+              ? transcription.text.substring(0, 100) + "..." 
+              : transcription.text}
+          </ReactMarkdown>
+        </div>
+      </div>
+    </li>
+  ))}
+  
+  <li className="st-transcription-item">
+    <div className="st-transcription-container st-add-card" onClick={() => navigate('/transcribe')}>
+      <span className="st-plus-icon">+</span>
+    </div>
+  </li>
+</ul>
       )}
+      
       {activeTranscription && (
         <div className="st-transcription-modal">
           <div className="st-modal-content">
@@ -122,14 +137,12 @@ const SavedTranscriptions = () => {
                 value={editText}
                 rows="20"
                 onChange={(e) => setEditText(e.target.value)}
-                style={{ width: '100%' }}
               />
             ) : (
               <textarea
                 className="st-textarea"
                 value={activeTranscription.text}
                 rows="20"
-                style={{ width: '100%' }}
                 readOnly
               />
             )}
@@ -144,11 +157,17 @@ const SavedTranscriptions = () => {
               )}
               <button className="st-delete-button" onClick={handleDelete}>Delete</button>
             </div>
+            
           </div>
+          
         </div>
+        
       )}
+
+
     </div>
   );
-};
+
+  };
 
 export default SavedTranscriptions;

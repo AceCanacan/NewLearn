@@ -1,36 +1,36 @@
-.st-title {
+.sn-title {
     font-size: 2em;
     color: #333;
     margin-bottom: 20px;
     text-align: center;
-}
-
-.st-no-transcriptions {
+  }
+  
+  .sn-no-notes {
     color: #888;
     text-align: center;
     margin-top: 20px;
-}
-
-.st-transcriptions-list {
+  }
+  
+  .sn-notes-list {
     list-style-type: none;
     padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-}
-
-.st-transcription-item {
+  }
+  
+  .sn-note-item {
     width: 90%;
     max-width: 800px;
     margin: 10px 0;
     transition: transform 0.3s;
-}
-
-.st-transcription-item:hover {
+  }
+  
+  .sn-note-item:hover {
     transform: scale(1.02);
-}
-
-.st-transcription-container {
+  }
+  
+  .sn-note-container {
     border: 1px solid #ddd;
     padding: 15px;
     border-radius: 8px;
@@ -38,18 +38,18 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
     transition: background-color 0.3s;
-}
-
-.st-transcription-container:hover {
+  }
+  
+  .sn-note-container:hover {
     background-color: #f1f1f1;
-}
-
-.st-markdown-content {
+  }
+  
+  .sn-markdown-content {
     margin-bottom: 10px;
     color: #444;
-}
-
-.st-transcription-modal {
+  }
+  
+  .sn-note-modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -60,9 +60,9 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
-}
-
-.st-modal-content {
+  }
+  
+  .sn-modal-content {
     background-color: white;
     padding: 20px;
     border-radius: 8px;
@@ -70,9 +70,9 @@
     max-width: 600px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     text-align: left;
-}
-
-.st-close-button {
+  }
+  
+  .sn-close-button {
     background-color: #d9534f;
     border: none;
     color: white;
@@ -83,13 +83,13 @@
     float: right;
     margin-bottom: 20px;
     transition: background-color 0.3s;
-}
-
-.st-close-button:hover {
+  }
+  
+  .sn-close-button:hover {
     background-color: #c9302c;
-}
-
-.st-textarea {
+  }
+  
+  .sn-textarea {
     width: 100%;
     height: 300px;
     border-radius: 5px;
@@ -97,30 +97,43 @@
     border: 1px solid #ddd;
     font-size: 1em;
     resize: none;
-}
-
-.st-add-transcription {
+  }
+  
+  .sn-button-group {
     margin-top: 20px;
-    padding: 15px;
-    background-color: #5cb85c;
-    border: none;
-    color: white;
-    border-radius: 50%;
-    font-size: 30px;
-    width: 60px;
-    height: 60px;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+  }
+  
+  .sn-save-button, .sn-cancel-button, .sn-delete-button, .sn-edit-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
     cursor: pointer;
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    transition: background-color 0.3s, transform 0.3s;
-}
-
-.st-add-transcription:hover {
-    background-color: #4cae4c;
-    transform: scale(1.1);
-}
+    font-size: 1em;
+  }
+  
+  .sn-save-button {
+    background-color: #5cb85c;
+    color: white;
+  }
+  
+  .sn-cancel-button {
+    background-color: #f0ad4e;
+    color: white;
+  }
+  
+  .sn-delete-button {
+    background-color: #d9534f;
+    color: white;
+  }
+  
+  .sn-edit-button {
+    background-color: #5bc0de;
+    color: white;
+  }
+  
+  .sn-save-button:hover, .sn-cancel-button:hover, .sn-delete-button:hover, .sn-edit-button:hover {
+    opacity: 0.9;
+  }
+  

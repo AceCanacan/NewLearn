@@ -1,137 +1,143 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { useNavigate } from 'react-router-dom';
-
+import './savednotes.css'; // Import the custom styles
 import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/firebase';
+import { useNavigate } from 'react-router-dom';
 
 const loadFromFirestore = async (collectionPath, defaultValue) => {
-    try {
-      const user = auth.currentUser;
-      if (!user) return defaultValue;
-      const collectionRef = collection(db, ...collectionPath.split('/'));
-      const querySnapshot = await getDocs(collectionRef);
-      const data = querySnapshot.docs.map(doc => doc.data());
-      return data.length ? data : defaultValue;
-    } catch (error) {
-      return defaultValue;
-    }
-  };
-  
-  const saveToFirestore = async (docPath, value) => {
-    try {
-      const user = auth.currentUser;
-      if (!user) return;
-      const docRef = doc(db, ...docPath.split('/'));
-      await setDoc(docRef, value, { merge: true });
-    } catch (error) {
-    }
-  };
+  try {
+    const user = auth.currentUser;
+    if (!user) return defaultValue;
+    const collectionRef = collection(db, ...collectionPath.split('/'));
+    const querySnapshot = await getDocs(collectionRef);
+    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return data.length ? data : defaultValue;
+  } catch (error) {
+    console.error("Error loading data from Firestore:", error);
+    return defaultValue;
+  }
+};
+
+const saveToFirestore = async (docPath, value) => {
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
+    const docRef = doc(db, ...docPath.split('/'));
+    await setDoc(docRef, value, { merge: true });
+  } catch (error) {
+    console.error("Error saving data to Firestore:", error);
+  }
+};
 
 const SavedNotes = () => {
   const [savedNotes, setSavedNotes] = useState([]);
-  const [editingId, setEditingId] = useState(null);
+  const [activeNote, setActiveNote] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [noteToDelete, setNoteToDelete] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadNotes = async () => {
-        const user = auth.currentUser;
-        if (!user) return;
-        const notes = (await loadFromFirestore(`users/${user.uid}/savedNotes`, [])).sort((a, b) => b.id - a.id);
-        setSavedNotes(notes);
+      const user = auth.currentUser;
+      if (!user) return;
+      const notes = (await loadFromFirestore(`users/${user.uid}/savedNotes`, [])).sort((a, b) => b.id - a.id);
+      setSavedNotes(notes);
     };
     loadNotes();
   }, []);
 
-  const handleSaveEdit = async (id) => {
-    const user = auth.currentUser;
-    if (!user) return;
-    const updatedNotes = savedNotes.map(note =>
-        note.id === id ? { ...note, text: editText } : note
-    );
-    setSavedNotes(updatedNotes);
-    await saveToFirestore(`users/${user.uid}/savedNotes/${id}`, { text: editText });
-    setEditingId(null);
-    setEditText('');
-};
-
-    const handleDelete = async (id) => {
-        const user = auth.currentUser;
-        if (!user) return;
-        const updatedNotes = savedNotes.filter(note => note.id !== id);
-        setSavedNotes(updatedNotes);
-        await saveToFirestore(`users/${user.uid}/savedNotes/${id}`, { text: null });
-        setShowDisclaimer(false);
-        setNoteToDelete(null);
-    };
-  const handleEdit = (id) => {
-    const note = savedNotes.find(note => note.id === id);
-    setEditingId(id);
+  const handleNoteClick = (note) => {
+    setActiveNote(note);
     setEditText(note.text);
   };
 
-  const showDeleteModal = (id) => {
-    setShowDisclaimer(true);
-    setNoteToDelete(id);
+  const handleEdit = () => {
+    setIsEditing(true);
   };
 
-  const cancelDelete = () => {
-    setShowDisclaimer(false);
-    setNoteToDelete(null);
+  const handleSave = async () => {
+    if (activeNote && auth.currentUser) {
+      const docPath = `users/${auth.currentUser.uid}/savedNotes/${activeNote.id}`;
+      await saveToFirestore(docPath, { ...activeNote, text: editText });
+      setSavedNotes((prev) =>
+        prev.map((n) => (n.id === activeNote.id ? { ...n, text: editText } : n))
+      );
+      setIsEditing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (activeNote && auth.currentUser) {
+      const docPath = `users/${auth.currentUser.uid}/savedNotes/${activeNote.id}`;
+      await saveToFirestore(docPath, { text: null });
+      setSavedNotes((prev) => prev.filter((n) => n.id !== activeNote.id));
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    setActiveNote(null);
+    setIsEditing(false);
   };
 
   return (
-    <div className="saved-notes-container">
-      <button onClick={() => navigate('/')} style={{ marginBottom: '10px' }}>Home</button>
-      <h2>Saved Notes</h2>
+    <div>
+      <h2 className="sn-title">Saved Notes</h2>
       {savedNotes.length === 0 ? (
-        <p>No saved notes available.</p>
+        <p className="sn-no-notes">No notes saved yet.</p>
       ) : (
-        <ul className="saved-notes-list">
+        <ul className="sn-notes-list">
           {savedNotes.map(note => (
-            <li key={note.id} className="saved-note">
-              <div style={{ border: '1px solid #ddd', padding: '10px', borderRadius: '5px', margin: '10px 0' }}>
-                {editingId === note.id ? (
-                  <>
-                    <textarea
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      rows="4"
-                      style={{ width: '100%' }}
-                    />
-                    <button onClick={() => handleSaveEdit(note.id)} style={{ marginTop: '10px' }}>Save</button>
-                    <button onClick={() => setEditingId(null)} style={{ marginTop: '10px', marginLeft: '10px' }}>Cancel</button>
-                    <button onClick={() => showDeleteModal(note.id)} style={{ marginTop: '10px', marginLeft: '10px' }}>Delete</button>
-                  </>
-                ) : (
-                  <>
-                    <ReactMarkdown>{note.text}</ReactMarkdown>
-                    <button onClick={() => handleEdit(note.id)} style={{ marginTop: '10px', marginRight: '10px' }}>Edit</button>
-                    
-                  </>
-                )}
+            <li key={note.id} className="sn-note-item">
+              <div className="sn-note-container" onClick={() => handleNoteClick(note)}>
+                <ReactMarkdown className="sn-markdown-content">
+                  {note.text.length > 100 
+                    ? note.text.substring(0, 100) + "..." 
+                    : note.text}
+                </ReactMarkdown>
               </div>
             </li>
           ))}
         </ul>
       )}
-      {showDisclaimer && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <p>Are you sure you want to delete this note? This action cannot be undone.</p>
-            <button onClick={() => handleDelete(noteToDelete)} style={{ marginRight: '10px' }}>Yes</button>
-            <button onClick={cancelDelete}>No</button>
+      {activeNote && (
+        <div className="sn-note-modal">
+          <div className="sn-modal-content">
+            <button className="sn-close-button" onClick={handleClose}>X</button>
+            <h2>{activeNote.title}</h2>
+            {isEditing ? (
+              <textarea
+                className="sn-textarea"
+                value={editText}
+                rows="20"
+                onChange={(e) => setEditText(e.target.value)}
+              />
+            ) : (
+              <textarea
+                className="sn-textarea"
+                value={activeNote.text}
+                rows="20"
+                readOnly
+              />
+            )}
+            <div className="sn-button-group">
+              {isEditing ? (
+                <>
+                  <button className="sn-save-button" onClick={handleSave}>Save</button>
+                  <button className="sn-cancel-button" onClick={() => setIsEditing(false)}>Cancel</button>
+                </>
+              ) : (
+                <button className="sn-edit-button" onClick={handleEdit}>Edit</button>
+              )}
+              <button className="sn-delete-button" onClick={handleDelete}>Delete</button>
+            </div>
           </div>
         </div>
       )}
-      <button onClick={() => navigate('/notesmaker')} style={{ marginTop: '20px' }}>+</button>
+      <button className="sn-add-button" onClick={() => navigate('/notesmaker')}>+</button>
     </div>
-    
   );
-
 
 };
 
