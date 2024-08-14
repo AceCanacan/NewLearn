@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "nulearn-c9eea"
-  }
+    "default": "nulearn-c9eea",
+    "newlearn": "nulearn-c9eea"
+  },
+  "targets": {},
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
 }

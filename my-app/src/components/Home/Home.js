@@ -1,7 +1,8 @@
 import React, { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
-
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '../../firebase/firebase'; // Adjust paths as necessary
 import { signOutUser } from '../../firebase/auth';
 
 import quizmakerLogo from '../../assets/icons/quizmaker_logo.png';
@@ -27,7 +28,33 @@ const Home = () => {
     navigate(route);
   };
 
+  useEffect(() => {
+    const ensureUserDocument = async () => {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
 
+        if (userDoc.exists()) {
+          let currentCount = userDoc.data().generationCount;
+          if (currentCount === undefined) {
+            console.log('generationCount is missing, initializing to 0.');
+            await updateDoc(userDocRef, { generationCount: 0 });
+          }
+        } else {
+          console.error('User document does not exist, creating a new document...');
+          await setDoc(userDocRef, { generationCount: 0 });
+        }
+      }
+    };
+
+    ensureUserDocument();
+
+    const savedIndex = sessionStorage.getItem('currentIndex');
+    if (savedIndex !== null) {
+      setCurrentIndex(parseInt(savedIndex, 10));
+    }
+  }, []);
   
 
   const scrollCarousel = (direction) => {

@@ -1,24 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './savedtranscriptions.css';  // Your custom styles
-import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, getFirestore } from 'firebase/firestore';
 import { db, auth } from '../../firebase/firebase';
 import { useNavigate } from 'react-router-dom';
-
-const loadFromFirestore = async (docPath, defaultValue) => {
-  try {
-    const docRef = doc(db, docPath);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data();
-    } else {
-      return defaultValue;
-    }
-  } catch (error) {
-    console.error("Error loading data from Firestore:", error);
-    return defaultValue;
-  }
-};
 
 const saveToFirestore = async (docPath, value) => {
   try {
@@ -29,14 +14,7 @@ const saveToFirestore = async (docPath, value) => {
   }
 };
 
-const removeFromFirestore = async (docPath) => {
-  try {
-    const docRef = doc(db, docPath);
-    await deleteDoc(docRef);
-  } catch (error) {
-    console.error("Error deleting data from Firestore:", error);
-  }
-};
+const firestore = getFirestore();
 
 const SavedTranscriptions = () => {
   const [savedTranscriptions, setSavedTranscriptions] = useState([]);
@@ -44,7 +22,18 @@ const SavedTranscriptions = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
   const navigate = useNavigate();
+  const [editTitle, setEditTitle] = useState('');
 
+  const removeFromFirestore = async (docPath) => {
+    try {
+      const docRef = doc(db, docPath);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("Error deleting data from Firestore:", error);
+      throw error;
+    }
+  };
+  
   useEffect(() => {
     const fetchData = async () => {
       const user = auth.currentUser;
@@ -62,7 +51,9 @@ const SavedTranscriptions = () => {
   const handleTranscriptionClick = (transcription) => {
     setActiveTranscription(transcription);
     setEditText(transcription.text);
+    setEditTitle(transcription.title);  // Set the title for editing
   };
+  
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -71,10 +62,10 @@ const SavedTranscriptions = () => {
   const handleSave = async () => {
     if (activeTranscription && auth.currentUser) {
       const docPath = `users/${auth.currentUser.uid}/transcriptions/${activeTranscription.id}`;
-      await saveToFirestore(docPath, { ...activeTranscription, text: editText });
+      await saveToFirestore(docPath, { ...activeTranscription, title: editTitle, text: editText });
       setSavedTranscriptions((prev) =>
-        prev.map((t) => (t.id === activeTranscription.id ? { ...t, text: editText } : t))
-      );
+        prev.map((t) => (t.id === activeTranscription.id ? { ...t, title: editTitle, text: editText } : t))
+      );      
       setIsEditing(false);
     }
   };
@@ -82,11 +73,46 @@ const SavedTranscriptions = () => {
   const handleDelete = async () => {
     if (activeTranscription && auth.currentUser) {
       const docPath = `users/${auth.currentUser.uid}/transcriptions/${activeTranscription.id}`;
-      await removeFromFirestore(docPath);
-      setSavedTranscriptions((prev) => prev.filter((t) => t.id !== activeTranscription.id));
-      handleClose();
+      console.log("Attempting to delete docPath:", docPath); // Debugging line
+  
+      let attempts = 0;
+      let success = false;
+  
+      while (attempts < 3 && !success) {
+        try {
+          await removeFromFirestore(docPath);
+          console.log(`Attempt ${attempts + 1}: Deletion successful.`);
+          
+          // Check if the document is still there
+          const docExists = await checkIfDocumentExists(docPath);
+          if (!docExists) {
+            success = true;
+            setSavedTranscriptions((prev) =>
+              prev.filter((t) => t.id !== activeTranscription.id)
+            );
+            setActiveTranscription(null);
+          } else {
+            console.log(`Attempt ${attempts + 1}: Document still exists.`);
+          }
+        } catch (error) {
+          console.error(`Attempt ${attempts + 1}: Error deleting data from Firestore:`, error);
+        }
+        attempts++;
+      }
+  
+      if (!success) {
+        console.error("Failed to delete document after 3 attempts.");
+      }
     }
   };
+  
+  const checkIfDocumentExists = async (docPath) => {
+    const docRef = doc(firestore, docPath);  // Correctly creates a document reference
+    const docSnapshot = await getDoc(docRef);  // Retrieves the document snapshot
+    return docSnapshot.exists();  // Checks if the document exists
+  };
+  
+  
 
   const handleClose = () => {
     setActiveTranscription(null);
@@ -96,10 +122,12 @@ const SavedTranscriptions = () => {
   return (
     <div>
       <button onClick={() => navigate('/')}>Back to Home</button>
-      <h2 className="st-title">Saved Transcriptions</h2>
-      {savedTranscriptions.length === 0 ? (
-        <p className="st-no-transcriptions">No transcriptions saved yet.</p>
-      ) : (
+
+
+      {savedTranscriptions.length === 0 && (
+  <p className="st-no-transcriptions">No transcriptions saved yet.</p>
+)}
+
 <ul className="st-transcriptions-list">
   {savedTranscriptions.map(transcription => (
     <li key={transcription.id} className="st-transcription-item">
@@ -117,35 +145,41 @@ const SavedTranscriptions = () => {
       </div>
     </li>
   ))}
-  
   <li className="st-transcription-item">
     <div className="st-transcription-container st-add-card" onClick={() => navigate('/transcribe')}>
       <span className="st-plus-icon">+</span>
     </div>
   </li>
 </ul>
-      )}
-      
+
+
+
+
+  
       {activeTranscription && (
         <div className="st-transcription-modal">
           <div className="st-modal-content">
             <button className="st-close-button" onClick={handleClose}>X</button>
-            <h2>{activeTranscription.title}</h2>
+  
             {isEditing ? (
-              <textarea
-                className="st-textarea"
-                value={editText}
-                rows="20"
-                onChange={(e) => setEditText(e.target.value)}
+              <input 
+                type="text" 
+                className="st-title-input" 
+                value={editTitle} 
+                onChange={(e) => setEditTitle(e.target.value)} 
               />
             ) : (
-              <textarea
-                className="st-textarea"
-                value={activeTranscription.text}
-                rows="20"
-                readOnly
-              />
+              <h2>{activeTranscription.title}</h2>
             )}
+  
+            <textarea
+              className="st-textarea"
+              value={isEditing ? editText : activeTranscription.text}
+              rows="20"
+              onChange={isEditing ? (e) => setEditText(e.target.value) : undefined}
+              readOnly={!isEditing}
+            />
+  
             <div className="st-button-group">
               {isEditing ? (
                 <>
@@ -157,17 +191,12 @@ const SavedTranscriptions = () => {
               )}
               <button className="st-delete-button" onClick={handleDelete}>Delete</button>
             </div>
-            
           </div>
-          
         </div>
-        
       )}
-
-
     </div>
   );
-
+  
   };
 
 export default SavedTranscriptions;

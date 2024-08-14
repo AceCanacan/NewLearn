@@ -50,21 +50,7 @@ const [saveName, setSaveName] = useState('');
 
   }, []);
   
-  const handleSave = async () => {
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      const userDocPath = `users/${currentUser.uid}/transcriptions/${Date.now()}`;
-      const newTranscription = {
-        id: Date.now(),
-        text: result
-      };
-      setSavedTranscriptions([...savedTranscriptions, newTranscription]);
-      await saveToFirestore(userDocPath, newTranscription);
-      handleReset();
-      navigate('/savedtranscriptions');
-    }
-  };
-  
+
   const validFileTypes = ['image/png', 'image/jpeg', 'audio/mpeg'];
 
   const handleFileChange = (e) => {
@@ -85,7 +71,7 @@ const [saveName, setSaveName] = useState('');
   
 
   const handleUpload = async () => {
-    if (generationCount >= 3) {
+    if (generationCount >= 10) {
       alert('You have reached the maximum number of generations.');
       return;
     }
@@ -106,10 +92,19 @@ const [saveName, setSaveName] = useState('');
       const organizedText = await organizeText(transcribedText);
       setResult(organizedText);
   
-      // Update the generation count in Firestore
+      // Fetch the current user's document
       const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, { generationCount: generationCount + 1 });
-      setGenerationCount(generationCount + 1);
+      const userDoc = await getDoc(userDocRef);
+  
+      if (userDoc.exists()) {
+        let currentCount = userDoc.data().generationCount || 0;
+  
+        // Update the generation count in Firestore
+        await updateDoc(userDocRef, { generationCount: currentCount + 1 });
+        setGenerationCount(currentCount + 1);
+      } else {
+        setError('User document does not exist.');
+      }
   
     } catch (error) {
       console.error('Error during processing:', error);
@@ -118,6 +113,10 @@ const [saveName, setSaveName] = useState('');
       setIsProcessing(false);
     }
   };
+  
+  
+  
+  
   
   
 
@@ -279,24 +278,20 @@ const [saveName, setSaveName] = useState('');
       
       const newTranscription = {
         id: Date.now(),
+        title: saveName || `Transcription ${generationCount + 1}`, 
         text: result
       };
-      console.log("confirmSave: New transcription object:", newTranscription);
+      
       
       setSavedTranscriptions([...savedTranscriptions, newTranscription]);
-      console.log("confirmSave: Updated saved transcriptions state:", savedTranscriptions);
       
       await saveToFirestore(userDocPath, newTranscription);
-      console.log("confirmSave: Transcription saved to Firestore.");
       
       handleReset();
-      console.log("confirmSave: Form reset.");
       
       setShowSaveDisclaimer(false);
-      console.log("confirmSave: Save disclaimer hidden.");
       
       navigate('/savedtranscriptions');
-      console.log("confirmSave: Navigation to /savedtranscriptions completed.");
 
       
     } else {
