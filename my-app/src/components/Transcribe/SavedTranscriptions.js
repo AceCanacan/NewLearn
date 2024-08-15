@@ -99,7 +99,7 @@ const SavedTranscriptions = () => {
       <div className="st-squircle-banner">Convert images and audio to text</div>
       <button className="st-back-button" onClick={() => navigate('/')}>
           <i className="fas fa-home"></i>
-        </button>
+      </button>
       <div className="st-container">
 
         <ul className="st-transcriptions-list">
@@ -125,19 +125,30 @@ const SavedTranscriptions = () => {
         </ul>
   
         {activeTranscription && (
-          <div className="st-transcription-modal">
+          <div className="st-transcription-modal" onClick={() => setActiveTranscription(null)}>
             <div className="st-modal-content">
-              <button className="st-close-button" onClick={handleClose}>X</button>
+
   
               {isEditing ? (
-                <input 
-                  type="text" 
-                  className="st-title-input" 
-                  value={editTitle} 
-                  onChange={(e) => setEditTitle(e.target.value)} 
-                />
+                <div style={{ position: 'relative' }}>
+                    <h2 className="st-active-transcription-header" style={{ visibility: 'hidden' }}>
+                        {activeTranscription.title}
+                    </h2>
+                    <input 
+                        type="text" 
+                        className="st-title-input" 
+                        value={editTitle} 
+                        onChange={(e) => setEditTitle(e.target.value)} 
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                        }}
+                    />
+                </div>
               ) : (
-                <h2>{activeTranscription.title}</h2>
+                <h2 className="st-active-transcription-header">{activeTranscription.title}</h2>
               )}
   
               <textarea
@@ -147,18 +158,18 @@ const SavedTranscriptions = () => {
                 onChange={isEditing ? (e) => setEditText(e.target.value) : undefined}
                 readOnly={!isEditing}
               />
-  
               <div className="st-button-group">
                 {isEditing ? (
-                  <>
-                    <button className="st-save-button" onClick={handleSave}>Save</button>
-                    <button className="st-cancel-button" onClick={() => setIsEditing(false)}>Cancel</button>
-                  </>
+                    <>
+                        <button className="st-save-button" onClick={handleSave}>Save</button>
+                        <button className="st-cancel-button" onClick={() => setIsEditing(false)}>Cancel</button>
+                    </>
                 ) : (
-                  <button className="st-edit-button" onClick={handleEdit}>Edit</button>
+                    <button className="st-edit-button" onClick={handleEdit}>Edit</button>
                 )}
                 <button className="st-delete-button" onClick={handleDelete}>Delete</button>
               </div>
+
             </div>
           </div>
         )}
