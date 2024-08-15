@@ -298,95 +298,153 @@ const [saveName, setSaveName] = useState('');
       console.error("confirmSave: Missing currentUser or saveName.");
     }
   };
+  const handleDragOver = (event) => {
+    event.preventDefault();
+  };
   
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file) {
+      handleFileChange({ target: { files: [file] } });
+    }
+  };
   
-  
+  const resetUpload = () => {
+    setFile(null);
+    setResult(null);
+    setError(null);
+  };
 
   return (
     <div>
-      
-      {!file && !result && (
-        <div className="upload-container">
-          <div className="arrow-up-logo">⬆️</div>
-          <div className="text">Drag and drop document here to upload</div>
-          <button className="upload-button" onClick={() => document.getElementById('fileInput').click()}>
-            Select from Device
-          </button>
-          <input id="fileInput" type="file" accept=".png,.jpg,.jpeg,.mp3" onChange={handleFileChange} className="hidden-input" />
-          <div className="drag-and-drop-text">or drag and drop document here to upload</div>
-        </div>
-      )}
-  
-      {file && (
-        <div className="result-container">
-          <div className="preview">
-            {fileType === 'image' ? (
-              <img src={URL.createObjectURL(file)} alt="Uploaded file preview" className="uploaded-image" />
-            ) : (
-              <div className="audio-logo">🎵</div>
-            )}
+<button className="rt-back-button" onClick={() => navigate('/savedtranscriptions')}>
+    &#9664;
+</button>
+
+
+      <div className="transcribe-result-upload-wrapper">
+        <div className="st-squircle-banner">Convert images and audio to text</div>
+        {!file && !result && (
+          <div
+            className="transcribe-result-upload-container"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            <div className="transcribe-result-arrow-up-logo">
+              <i className="fas fa-upload"></i>
+            </div>
+            <div className="transcribe-result-text">Drag and drop your audio file here</div>
+            <button
+              className="transcribe-result-upload-button"
+              onClick={() => document.getElementById("fileInput").click()}
+            >
+              Select from Device
+            </button>
+            <input
+              id="fileInput"
+              type="file"
+              accept=".png,.jpg,.jpeg,.mp3"
+              onChange={handleFileChange}
+              className="transcribe-result-hidden"
+            />
+            <div className="transcribe-result-drag-and-drop-text">
+              MP3, WAV, M4A, MP4, MPEG, MPGA, WEBM
+            </div>
           </div>
-          <div className="transcription">
-            {result ? (
-              <>
-                <h3>Transcription Result:</h3>
-                <ReactMarkdown className="markdown-result">{result}</ReactMarkdown>
-              </>
-            ) : (
-              <button 
-                className="generate-button" 
-                onClick={handleUpload} 
+        )}
+  
+        {file && (
+          <div className="transcribe-result-wrapper">
+            <div className="transcribe-result-container">
+              <div className="transcribe-result-preview">
+                {fileType === "image" ? (
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt="Uploaded file preview"
+                    className="transcribe-result-uploaded-image"
+                  />
+                ) : (
+                  <div className="transcribe-result-audio-logo">🎵</div>
+                )}
+              </div>
+              {result ? (
+                <div className="transcribe-result-transcription">
+                  <h3>Transcription Result:</h3>
+                  <ReactMarkdown className="transcribe-result-markdown-result">
+                    {result}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <button
+                  className="transcribe-result-generate-button"
+                  onClick={handleUpload}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? "Loading..." : "Generate"}
+                </button>
+              )}
+            </div>
+  
+            {!result && (
+              <button
+                className="transcribe-result-upload-another-button"
+                onClick={resetUpload}
                 disabled={isProcessing}
               >
-                {isProcessing ? 'Loading...' : 'Generate'}
+                Upload Another File
               </button>
             )}
+  
+            {result && (
+              <div className="transcribe-result-buttons-container">
+                <button onClick={handleSaveClick}>Save</button>
+                <button onClick={handleDeleteClick}>Delete</button>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
   
-      {result && (
-        <div className="buttons-container">
-          <button onClick={handleSaveClick}>Save</button>
-          <button onClick={handleDeleteClick}>Delete</button>
-  
-          {showSaveDisclaimer && (
-            <div className="transcribe-disclaimer-overlay">
-              <div className="transcribe-disclaimer-content">
-                <p>Please provide a name for your transcription:</p>
-                <input 
-                  type="text" 
-                  value={saveName} 
-                  onChange={(e) => setSaveName(e.target.value)} 
-                  placeholder="Enter name"
-                />
-                <button onClick={confirmSave}>Save</button>
-                <button onClick={() => setShowSaveDisclaimer(false)}>Cancel</button>
+        {result && (
+          <div className="transcribe-result-disclaimer-container">
+            {showSaveDisclaimer && (
+              <div className="transcribe-result-disclaimer-overlay">
+                <div className="transcribe-result-disclaimer-content">
+                  <p>Please provide a name for your transcription:</p>
+                  <input
+                    type="text"
+                    value={saveName}
+                    onChange={(e) => setSaveName(e.target.value)}
+                    placeholder="Enter name"
+                  />
+                  <button onClick={confirmSave}>Save</button>
+                  <button onClick={() => setShowSaveDisclaimer(false)}>Cancel</button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
   
-          {showDisclaimer && (
-            <div className="transcribe-disclaimer-overlay">
-              <div className="transcribe-disclaimer-content">
-                <p>Are you sure you want to delete this transcription? This action cannot be undone.</p>
-                <button onClick={confirmDelete}>Yes, Delete</button>
-                <button onClick={cancelDelete}>Cancel</button>
+            {showDisclaimer && (
+              <div className="transcribe-result-disclaimer-overlay">
+                <div className="transcribe-result-disclaimer-content">
+                  <p>
+                    Are you sure you want to delete this transcription? This action
+                    cannot be undone.
+                  </p>
+                  <button onClick={confirmDelete}>Yes, Delete</button>
+                  <button onClick={cancelDelete}>Cancel</button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
   
-      {error && <p className="error-text">{error}</p>}
-      <button className="st-add-transcription" onClick={() => navigate('/savedtranscriptions')}>b</button>
+        {error && <p className="transcribe-result-error-text">{error}</p>}
+
+      </div>
     </div>
   );
   
-
-
-
-
+  
 }
 
 export default Transcribe;

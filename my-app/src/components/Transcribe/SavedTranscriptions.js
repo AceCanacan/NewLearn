@@ -109,8 +109,8 @@ const SavedTranscriptions = () => {
                 <div className="st-transcription-header">{transcription.title}</div>
                 <div className="st-transcription-content">
                   <ReactMarkdown className="st-markdown-content">
-                    {transcription.text?.length > 100 
-                      ? transcription.text.substring(0, 100) + "..." 
+                    {transcription.text?.length > 300 
+                      ? transcription.text.substring(0, 300) + "..." 
                       : transcription.text || ""}
                   </ReactMarkdown>
                 </div>

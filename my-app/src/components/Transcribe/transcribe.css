@@ -1,151 +1,229 @@
-.result-container {
+/* Upload Section */
+.transcribe-result-upload-wrapper {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  border: 2px solid #ffa500; /* orange color */
-  padding: 20px;
-  border-radius: 10px;
-  background-color: #fff5e6;
-  max-width: 800px;
-  margin: 20px auto;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Full viewport height */
+  width: 100vw;  /* Full viewport width */
+  position: relative;
+  box-sizing: border-box;
 }
 
 
-.upload-container .arrow-up-logo {
-  font-size: 50px;
-  color: #ffa500; /* orange color */
-  margin-bottom: 10px;
+.transcribe-result-upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 70vw; /* Fixed width */
+  height: 20vw; /* Match height to result section */
+  padding: 4vw;
+  border: 0.5vw solid #ffa500;
+  border-radius: 2vw;
+  background-color: #ffa500;
+  box-sizing: border-box;
+  max-width: 70vw;
+  max-height: 70vw;
 }
 
-.upload-container .text {
-  font-size: 18px;
-  color: #333;
-  margin-bottom: 20px;
-  text-align: center;
-}
 
-.upload-container .upload-button {
-  background-color: #ffa500; /* orange color */
+.transcribe-result-upload-container .transcribe-result-arrow-up-logo {
+  font-size: 5vw;
   color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  margin-bottom: 10px;
+
 }
 
-.upload-container .drag-and-drop-text {
-  font-size: 14px;
-  color: #888;
+.transcribe-result-upload-container .transcribe-result-text {
+  font-size: 2vw;
+  color: white;
+
   text-align: center;
-  margin-top: 10px;
 }
 
-.hidden {
+.transcribe-result-upload-container .transcribe-result-upload-button {
+  background-color: #007bff;
+  color: white;
+  padding: 1vw 3vw;
+  border: none;
+  border-radius: 1vw;
+  cursor: pointer;
+  font-size: 2vw;
+}
+
+.transcribe-result-upload-container .transcribe-result-drag-and-drop-text {
+  font-size: 1.4vw;
+  color: white;
+  text-align: center;
+
+}
+
+.transcribe-result-hidden {
   display: none;
 }
 
-.result-container {
+/* Generate Result Section */
+.transcribe-result-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 2px solid #ffa500; /* orange color */
-  padding: 20px;
-  border-radius: 10px;
-  background-color: #fff5e6;
-  max-width: 800px;
-  margin: 20px auto;
+  border: 0.5vw solid #ffa500;
+  padding: 2vw;
+  border-radius: 1vw;
+  background-color: #ffa500;
+  width: 70vw;
+  height: 20vw;
+  margin: 2vw auto;
+  box-sizing: border-box;
+  max-width: 70vw;
+  max-height: 20vw;
 }
 
-.result-container .preview {
-  width: 150px;
-  height: 150px;
-  background-color: #fff; /* White background to ensure visibility */
-  border-radius: 10px;
+
+.transcribe-result-container .transcribe-result-preview {
+  width: 16vw;
+  height: 16vw; /* Your chosen height */
+  background-color: #fff;
+  border-radius: 1vw;
+  display: flex;
+  align-items: center; /* Vertically center the image */
+  justify-content: center; /* Horizontally center the image */
+  overflow: hidden; /* Ensure overflow is hidden */
+}
+
+.transcribe-result-container .transcribe-result-preview img {
+  height: 100%; /* Fit the height of the square */
+  width: auto; /* Adjust the width while maintaining aspect ratio */
+  object-fit: cover; /* Cover the entire square, cropping if necessary */
+  border-radius: 1vw;
+}
+
+.transcribe-result-buttons-container {
+  margin-top: 1.5vw; /* Space between the container and buttons */
+  display: flex;
+  gap: 1vw;
+  justify-content: center;
+}
+.transcribe-result-buttons-container button {
+  margin: 1vw 0; /* Margin to space buttons vertically */
+  padding: 1vw 2vw;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 0.5vw;
+  cursor: pointer;
+}
+
+.transcribe-result-buttons-container button:hover {
+  background-color: #0056b3;
+}
+
+.transcribe-result-container .transcribe-result-preview .transcribe-result-audio-logo {
+  font-size: 8vw;
+  color: #ffa500;
+  background-color: #fff;
+}
+
+.transcribe-result-generate-button {
+  width: 47vw; /* Adjust the width to fit the container */
+  height: 16vw; /* Same height as the preview */
+  background-color: #007bff; /* Blue background */
+  color: white; /* White text */
+  border: none; /* Remove border */
+  border-radius: 1vw; /* Match the border-radius */
+  font-size: 2vw; /* Adjust font size for the text */
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden; /* Ensures image doesn't overflow */
+  cursor: pointer; /* Pointer cursor on hover */
+  box-sizing: border-box;
 }
 
-.result-container .preview img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: cover; /* Ensures the image covers the area properly */
-  border-radius: 10px;
-}
 
-.result-container .preview .audio-logo {
-  font-size: 80px;
-  color: #ffa500; /* orange color */
-  background-color: #fff; /* White background for visibility */
-}
-
-.result-container .preview img {
-  max-width: 100%;
-  max-height: 100%;
-  border-radius: 10px;
-}
-
-.result-container .preview .audio-logo {
-  font-size: 80px;
-  color: #ffa500; /* orange color */
-}
-
-.result-container .transcription {
+/* Transcription Section */
+.transcribe-result-container .transcribe-result-transcription {
   flex: 1;
-  margin-left: 20px;
-  max-height: 200px; /* Limit height for scrolling */
-  overflow-y: auto;  /* Enable scrolling */
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  margin-left: 2vw;
+  max-height: 16vw;
+  overflow-y: auto;
+  padding: 1vw;
+  border: 0.1vw solid #ddd;
+  border-radius: 0.5vw;
   background-color: #f9f9f9;
 }
-.result-container .buttons {
+
+/* Button Actions Section */
+.transcribe-result-container .transcribe-result-buttons {
   display: flex;
   justify-content: center;
-  margin-top: 10px;
+  margin-top: 1vw;
+  width: auto;
 }
 
-.result-container .buttons button {
+.transcribe-result-container .transcribe-result-buttons button {
   background-color: #007bff;
   color: white;
-  padding: 10px 20px;
+  padding: 1vw 2vw;
   border: none;
-  border-radius: 5px;
+  border-radius: 0.5vw;
   cursor: pointer;
-  font-size: 16px;
-  margin-right: 10px;
+  font-size: 1.6vw;
+  margin-right: 1vw;
 }
 
-
-/* Ensure the disclaimer is only for the Transcribe component */
-.transcribe-disclaimer-overlay {
+/* Disclaimer Overlays */
+.transcribe-result-disclaimer-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);  /* Darken the background */
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
 
-.transcribe-disclaimer-content {
+.transcribe-result-disclaimer-content {
   background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
-  width: 100%;
-  animation: popUp 0.3s ease-out;
+  padding: 2vw;
+  border-radius: 0.8vw;
+  box-shadow: 0 0.2vw 1vw rgba(0, 0, 0, 0.1);
+  width: 40vw; /* Fixed width */
+  max-width: 40vw;
+  animation: transcribe-result-popUp 0.3s ease-out;
 }
 
-@keyframes popUp {
+.transcribe-result-disclaimer-content p {
+  margin-bottom: 2vw;
+  font-size: 1.6vw;
+  color: #333;
+}
+
+.transcribe-result-disclaimer-content button {
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  padding: 1vw 2vw;
+  border-radius: 0.5vw;
+  cursor: pointer;
+  margin-right: 1vw;
+}
+
+.transcribe-result-disclaimer-content button:last-child {
+  background-color: #6c757d;
+}
+
+.transcribe-result-disclaimer-content input {
+  width: calc(100% - 2.2vw);
+  padding: 1vw;
+  margin-bottom: 1.5vw;
+  border: 0.1vw solid #ccc;
+  border-radius: 0.5vw;
+}
+
+/* Animations */
+@keyframes transcribe-result-popUp {
   0% {
     transform: scale(0.8);
     opacity: 0;
@@ -156,30 +234,27 @@
   }
 }
 
-.transcribe-disclaimer-content p {
-  margin-bottom: 20px;
-  font-size: 1rem;
-  color: #333;
-}
 
-.transcribe-disclaimer-content button {
-  background-color: #007BFF;
-  color: white;
+.rt-back-button {
+  background-color: #3666fb; /* Blue color */
   border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
+  color: white;
+  border-radius: 50%; /* Makes the button a circle */
   cursor: pointer;
-  margin-right: 10px;
+  padding: 1.5vw; /* Adjust size as needed */
+  width: 3vw; /* Ensures circular shape */
+  height: 3vw; /* Ensures circular shape */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5vw; /* Adjust icon size as needed */
+  position: fixed; /* Keeps the button in the top-right corner */
+  top: 2vw;
+  left: 2vw;
+  z-index: 1000; /* Ensures it's on top of other elements */
 }
 
-.transcribe-disclaimer-content button:last-child {
-  background-color: #6c757d;  /* Grey for cancel button */
-}
-
-.transcribe-disclaimer-content input {
-  width: calc(100% - 22px);
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+.rt-back-button:hover {
+  background-color: #2980b9; /* Darker blue on hover */
+  transform: scale(1.1); /* Slightly enlarge on hover */
 }

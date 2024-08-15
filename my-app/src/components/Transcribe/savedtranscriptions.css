@@ -83,7 +83,7 @@ body {
     background-color: white;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.3s;
-    overflow: hidden; /* Ensure the banner is part of the card */
+    overflow: hidden; 
 }
 
 .st-transcription-container:hover {
