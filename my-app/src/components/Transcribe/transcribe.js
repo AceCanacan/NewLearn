@@ -20,11 +20,10 @@ function Transcribe() {
   const [fileType, setFileType] = useState('');
   const [result, setResult] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isFileValid, setIsFileValid] = useState(false);
+  const [ setIsFileValid] = useState(false);
   const [error, setError] = useState('');
   const [savedTranscriptions, setSavedTranscriptions] = useState([]);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [ setTranscriptionToDelete] = useState(null);
   const navigate = useNavigate();
   const [showSaveDisclaimer, setShowSaveDisclaimer] = useState(false);
 const [saveName, setSaveName] = useState('');
@@ -298,6 +297,7 @@ const [saveName, setSaveName] = useState('');
       console.error("confirmSave: Missing currentUser or saveName.");
     }
   };
+
   const handleDragOver = (event) => {
     event.preventDefault();
   };

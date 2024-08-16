@@ -21,12 +21,14 @@ const NotesMaker = () => {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const [customSuggestions, setCustomSuggestions] = useState([]);
+  const [customSuggestions, setCustomSuggestions] = useState([]);  
   const [customInput, setCustomInput] = useState('');
   const [selectedSuggestions, setSelectedSuggestions] = useState(new Set());
   const [confirmed, setConfirmed] = useState(false);
   const [user, setUser] = useState(null);
   const [popupContent, setPopupContent] = useState('');
+  const [showSaveDisclaimer, setShowSaveDisclaimer] = useState(false);
+  const [noteTitle, setNoteTitle] = useState('');
 
   const navigate = useNavigate();
   
@@ -37,7 +39,7 @@ const NotesMaker = () => {
         setUser(currentUser);
         const userDocRef = doc(db, 'users', currentUser.uid);
         const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists() && userDoc.data().generationCount >= 3) {
+        if (userDoc.exists() && userDoc.data().notesGenerationCount >= 3) {
           alert('You have reached the maximum number of generations.');
           // Disable the generate button or take necessary action
         }
@@ -71,20 +73,20 @@ const NotesMaker = () => {
     try {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
-      let generationCount = 0;
+      let notesGenerationCount = 0;
   
       if (userDoc.exists()) {
-        generationCount = userDoc.data().generationCount || 0;
+        notesGenerationCount = userDoc.data().notesGenerationCount || 0;
       }
   
-      if (generationCount >= 3) {
-        alert('You have reached the maximum number of generations.');
+      if (notesGenerationCount >= 3) {
+        alert('You have reached the maximum number of notes generations.');
         setIsLoading(false);
         return;
       }
   
-      const remainingGenerations = 3 - generationCount;
-      const userConfirmed = window.confirm(`You have ${remainingGenerations} generations left. Do you want to proceed with generating notes?`);
+      const remainingGenerations = 3 - notesGenerationCount;
+      const userConfirmed = window.confirm(`You have ${remainingGenerations} notes generations left. Do you want to proceed with generating notes?`);
   
       if (!userConfirmed) {
         setIsLoading(false);
@@ -139,7 +141,7 @@ const NotesMaker = () => {
         alert('Failed to generate notes. Please try again.');
       }
   
-      await updateDoc(userDocRef, { generationCount: generationCount + 1 });
+      await updateDoc(userDocRef, { notesGenerationCount: notesGenerationCount + 1 });
   
     } catch (error) {
       console.error('Error generating notes:', error);
@@ -256,14 +258,19 @@ const NotesMaker = () => {
     }
   };
 
-  const saveNotes = async (notes) => {
+  const saveNotes = async (title, notes) => {
     const uniqueId = Date.now().toString();
-    const newNote = { id: uniqueId, text: notes };
+    const newNote = {
+      id: uniqueId,
+      title: title || `Note ${uniqueId}`,
+      text: notes
+    };
   
     try {
       const user = auth.currentUser;
       if (!user) return; // Ensure the user is authenticated
-      await saveToFirestore(`users/${user.uid}/savedNotes/${uniqueId}`, newNote); // Save under the user's directory
+      const userDocPath = `users/${user.uid}/savedNotes/${uniqueId}`;
+      await saveToFirestore(userDocPath, newNote); // Save under the user's directory
       console.log('Notes saved with ID:', uniqueId);
       handleReset();
     } catch (error) {
@@ -300,18 +307,24 @@ const NotesMaker = () => {
 
   const addCustomSuggestion = () => {
     if (!customInput.trim()) {
-      return;
+        return;
     }
-  
+
     const newSuggestion = {
-      id: suggestions.length + customSuggestions.length,
-      text: customInput.trim()
+        id: suggestions.length + customSuggestions.length + 1, // Ensure unique ID
+        text: customInput.trim()
     };
-  
-    setCustomSuggestions([...customSuggestions, newSuggestion]);
-    console.log('Custom suggestions:', [...customSuggestions, newSuggestion]); // Add this log
-    setCustomInput('');
-  };
+
+    const updatedCustomSuggestions = [...customSuggestions, newSuggestion];
+    setCustomSuggestions(updatedCustomSuggestions);
+    
+    const updatedSelectedSuggestions = new Set(selectedSuggestions);
+    updatedSelectedSuggestions.add(newSuggestion.id);
+    setSelectedSuggestions(updatedSelectedSuggestions); // Activate the new suggestion
+
+    console.log('Custom suggestions:', updatedCustomSuggestions); // Log the updated suggestions
+    setCustomInput(''); // Clear the input field
+};
   
   const removeCustomSuggestion = (id) => {
     setCustomSuggestions(customSuggestions.filter(suggestion => suggestion.id !== id));
@@ -333,86 +346,118 @@ const NotesMaker = () => {
     setPopupContent('');
   };
   
-
+  const handleSaveClick = () => {
+    setShowSaveDisclaimer(true);
+  };
   
+  const confirmSave = async () => {
+    if (noteTitle) {
+      await saveNotes(noteTitle, popupContent);
+      setShowSaveDisclaimer(false);
+    } else {
+      alert('Please enter a title for your notes.');
+    }
+  };
 
 
   return (
-    <div className="quizmaker-container">
-      <button onClick={() => navigate('/savednotes')} style={{ marginBottom: '10px' }}>Back</button>
-      {popupContent ? (
-        <div className="notes-display">
-          <pre>{popupContent}</pre>
-          <button onClick={() => saveNotes(popupContent)}>Save</button>
-          <button onClick={() => deleteNotes()}>Delete</button>
-        </div>
-      ) : (
-        <>
-          <h2>QuizMaker</h2>
-          <textarea
-            rows="10"
-            cols="50"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value.slice(0, 1000))}
-            placeholder="Enter the large body of text here..."
-            disabled={confirmed}
-            maxLength={1000} // Ensuring the maxlength is set
-          ></textarea>
-          <div>{inputText.length}/1000 characters</div>
+    <>
+        <div className="sn-squircle-banner">Generate notes with AI</div>
+        <button className="rt-back-button" onClick={() => navigate('/savedtranscriptions')}>
+            &#9664;
+        </button>
 
-          {!confirmed && (
-            <button onClick={handleConfirm}>
-              Confirm
-            </button>
-          )}
-          {confirmed && (
+        <div className="input-container">
+            <textarea
+                className="input-box"
+                rows="5"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value.slice(0, 1000))}
+                placeholder="Enter the large body of text here..."
+                disabled={confirmed}
+                maxLength={1000}
+            ></textarea>
+
+            {!confirmed && (
+                <button className="start-button" onClick={handleConfirm}>Start</button>
+            )}
+        </div>
+
+        {confirmed && (
             <>
-              <div className="suggestions-container">
-                {suggestions.map(suggestion => (
-                  <div
-                    key={suggestion.id}
-                    className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
-                    onClick={() => toggleSuggestion(suggestion.id)}
-                  >
-                    {suggestion.text}
-                  </div>
-                ))}
-                {customSuggestions.map(suggestion => (
-                  <div
-                    key={suggestion.id}
-                    className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
-                    onClick={() => toggleSuggestion(suggestion.id)}
-                  >
-                    {suggestion.text}
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      removeCustomSuggestion(suggestion.id);
-                    }}>X</button>
-                  </div>
-                ))}
-              </div>
-              <div className="custom-suggestions">
-                <input
-                  type="text"
-                  value={customInput}
-                  onChange={(e) => setCustomInput(e.target.value)}
-                  placeholder="Add your own suggestion"
-                />
-                <button onClick={addCustomSuggestion}>+</button>
-              </div>
+                <div className="suggestions-container">
+                    {suggestions.map(suggestion => (
+                        <div
+                            key={suggestion.id}
+                            className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
+                            onClick={() => toggleSuggestion(suggestion.id)}
+                        >
+                            {suggestion.text}
+                        </div>
+                    ))}
+                    {customSuggestions.map(suggestion => (
+                        <div
+                            key={suggestion.id}
+                            className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
+                            onClick={() => toggleSuggestion(suggestion.id)}
+                        >
+                            {suggestion.text}
+                            <button className="remove-button" onClick={(e) => {
+                                e.stopPropagation();
+                                removeCustomSuggestion(suggestion.id);
+                            }}>X</button>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="custom-suggestions">
+    <input
+        type="text"
+        value={customInput}
+        onChange={(e) => setCustomInput(e.target.value)}
+        placeholder="Add your own suggestion"
+        onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+                addCustomSuggestion();
+            }
+        }}
+        onFocus={(e) => e.target.style.backgroundColor = '#E0F7FA'}  // Light blue on focus
+        onBlur={(e) => e.target.style.backgroundColor = '#FFFFFF'}  // White on blur
+    />
+</div>
+
+                <button onClick={handleGenerate} disabled={isLoading}>
+                    {isLoading ? 'Generating...' : 'Generate Questions'}
+                </button>
             </>
-          )}
-          {confirmed && (
-            <button onClick={handleGenerate} disabled={isLoading}>
-              {isLoading ? 'Generating...' : 'Generate Questions'}
-            </button>
-          )}
-        </>
-      )}
+        )}
+
+        {showSaveDisclaimer && (
+            <div className="sn-disclaimer-overlay">
+                <div className="sn-disclaimer-content">
+                    <p>Please provide a title for your notes:</p>
+                    <input
+                        type="text"
+                        value={noteTitle}
+                        onChange={(e) => setNoteTitle(e.target.value)}
+                        placeholder="Enter title"
+                    />
+                    <button onClick={confirmSave}>Save</button>
+                    <button onClick={() => setShowSaveDisclaimer(false)}>Cancel</button>
+                </div>
+            </div>
+        )}
+        {popupContent && (
+    <div className="modal-overlay">
+        <div className="modal-content">
+            <p>{popupContent}</p>
+            <button className="modal-save-button" onClick={handleSaveClick}>Save</button>
+            <button className="modal-delete-button" onClick={deleteNotes}>Deletee</button>
+        </div>
     </div>
-  );
-  
-  
+)}
+    </>
+);
   };
 
 export default NotesMaker;
