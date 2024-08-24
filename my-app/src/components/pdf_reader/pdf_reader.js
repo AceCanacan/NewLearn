@@ -7,11 +7,7 @@ const PDFReader = () => {
   const [response, setResponse] = useState('');
   const [uploadStatus, setUploadStatus] = useState('');
 
-  const API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
-
-  useEffect(() => {
-    console.log("API_KEY:", API_KEY); // Log the API key (be cautious with this in production)
-  }, []);
+  const API_KEY = "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";
 
   const handleFileChange = (e) => {
     console.log("File selected:", e.target.files[0]);
@@ -32,7 +28,7 @@ const PDFReader = () => {
 
     try {
         console.log("Sending file upload request");
-        const res = await fetch('http://localhost:5000/upload', {
+        const res = await fetch('http://localhost:8002/upload', {
             method: 'POST',
             body: formData,
             headers: {
