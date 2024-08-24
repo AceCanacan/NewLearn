@@ -175,8 +175,7 @@ const SavedTranscriptions = () => {
         )}
       </div>
     </div>
-  );
-    
+  );  
   
   };
 

@@ -1,0 +1,87 @@
+/* pdf_reader_styles.css */
+
+.pdf-reader-container {
+    max-width: 800px;
+    margin: 40px auto;
+    background-color: #ffffff;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    padding: 40px;
+  }
+  
+  .pdf-reader-title {
+    text-align: center;
+    color: #1e3a8a;
+    margin-bottom: 30px;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  
+  .pdf-reader-form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .pdf-reader-label {
+    margin-bottom: 10px;
+    color: #3b82f6;
+    font-weight: 600;
+    font-size: 18px;
+  }
+  
+  .pdf-reader-input {
+    padding: 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    outline-color: #3b82f6;
+    font-family: inherit;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+  }
+  
+  .pdf-reader-input:focus {
+    border-color: #3b82f6;
+  }
+  
+  .pdf-reader-button {
+    padding: 14px 24px;
+    background-color: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  .pdf-reader-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-2px);
+  }
+  
+  .pdf-reader-response {
+    margin-top: 30px;
+    background-color: #f3f4f6;
+    padding: 25px;
+    border-radius: 10px;
+    border-left: 5px solid #3b82f6;
+  }
+  
+  .pdf-reader-response-title {
+    margin-top: 0;
+    color: #1e3a8a;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+  
+  .pdf-reader-response-text {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #4b5563;
+  }
+  
