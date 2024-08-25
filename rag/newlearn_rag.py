@@ -1,28 +1,37 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Document, Settings
 from PyPDF2 import PdfReader
 import uuid
 import openai
+from tqdm import tqdm
+import time
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core import StorageContext, load_index_from_storage
+
 
 
 # Load environment variables
 load_dotenv()
 # Hardcode the API key (for testing purposes only)
-openai.api_key = "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"
+openai.api_key = "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"
 
 # Set the API key in llama_index settings
 Settings.openai_api_key = openai.api_key
 
-app = Flask(__name__)
+from openai import OpenAI
+client = OpenAI(api_key="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")
 
-# Enable CORS for all origins
+
+app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
 
 # Global variable to store the query engine
 rag_query_engine = None
+progress = 0
 
 @app.route('/upload', methods=['POST', 'OPTIONS'])
 def upload_file():
@@ -48,17 +57,47 @@ def upload_file():
     if file and file.filename.endswith('.pdf'):
         print(f"Processing file: {file.filename}")
         try:
+            global progress
+            progress = 0
+            
             # Read the PDF file
             pdf_reader = PdfReader(file)
             text = ""
-            for page in pdf_reader.pages:
+            for page in tqdm(pdf_reader.pages, desc="Reading PDF"):
                 text += page.extract_text()
+                progress += 1
+                time.sleep(0.1)  # Simulate longer processing time
             
+            progress = 0
             # Create a Document object with the text content and a unique ID
             document = Document(text=text, id_=str(uuid.uuid4()))
             
+            print("Starting embedding process...")
+            
+            # Initialize the OpenAIEmbedding
+            embed_model = OpenAIEmbedding(model="text-embedding-ada-002")
+            
             # Create the index from this document
-            index = VectorStoreIndex.from_documents([document])
+            index = VectorStoreIndex.from_documents(
+                [document],
+                embed_model=embed_model
+            )
+            
+            # Save the index
+            index.storage_context.persist("./storage")
+            
+            print("Embedding complete.")
+            print(f"Sample of embedded text: {text[:200]}...")  # Print first 200 characters
+            
+            # Load the index to get the embeddings
+            storage_context = StorageContext.from_defaults(persist_dir="./storage")
+            loaded_index = load_index_from_storage(storage_context)
+            
+            # Access a node to get its embedding
+            first_node = loaded_index.docstore.get_node(list(loaded_index.docstore.docs.keys())[0])
+            if first_node and first_node.embedding:
+                print(f"Embedding dimensions: {len(first_node.embedding)}")
+                print(f"Sample of first embedding: {first_node.embedding[:5]}")  # Print first 5 values
             
             # Create the query engine
             rag_query_engine = index.as_query_engine()
@@ -70,7 +109,16 @@ def upload_file():
             return jsonify({"error": f"Error processing file: {str(e)}"}), 500
     else:
         return jsonify({"error": "Invalid file type. Please upload a PDF."}), 400
-    
+
+
+def get_progress():
+    def generate():
+        global progress
+        while True:
+            yield f"data: {progress}\n\n"
+            time.sleep(0.5)
+    return Response(generate(), mimetype='text/event-stream')    
+
 @app.route('/query', methods=['POST'])
 def query():
     print(f"Received {request.method} request to /query")
@@ -83,12 +131,19 @@ def query():
     if not question:
         return jsonify({"error": "Question is required"}), 400
 
-    if rag_query_engine is None:
-        return jsonify({"error": "No document has been uploaded yet"}), 400
-
     try:
         print(f"Processing query: {question}")
-        response = rag_query_engine.query(question)
+        
+        # Load the index from storage
+        storage_context = StorageContext.from_defaults(persist_dir="./storage")
+        index = load_index_from_storage(storage_context)
+        
+        # Set up the query engine with hybrid mode
+        query_engine = index.as_query_engine()
+        
+        # Process the query
+        response = query_engine.query(question)
+        
         print("Query processed successfully")
         return jsonify({'answer': str(response)})
     except Exception as e:
