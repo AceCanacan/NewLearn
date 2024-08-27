@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./pdf_reader_styles.css";
+import { useNavigate } from "react-router-dom";
 
 const PDFReader = () => {
+  const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [query, setQuery] = useState("");
   const [response, setResponse] = useState("");
@@ -141,94 +143,98 @@ const PDFReader = () => {
   };
 
   return (
-    <div className="pdf-reader-container">
-      {isLoading && (
-        <div className="modal">
-          <div className="modal-content">
-            <h3>Processing PDF</h3>
-            <p>{progress}</p>
+    <div>
+      <button className="st-back-button" onClick={() => navigate("/")}>
+        <i className="fas fa-home"></i>
+      </button>
+      <div className="pdf-reader-container">
+        {isLoading && (
+          <div className="modal">
+            <div className="modal-content">
+              <h3>Processing PDF</h3>
+              <p>{progress}</p>
+            </div>
           </div>
-        </div>
-      )}
-      <h2 className="pdf-reader-title">PDF Underscore Reader</h2>
+        )}
+        <h2 className="pdf-reader-title">PDF Underscore Reader</h2>
 
-      {!uploadStatus && (
-        <form className="pdf-reader-form" onSubmit={handleFileUpload}>
-          <div>
-            <label className="pdf-reader-label" htmlFor="file">
-              Upload PDF:
-            </label>
-            <input
-              className="pdf-reader-input"
-              type="file"
-              id="file"
-              accept=".pdf"
-              onChange={handleFileChange}
-              required
-            />
+        {!uploadStatus && (
+          <form className="pdf-reader-form" onSubmit={handleFileUpload}>
+            <div>
+              <label className="pdf-reader-label" htmlFor="file">
+                Upload PDF:
+              </label>
+              <input
+                className="pdf-reader-input"
+                type="file"
+                id="file"
+                accept=".pdf"
+                onChange={handleFileChange}
+                required
+              />
+            </div>
+            <button className="pdf-reader-button" type="submit">
+              Upload PDF
+            </button>
+          </form>
+        )}
+
+        {uploadStatus && (
+          <div className="pdf-reader-status-container">
+            <p className="pdf-reader-status">{uploadStatus}</p>
+            {!uploadStatus.includes("successfully") && (
+              <button
+                className="pdf-reader-button"
+                onClick={() => {
+                  setUploadStatus("");
+                  setFile(null);
+                }}
+              >
+                Try Again
+              </button>
+            )}
           </div>
-          <button className="pdf-reader-button" type="submit">
-            Upload PDF
-          </button>
-        </form>
-      )}
-
-      {uploadStatus && (
-        <div className="pdf-reader-status-container">
-          <p className="pdf-reader-status">{uploadStatus}</p>
-          {!uploadStatus.includes("successfully") && (
+        )}
+        {uploadStatus && uploadStatus.includes("successfully") && (
+          <>
+            <form className="pdf-reader-form" onSubmit={handleQuerySubmit}>
+              <div>
+                <label className="pdf-reader-label" htmlFor="query">
+                  Enter your query:
+                </label>
+                <input
+                  className="pdf-reader-input"
+                  type="las"
+                  id="query"
+                  value={query}
+                  onChange={handleQueryChange}
+                  required
+                />
+              </div>
+              <button className="pdf-reader-button" type="submit">
+                Submit Query
+              </button>
+            </form>
+            {response && (
+              <div className="pdf-reader-response">
+                <h3 className="pdf-reader-response-title">Response:</h3>
+                <p className="pdf-reader-response-text">{response}</p>
+              </div>
+            )}
             <button
               className="pdf-reader-button"
               onClick={() => {
                 setUploadStatus("");
                 setFile(null);
+                setQuery("");
+                setResponse("");
               }}
             >
-              Try Again
+              Upload New PDF
             </button>
-          )}
-        </div>
-      )}
-
-      {uploadStatus && uploadStatus.includes("successfully") && (
-        <>
-          <form className="pdf-reader-form" onSubmit={handleQuerySubmit}>
-            <div>
-              <label className="pdf-reader-label" htmlFor="query">
-                Enter your query:
-              </label>
-              <input
-                className="pdf-reader-input"
-                type="text"
-                id="query"
-                value={query}
-                onChange={handleQueryChange}
-                required
-              />
-            </div>
-            <button className="pdf-reader-button" type="submit">
-              Submit Query
-            </button>
-          </form>
-          {response && (
-            <div className="pdf-reader-response">
-              <h3 className="pdf-reader-response-title">Response:</h3>
-              <p className="pdf-reader-response-text">{response}</p>
-            </div>
-          )}
-          <button
-            className="pdf-reader-button"
-            onClick={() => {
-              setUploadStatus("");
-              setFile(null);
-              setQuery("");
-              setResponse("");
-            }}
-          >
-            Upload New PDF
-          </button>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

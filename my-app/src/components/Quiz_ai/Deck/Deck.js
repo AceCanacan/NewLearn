@@ -1,17 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, setDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db, auth } from '../../../firebase/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import './Deck.css';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import {
+  collection,
+  getDocs,
+  setDoc,
+  doc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { db, auth } from "../../../firebase/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import "./Deck.css";
 
 function Deck() {
   const [decks, setDecks] = useState({});
   const [user, setUser] = useState(null);
   const [totalCardsCreated, setTotalCardsCreated] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [newDeckName, setNewDeckName] = useState('');
+  const [newDeckName, setNewDeckName] = useState("");
   const navigate = useNavigate();
 
   const MAX_CARDS = 5;
@@ -31,7 +38,7 @@ function Deck() {
   }, []);
 
   const fetchTotalCardsCreated = async (userId) => {
-    const userDocRef = doc(db, 'users', userId);
+    const userDocRef = doc(db, "users", userId);
     const userDoc = await getDoc(userDocRef);
     if (userDoc.exists()) {
       setTotalCardsCreated(userDoc.data().totalCardsCreated || 0);
@@ -49,7 +56,9 @@ function Deck() {
 
         for (const deckDoc of decksSnapshot.docs) {
           const data = deckDoc.data();
-          const numCards = Array.isArray(data.flashcards) ? data.flashcards.length : 0;
+          const numCards = Array.isArray(data.flashcards)
+            ? data.flashcards.length
+            : 0;
           decksData[deckDoc.id] = numCards;
         }
 
@@ -66,10 +75,12 @@ function Deck() {
       setDecks(newDecks);
 
       try {
-        await setDoc(doc(db, `users/${user.uid}/decks`, deckName), { cards: [] });
+        await setDoc(doc(db, `users/${user.uid}/decks`, deckName), {
+          cards: [],
+        });
 
         // Update total cards created
-        const userDocRef = doc(db, 'users', user.uid);
+        const userDocRef = doc(db, "users", user.uid);
         const newTotal = totalCardsCreated + 1;
         await updateDoc(userDocRef, { totalCardsCreated: newTotal });
         setTotalCardsCreated(newTotal);
@@ -85,16 +96,18 @@ function Deck() {
         });
         setDecks(decksData);
       } catch (error) {
-        console.error('Error saving deck:', error);
+        console.error("Error saving deck:", error);
       }
     } else {
-      console.log('Deck already exists:', deckName);
+      console.log("Deck already exists:", deckName);
     }
   };
 
   const handleCreateNewDeck = () => {
     if (totalCardsCreated >= MAX_CARDS) {
-      alert(`You have already created ${totalCardsCreated} cards. You cannot create more.`);
+      alert(
+        `You have already created ${totalCardsCreated} cards. You cannot create more.`,
+      );
       return;
     }
     setShowDisclaimer(true);
@@ -104,57 +117,79 @@ function Deck() {
     if (newDeckName && user) {
       await saveDeck(newDeckName);
       setShowDisclaimer(false);
-      setNewDeckName('');
+      setNewDeckName("");
     }
   };
 
   return (
-    <div className="deck-container">
-      
-      <h2>Recent</h2>
-      <button onClick={() => navigate('/')}>Back to Home</button>
-      <div className="deck-list">
-      {Object.keys(decks).map((deckName) => (
-  <Link to={`/deck/${deckName}/flashcard-input`} key={deckName} className="deck">
-    <h3>{deckName}</h3>
-    <div className="deck-details">
-      <span>{decks[deckName]} terms</span>
-    </div>
-  </Link>
-))}
-
-      </div>
-      <button 
-        className="create-deck-button" 
-        onClick={handleCreateNewDeck}
-        disabled={totalCardsCreated >= MAX_CARDS}
-      >
-        Create New Deck
+    <div>
+      <button className="st-back-button" onClick={() => navigate("/")}>
+        <i className="fas fa-home"></i>
       </button>
+      <div className="app-container">
+        <header className="app-header">
+          <h1>My Flashcards</h1>
+        </header>
 
-      {showDisclaimer && (
-        <div className="deck-disclaimer-modal">
-          <div className="deck-disclaimer-content">
-            <h3>Disclaimer</h3>
-            <p>
-              You have already created {totalCardsCreated} out of {MAX_CARDS} maximum allowed cards.
-              Are you sure you want to create a new deck? Remember, this is an alpha version and 
-              every card you create is permanent and cannot be erased. Choose wisely as your actions 
-              have lasting consequences.
-            </p>
-            <input 
-              type="text" 
-              placeholder="Enter new deck name" 
-              value={newDeckName}
-              onChange={(e) => setNewDeckName(e.target.value)}
-            />
-            <div className="disclaimer-buttons">
-              <button onClick={handleConfirmNewDeck}>Add</button>
-              <button onClick={() => setShowDisclaimer(false)}>Cancel</button>
+        <main className="main-content">
+          <section className="recent-decks">
+            <h2>Recent Decks</h2>
+            <div className="deck-grid">
+              {Object.entries(decks).map(([deckName, cardCount]) => (
+                <Link
+                  to={`/deck/${deckName}/flashcard-input`}
+                  key={deckName}
+                  className="deck-card"
+                >
+                  <h3>{deckName}</h3>
+                  <span className="card-count">{cardCount} cards</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <button
+            className="create-deck-button"
+            onClick={handleCreateNewDeck}
+            disabled={totalCardsCreated >= MAX_CARDS}
+          >
+            <i className="fas fa-plus"></i> Create New Deck
+          </button>
+        </main>
+
+        {showDisclaimer && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h3>Create New Deck</h3>
+              <p>
+                You have created {totalCardsCreated} out of {MAX_CARDS} maximum
+                allowed cards. This action cannot be undone. Are you sure you
+                want to continue?
+              </p>
+              <input
+                type="text"
+                placeholder="Enter deck name"
+                value={newDeckName}
+                onChange={(e) => setNewDeckName(e.target.value)}
+              />
+              <div className="modal-actions">
+                <button
+                  className="confirm-button"
+                  onClick={handleConfirmNewDeck}
+                >
+                  Create Deck
+                </button>
+                <button
+                  className="cancel-button"
+                  onClick={() => setShowDisclaimer(false)}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

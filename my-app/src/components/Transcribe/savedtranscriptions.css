@@ -1,143 +1,140 @@
-/* Global Styles */
-body {
-    background-color: #ffefc6; /* Background color */
+:root {
+    --primary-color: #3666fb;
+    --secondary-color: #f88c08;
+    --background-color: #ffefc6;
+    --card-background: #ffffff;
+    --text-color: #444444;
+    --border-color: #dddddd;
+    --transition: all 0.3s ease;
 }
-.st-title-input {
-    font-size: 1.5vw;
-    font-weight: bold;
-    text-align: center;
-    color: #444;
-    border: none;
-    border-bottom: 0.2vw solid #2980b9;
-    outline: none;
-    width: 100%;
-    margin: 0 auto; /* Center the input by setting margin to auto */
-    padding: 0.5vw 0; /* Add padding for consistent spacing inside the input */
+
+* {
     box-sizing: border-box;
-    display: block; /* Ensure the input is treated as a block-level element */
+    margin: 0;
+    padding: 0;
 }
 
-
-
+body {
+    font-family: "Arial", sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
 
 /* Banner */
 .st-squircle-banner {
-    background-color: #3666fb; /* Blue color for the banner */
+    background-color: var(--primary-color);
     color: white;
     text-align: center;
     font-weight: bold;
-    font-size: 2vw; /* Adjust font size as needed */
+    font-size: 2vw;
     width: 40%;
     padding: 1.5vw;
-    border-radius: 0 0 2vw 2vw; /* Bottom half rounded */
-    position: fixed; /* Fixes the banner at the top of the viewport */
+    border-radius: 0 0 2vw 2vw;
+    position: fixed;
     top: 0;
-    left: 50%; /* Start positioning from the center */
-    transform: translateX(-50%); /* Shift left by 50% of the banner width to center */
-    z-index: 1000; /* Ensure it stays on top of other elements */
-    box-shadow: 0 0.3vw 0.6vw rgba(0, 0, 0, 0.1); /* Optional shadow */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    box-shadow: 0 0.3vw 0.6vw rgba(0, 0, 0, 0.1);
     margin-bottom: 10vw;
 }
 
 /* Back Button */
 .st-back-button {
-    background-color: #3666fb; /* Blue color */
+    background-color: var(--primary-color);
     border: none;
     color: white;
-    border-radius: 50%; /* Makes the button a circle */
+    border-radius: 50%;
     cursor: pointer;
-    padding: 1.5vw; /* Adjust size as needed */
-    width: 3vw; /* Ensures circular shape */
-    height: 3vw; /* Ensures circular shape */
+    padding: 1.5vw;
+    width: 3vw;
+    height: 3vw;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5vw; /* Adjust icon size as needed */
+    font-size: 1.5vw;
 }
 
 .st-back-button:hover {
-    background-color: #2980b9; /* Darker blue on hover */
-    transform: scale(1.1); /* Slightly enlarge on hover */
+    background-color: #2980b9;
+    transform: scale(1.1);
 }
 
-
-/* Transcriptions List */
-.st-container {
-    display: block;
-    padding: 4vw;
-    margin-top: 2vw;
+/* Deck Container */
+.deck-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
 }
 
-.st-transcriptions-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+/* Deck List */
+.deck-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(20vw, 1fr));
-    grid-gap: 1.5vw;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
 }
 
-.st-transcription-item {
-    width: 100%;
-    padding-bottom: 100%;
-    position: relative;
-    overflow: hidden;
+/* Deck */
+.deck {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-decoration: none;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
-.st-transcription-item:hover {
-    transform: scale(1.02);
+.deck:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-
-/* Transcription Container */
-.st-transcription-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 1vw;
-    background-color: white;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.3s;
-    overflow: hidden; 
+.deck h3 {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
 }
 
-.st-transcription-container {
-    margin: 0 auto; /* Ensure the container is centered within its parent */
-    width: 100%; /* Ensure the container takes full width inside the parent */
+/* Deck Details */
+.deck-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--text-light);
 }
 
-.st-transcription-container:hover {
-    box-shadow: 0 0.6vw 1.2vw rgba(0, 0, 0, 0.2); /* Normal shadow on hover */
+.deck-details span {
+    background-color: #eef2ff;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
 }
 
-
-/* Transcription Header */
-.st-transcription-header {
-    background-color: #f88c08; /* The color for the header */
+/* Create Deck Button */
+.create-deck-button {
+    display: inline-block;
+    margin-top: 1.5rem;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--secondary-color);
     color: white;
-    font-weight: bold;
-    text-align: center;
-    padding: 0.5vw;
-    border-top-left-radius: 1vw;
-    border-top-right-radius: 1vw;
-    font-size: 1.5vw;
-    margin: 0; /* Ensure no margin creates a gap */
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
 }
 
-
-/* Markdown Content */
-.st-markdown-content {
-    margin-bottom: 1vh;
-    color: #444;
+.create-deck-button:hover {
+    background-color: #e67e22;
 }
 
-
-/* Active Transcription Modal */
-.st-transcription-modal {
+/* Deck Disclaimer Modal */
+.deck-disclaimer-modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -145,158 +142,60 @@ body {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     z-index: 1000;
-    box-sizing: border-box;
 }
 
-.st-modal-content {
-    background-color: white;
-    margin: 0 auto;
-    border-radius: 1vw;
-    width: 90vw;
-    max-width: 60vw;
-    text-align: left; /* Ensure text is left-aligned */
-    box-sizing: border-box;
-    overflow: hidden;
+.deck-disclaimer-content {
+    background-color: var(--card-background);
+    padding: 2rem;
+    border-radius: 10px;
+    max-width: 90%;
+    width: 500px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.deck-disclaimer-buttons {
     display: flex;
-    flex-direction: column; /* Ensure elements stack vertically */
-    align-items: center; /* Center the child elements horizontally */
+    justify-content: space-between;
+    margin-top: 1.5rem;
 }
 
+/* Responsive Design */
+@media (max-width: 768px) {
+    .deck-container {
+        padding: 1rem;
+    }
 
-.st-close-button {
-    background-color: #d9534f;
-    border: none;
-    color: white;
-    border-radius: 1vw;
-    cursor: pointer;
+    .deck-list {
+        grid-template-columns: 1fr;
+    }
 
-    font-size: 1.5vw;
-    float: right;
-    transition: background-color 0.3s;
+    .deck {
+        padding: 1rem;
+    }
+
+    .create-deck-button {
+        width: 100%;
+    }
+
+    .deck-disclaimer-content {
+        padding: 1.5rem;
+    }
 }
 
-.st-close-button:hover {
-    background-color: #c9302c;
-}
+@media (max-width: 480px) {
+    .deck h3 {
+        font-size: 1rem;
+    }
 
-.st-active-transcription-header {
-    background-color: #f88c08;
-    color: white;
-    font-weight: bold;
-    text-align: center;
-    padding: 1vw;
-    border-top-left-radius: 1vw;
-    border-top-right-radius: 1vw;
-    font-size: 1.5vw;
-    margin: 0 auto; /* Center the title horizontally */
-    width: 100%; /* Ensure the header takes up the full width */
-}
+    .deck-details {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
-.st-modal-content .st-textarea {
-    margin: 0 auto;
-    box-shadow: none;
-    width: calc(100% - 6vw); /* Ensure some padding inside the textarea */
-    height: 45vh;
-    border-radius: 1vw 1vw 0 0;
-    padding: 2vw 3vw; /* Padding to prevent text from touching the edges */
-    font-size: 1.5vw;
-    resize: none;
-    box-sizing: border-box;
-
-    border: none;
-    border-bottom: 0.1vw solid #ddd;
-}
-
-
-
-
-.st-button-group {
-    display: flex;
-    justify-content: center; /* Centers the buttons horizontally */
-    align-items: center; /* Aligns the buttons vertically in the center */
-    margin-bottom: 1vw;
-}
-
-.st-button-group button {
-    padding: 1vw 2vw; /* Ensures consistent button padding */
-    font-size: 1.5vw; /* Adjust the font size as needed */
-    cursor: pointer;
-}
-
-
-
-
-
-/* Add Transcription Button */
-.st-add-transcription {
-    margin-top: 2vh;
-    padding: 2vh;
-    background-color: #5cb85c;
-    border: none;
-    color: white;
-    border-radius: 50%;
-    font-size: 5vw;
-    width: 9vw;
-    height: 9vw;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    position: fixed;
-    bottom: 2vh;
-    right: 2vw;
-    box-shadow: 0 0.6vw 1.2vw rgba(0, 0, 0, 0.2);
-    transition: background-color 0.3s, transform 0.3s;
-}
-
-.st-add-transcription:hover {
-    background-color: #f88c08;
-    transform: scale(1.1);
-}
-
-
-/* Miscellaneous Styles */
-.hidden-input {
-    display: none;
-}
-
-.uploaded-image {
-    max-width: 100%;
-    height: auto;
-}
-
-.markdown-result {
-    margin-top: 2vh;
-}
-
-.generate-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
-.error-text {
-    color: red;
-}
-
-/* Add Card */
-.st-add-card {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #fdd195;
-    cursor: pointer;
-}
-
-.st-add-card:hover {
-    background-color: #f88c08; /* Different hover effect for add card */
-}
-
-.st-plus-icon {
-    font-size: 5vw;
-    color: white;
-    font-weight: bold;
-    line-height: 1;
+    .deck-details span {
+        margin-top: 0.5rem;
+    }
 }
