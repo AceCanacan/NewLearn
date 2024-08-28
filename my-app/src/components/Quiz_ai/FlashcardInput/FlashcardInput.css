@@ -1,225 +1,230 @@
 /* Container for the flashcard input section */
 .flashcard-input {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f3f4f6;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f3f4f6;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .flashcard-input h3 {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: 500;
-  color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: 500;
+    color: #333;
 }
 
 .flashcard-input h3 input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-  font-size: 18px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    font-size: 18px;
 }
 
 /* Actions for deck management */
 .deck-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
 }
 
 .deck-actions button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-size: 16px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 16px;
 }
 
 .deck-actions button:hover {
-  background-color: #0056b3;
+    background-color: #0056b3;
 }
 
 .deck-actions label {
-  display: flex;
-  align-items: center;
-  font-size: 16px;
-  color: #333;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    color: #333;
 }
 
 .deck-actions input[type="checkbox"] {
-  margin-right: 8px;
+    margin-right: 8px;
 }
 
 /* Add new flashcard button */
 .add-button {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 8px;
-  background-color: #28a745;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-size: 16px;
-  margin-bottom: 20px;
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: #28a745;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 16px;
+    margin-bottom: 20px;
 }
 
 .add-button:hover {
-  background-color: #218838;
+    background-color: #218838;
 }
 
 /* Container for the list of flashcards */
 .flashcard-list {
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 /* Individual flashcard styling */
 .flashcard {
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* Content area for each flashcard */
 .flashcard-content {
-  display: flex;
-  width: 100%;
-  align-items: center;
+    display: flex;
+    width: 100%;
+    align-items: center;
 }
 
-.flashcard-question, .flashcard-answer {
-  flex: 1;
-  margin-right: 10px;
+.flashcard-question,
+.flashcard-answer {
+    flex: 1;
+    margin-right: 10px;
 }
 
-.flashcard-question label, .flashcard-answer label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 600;
-  font-size: 14px;
-  color: #555;
+.flashcard-question label,
+.flashcard-answer label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #555;
 }
 
-.flashcard-question input, .flashcard-answer input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box;
-  font-size: 14px;
+.flashcard-question input,
+.flashcard-answer input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
 }
 
-.flashcard-question p, .flashcard-answer p {
-  margin: 0;
-  font-size: 14px;
-  color: #333;
+.flashcard-question p,
+.flashcard-answer p {
+    margin: 0;
+    font-size: 14px;
+    color: #333;
 }
 
 .vertical-line {
-  width: 1px;
-  background-color: #ccc;
-  height: 60px;
-  margin: 0 10px;
+    width: 1px;
+    background-color: #ccc;
+    height: 60px;
+    margin: 0 10px;
 }
 
 .flashcard-buttons {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
-.edit-button, .delete-button {
-  margin-top: 10px;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-size: 14px;
+.edit-button,
+.delete-button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 14px;
 }
 
 .delete-button {
-  background-color: #dc3545;
+    background-color: #dc3545;
 }
 
 .edit-button:hover {
-  background-color: #0056b3;
+    background-color: #0056b3;
 }
 
 .delete-button:hover {
-  background-color: #c82333;
+    background-color: #c82333;
 }
 
 /* Link to the test page */
 .test-link {
-  text-align: center;
-  margin-top: 20px;
+    text-align: center;
+    margin-top: 20px;
 }
 
 .test-link button {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  background-color: #28a745;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-size: 16px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #28a745;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 16px;
 }
 
 .test-link button:hover {
-  background-color: #218838;
+    background-color: #218838;
 }
 
 /* Styling for disclaimer modal */
 .disclaimer-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 500px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  text-align: center;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 500px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    text-align: center;
 }
 
 .disclaimer-modal p {
-  margin-bottom: 20px;
-  font-size: 16px;
-  color: #333;
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #333;
 }
 
 .disclaimer-modal button {
-  margin: 5px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-size: 14px;
+    margin: 5px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 14px;
 }
 
 .disclaimer-modal button:hover {
-  background-color: #0056b3;
+    background-color: #0056b3;
 }

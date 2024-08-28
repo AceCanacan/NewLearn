@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import {  setDoc, doc, deleteDoc, getDoc,updateDoc} from 'firebase/firestore';
-import { db, auth } from '../../../firebase/firebase'; // Adjust the path as needed
-import { onAuthStateChanged } from 'firebase/auth'
-import './FlashcardInput.css';
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { setDoc, doc, deleteDoc, getDoc, updateDoc } from "firebase/firestore";
+import { db, auth } from "../../../firebase/firebase"; // Adjust the path as needed
+import { onAuthStateChanged } from "firebase/auth";
+import "./FlashcardInput.css";
 
 // Utility functions for Firestore operations
 const loadFromFirestore = async (docPath, defaultValue) => {
@@ -20,21 +20,18 @@ const loadFromFirestore = async (docPath, defaultValue) => {
   }
 };
 
-
 const saveToFirestore = async (docPath, value) => {
   try {
     const docRef = doc(db, docPath);
     await setDoc(docRef, value);
-  } catch (error) {
-  }
+  } catch (error) {}
 };
 
 const removeFromFirestore = async (docPath) => {
   try {
     const docRef = doc(db, docPath);
     await deleteDoc(docRef);
-  } catch (error) {
-  }
+  } catch (error) {}
 };
 
 const loadDeckFlashcards = async (userId, deckName) => {
@@ -49,11 +46,9 @@ const saveDeckFlashcards = async (userId, deckName, flashcards) => {
   await saveToFirestore(`users/${userId}/decks/${deckName}`, deckData);
 };
 
-
 const removeDeckFlashcards = async (userId, deckName) => {
   await removeFromFirestore(`users/${userId}/decks/${deckName}`);
 };
-
 
 function FlashcardInput() {
   const { deckName } = useParams();
@@ -78,12 +73,12 @@ function FlashcardInput() {
         setTotalFlashcardsCreated(0);
       }
     });
-  
+
     return () => unsubscribe();
   }, [deckName]);
 
   const fetchTotalFlashcardsCreated = async (userId, deckName) => {
-    const deckDocRef = doc(db, 'users', userId, 'decks', deckName);
+    const deckDocRef = doc(db, "users", userId, "decks", deckName);
     const deckDoc = await getDoc(deckDocRef);
     if (deckDoc.exists()) {
       setTotalFlashcardsCreated(deckDoc.data().totalFlashcardsCreated || 0);
@@ -99,17 +94,19 @@ function FlashcardInput() {
         setFlashcards(storedFlashcards);
       }
     };
-  
+
     if (user) {
       fetchFlashcards();
     }
   }, [deckName, user]);
-  
-
 
   const handleTestYourself = async () => {
-    await saveToFirestore('settings', `${deckName}-shuffled`, { shuffled: flashcards });
-    await saveToFirestore('settings', `${deckName}-currentIndex`, { currentIndex: 0 });
+    await saveToFirestore("settings", `${deckName}-shuffled`, {
+      shuffled: flashcards,
+    });
+    await saveToFirestore("settings", `${deckName}-currentIndex`, {
+      currentIndex: 0,
+    });
     navigate(`/test/${deckName}`);
   };
 
@@ -124,13 +121,17 @@ function FlashcardInput() {
   };
 
   const handleDelete = (index) => {
-    if (user && window.confirm('Are you sure you want to delete this flashcard? This action cannot be undone.')) {
+    if (
+      user &&
+      window.confirm(
+        "Are you sure you want to delete this flashcard? This action cannot be undone.",
+      )
+    ) {
       const newFlashcards = flashcards.filter((_, i) => i !== index);
       setFlashcards(newFlashcards);
       saveDeckFlashcards(user.uid, deckName, newFlashcards);
     }
   };
-  
 
   const handleRenameDeck = async () => {
     if (newDeckName && newDeckName !== deckName && user) {
@@ -141,21 +142,27 @@ function FlashcardInput() {
       navigate(`/deck/${newDeckName}`);
     }
   };
-  
 
   const handleDeleteDeck = async () => {
-    if (window.confirm('Are you sure you want to delete this deck? This action cannot be undone.') && user) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this deck? This action cannot be undone.",
+      ) &&
+      user
+    ) {
       await removeDeckFlashcards(user.uid, deckName);
-      navigate('/');
+      navigate("/");
     }
   };
 
   const handleAddFlashcard = () => {
     if (totalFlashcardsCreated >= MAX_FLASHCARDS) {
-      alert(`You have already created ${totalFlashcardsCreated} flashcards in this deck. You cannot create more.`);
+      alert(
+        `You have already created ${totalFlashcardsCreated} flashcards in this deck. You cannot create more.`,
+      );
       return;
     }
-    const newFlashcards = [...flashcards, { question: '', answer: '' }];
+    const newFlashcards = [...flashcards, { question: "", answer: "" }];
     setFlashcards(newFlashcards);
     setEditIndex(newFlashcards.length - 1);
   };
@@ -164,13 +171,13 @@ function FlashcardInput() {
     if (user) {
       await saveDeckFlashcards(user.uid, deckName, flashcards);
       setEditIndex(null);
-      
+
       // Update total flashcards created for this deck
-      const deckDocRef = doc(db, 'users', user.uid, 'decks', deckName);
+      const deckDocRef = doc(db, "users", user.uid, "decks", deckName);
       const newTotal = flashcards.length;
       await updateDoc(deckDocRef, { totalFlashcardsCreated: newTotal });
       setTotalFlashcardsCreated(newTotal);
-      
+
       setIsEditingDeck(false);
       setShowDisclaimer(false);
     }
@@ -182,8 +189,6 @@ function FlashcardInput() {
     setFlashcards(newFlashcards);
     // Remove the saveDeckFlashcards call from here
   };
-
-
 
   return (
     <div className="flashcard-input">
@@ -198,11 +203,15 @@ function FlashcardInput() {
           newDeckName
         )}
       </h3>
-      <button onClick={() => navigate('/deck/home')}>Back</button>
+      <button onClick={() => navigate("/deck/home")}>Back</button>
 
       <div className="deck-actions">
-        <button onClick={isEditingDeck ? handleRenameDeck : () => setIsEditingDeck(true)}>
-          {isEditingDeck ? 'Save' : 'Edit Deck'}
+        <button
+          onClick={
+            isEditingDeck ? handleRenameDeck : () => setIsEditingDeck(true)
+          }
+        >
+          {isEditingDeck ? "Save" : "Edit Deck"}
         </button>
         {isEditingDeck && (
           <>
@@ -212,40 +221,48 @@ function FlashcardInput() {
         )}
       </div>
       {showDisclaimer && (
-  <div className="disclaimer-modal">
-    <div className="disclaimer-content">
-      <h3>Disclaimer</h3>
-      <p>
-        You are about to save {flashcards.length} flashcards in this deck.
-        The maximum allowed is {MAX_FLASHCARDS}. Remember, this is an alpha version and 
-        every flashcard you create is permanent and cannot be erased. Choose wisely as your actions 
-        have lasting consequences.
-      </p>
-      <div className="disclaimer-buttons">
-        <button onClick={handleConfirmSave}>Confirm Save</button>
-        <button onClick={() => setShowDisclaimer(false)}>Cancel</button>
-      </div>
-    </div>
-  </div>
-)}
+        <div className="disclaimer-modal">
+          <div className="disclaimer-content">
+            <h3>Disclaimer</h3>
+            <p>
+              You are about to save {flashcards.length} flashcards in this deck.
+              The maximum allowed is {MAX_FLASHCARDS}. Remember, this is an
+              alpha version and every flashcard you create is permanent and
+              cannot be erased. Choose wisely as your actions have lasting
+              consequences.
+            </p>
+            <div className="disclaimer-buttons">
+              <button onClick={handleConfirmSave}>Confirm Save</button>
+              <button onClick={() => setShowDisclaimer(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
       <>
-  <Link to={`/test/${deckName}`} className="test-link">
-    <button onClick={handleTestYourself}>Test Yourself</button>
-  </Link>
-  <Link to={`/review/${deckName}`} className="test-link">
-    <button>Review</button>
-  </Link>
-  <Link to={`/score-report/${deckName}`} className="test-link">
-    <button>View Scores</button>
-  </Link>
-  <button className="test-link" onClick={() => {
-    if (localStorage.getItem(`${deckName}-generated`) === 'true') {
-      alert('You have already used the QuizMaker feature for this deck.');
-    } else {
-      navigate(`/quizmaker/${deckName}`);
-    }
-  }}>Go to QuizMaker</button>
-</>
+        <Link to={`/test/${deckName}`} className="test-link">
+          <button onClick={handleTestYourself}>Test Yourself</button>
+        </Link>
+        <Link to={`/review/${deckName}`} className="test-link">
+          <button>Review</button>
+        </Link>
+        <Link to={`/score-report/${deckName}`} className="test-link">
+          <button>View Scores</button>
+        </Link>
+        <button
+          className="test-link"
+          onClick={() => {
+            if (localStorage.getItem(`${deckName}-generated`) === "true") {
+              alert(
+                "You have already used the QuizMaker feature for this deck.",
+              );
+            } else {
+              navigate(`/quizmaker/${deckName}`);
+            }
+          }}
+        >
+          Go to QuizMaker
+        </button>
+      </>
 
       <div className="flashcard-list">
         {flashcards.map((flashcard, index) => (
@@ -257,7 +274,9 @@ function FlashcardInput() {
                   <input
                     type="text"
                     value={flashcard.question}
-                    onChange={(e) => handleInputChange(index, 'question', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(index, "question", e.target.value)
+                    }
                   />
                 ) : (
                   <p>{flashcard.question}</p>
@@ -270,7 +289,9 @@ function FlashcardInput() {
                   <input
                     type="text"
                     value={flashcard.answer}
-                    onChange={(e) => handleInputChange(index, 'answer', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(index, "answer", e.target.value)
+                    }
                   />
                 ) : (
                   <p>{flashcard.answer}</p>
@@ -287,18 +308,24 @@ function FlashcardInput() {
                     }
                   }}
                 >
-                  {editIndex === index ? 'Save' : 'Edit'}
+                  {editIndex === index ? "Save" : "Edit"}
                 </button>
                 {editIndex === index && (
-                  <button className="delete-button" onClick={() => handleDelete(index)}>Delete</button>
+                  <button
+                    className="delete-button"
+                    onClick={() => handleDelete(index)}
+                  >
+                    Delete
+                  </button>
                 )}
               </div>
             </div>
           </div>
         ))}
       </div>
-      <button className="add-button" onClick={handleAddFlashcard}>+ Add Flashcard</button>
-
+      <button className="add-button" onClick={handleAddFlashcard}>
+        + Add Flashcard
+      </button>
     </div>
   );
 }

@@ -21,7 +21,7 @@ function Deck() {
   const [newDeckName, setNewDeckName] = useState("");
   const navigate = useNavigate();
 
-  const MAX_CARDS = 5;
+  const MAX_CARDS = 10;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -123,72 +123,73 @@ function Deck() {
 
   return (
     <div>
+      <div className="st-squircle-banner">Convert images and audio to text</div>
       <button className="st-back-button" onClick={() => navigate("/")}>
         <i className="fas fa-home"></i>
       </button>
-      <div className="app-container">
-        <header className="app-header">
-          <h1>My Flashcards</h1>
-        </header>
+      <div className="deck-main-container">
+        <div className="deck-app-container">
+          <header className="deck-app-header"></header>
 
-        <main className="main-content">
-          <section className="recent-decks">
-            <h2>Recent Decks</h2>
-            <div className="deck-grid">
-              {Object.entries(decks).map(([deckName, cardCount]) => (
-                <Link
-                  to={`/deck/${deckName}/flashcard-input`}
-                  key={deckName}
-                  className="deck-card"
+          <main className="deck-main-content">
+            <section className="deck-recent-decks">
+              <ul className="deck-grid">
+                {Object.entries(decks).map(([deckName, cardCount]) => (
+                  <li key={deckName} className="deck-card">
+                    <Link
+                      to={`/deck/${deckName}/flashcard-input`}
+                      className="deck-card-link"
+                    >
+                      <h3 className="deck-card-title">{deckName}</h3>
+                      <span className="deck-card-count">{cardCount} cards</span>
+                    </Link>
+                  </li>
+                ))}
+                <li
+                  className="deck-card deck-add-card"
+                  onClick={handleCreateNewDeck}
                 >
-                  <h3>{deckName}</h3>
-                  <span className="card-count">{cardCount} cards</span>
-                </Link>
-              ))}
-            </div>
-          </section>
+                  <div className="deck-add-icon">+</div>
+                  <span className="deck-add-text">Create New Deck</span>
+                </li>
+              </ul>
+            </section>
+          </main>
 
-          <button
-            className="create-deck-button"
-            onClick={handleCreateNewDeck}
-            disabled={totalCardsCreated >= MAX_CARDS}
-          >
-            <i className="fas fa-plus"></i> Create New Deck
-          </button>
-        </main>
-
-        {showDisclaimer && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <h3>Create New Deck</h3>
-              <p>
-                You have created {totalCardsCreated} out of {MAX_CARDS} maximum
-                allowed cards. This action cannot be undone. Are you sure you
-                want to continue?
-              </p>
-              <input
-                type="text"
-                placeholder="Enter deck name"
-                value={newDeckName}
-                onChange={(e) => setNewDeckName(e.target.value)}
-              />
-              <div className="modal-actions">
-                <button
-                  className="confirm-button"
-                  onClick={handleConfirmNewDeck}
-                >
-                  Create Deck
-                </button>
-                <button
-                  className="cancel-button"
-                  onClick={() => setShowDisclaimer(false)}
-                >
-                  Cancel
-                </button>
+          {showDisclaimer && (
+            <div className="deck-modal-overlay">
+              <div className="deck-modal-content">
+                <h3>Create New Deck</h3>
+                <p>
+                  You have created {totalCardsCreated} out of {MAX_CARDS}{" "}
+                  maximum allowed cards. This action cannot be undone. Are you
+                  sure you want to continue?
+                </p>
+                <input
+                  type="text"
+                  placeholder="Enter deck name"
+                  value={newDeckName}
+                  onChange={(e) => setNewDeckName(e.target.value)}
+                  className="deck-input"
+                />
+                <div className="deck-modal-actions">
+                  <button
+                    className="deck-confirm-button"
+                    onClick={handleConfirmNewDeck}
+                  >
+                    Create Deck
+                  </button>
+                  <button
+                    className="deck-cancel-button"
+                    onClick={() => setShowDisclaimer(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
