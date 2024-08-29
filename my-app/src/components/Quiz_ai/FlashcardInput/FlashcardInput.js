@@ -191,38 +191,55 @@ function FlashcardInput() {
   };
 
   return (
-    <div className="flashcard-input">
-      <h3>
+    <div className="flashcard-input-container">
+      <h3 className="flashcard-input-title">
         {isEditingDeck ? (
           <input
             type="text"
             value={newDeckName}
             onChange={(e) => setNewDeckName(e.target.value)}
+            className="flashcard-input-deck-name"
           />
         ) : (
           newDeckName
         )}
       </h3>
-      <button onClick={() => navigate("/deck/home")}>Back</button>
+      <button
+        onClick={() => navigate("/deck/home")}
+        className="flashcard-input-back-button"
+      >
+        Back
+      </button>
 
-      <div className="deck-actions">
+      <div className="flashcard-input-deck-actions">
         <button
           onClick={
             isEditingDeck ? handleRenameDeck : () => setIsEditingDeck(true)
           }
+          className="flashcard-input-edit-deck-button"
         >
           {isEditingDeck ? "Save" : "Edit Deck"}
         </button>
         {isEditingDeck && (
           <>
-            <button onClick={handleDeleteDeck}>Delete Deck</button>
-            <button onClick={() => setIsEditingDeck(false)}>Cancel</button>
+            <button
+              onClick={handleDeleteDeck}
+              className="flashcard-input-delete-deck-button"
+            >
+              Delete Deck
+            </button>
+            <button
+              onClick={() => setIsEditingDeck(false)}
+              className="flashcard-input-cancel-edit-button"
+            >
+              Cancel
+            </button>
           </>
         )}
       </div>
       {showDisclaimer && (
-        <div className="disclaimer-modal">
-          <div className="disclaimer-content">
+        <div className="flashcard-input-disclaimer-modal">
+          <div className="flashcard-input-disclaimer-content">
             <h3>Disclaimer</h3>
             <p>
               You are about to save {flashcards.length} flashcards in this deck.
@@ -231,25 +248,46 @@ function FlashcardInput() {
               cannot be erased. Choose wisely as your actions have lasting
               consequences.
             </p>
-            <div className="disclaimer-buttons">
-              <button onClick={handleConfirmSave}>Confirm Save</button>
-              <button onClick={() => setShowDisclaimer(false)}>Cancel</button>
+            <div className="flashcard-input-disclaimer-buttons">
+              <button
+                onClick={handleConfirmSave}
+                className="flashcard-input-confirm-save-button"
+              >
+                Confirm Save
+              </button>
+              <button
+                onClick={() => setShowDisclaimer(false)}
+                className="flashcard-input-cancel-save-button"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
       )}
       <>
-        <Link to={`/test/${deckName}`} className="test-link">
-          <button onClick={handleTestYourself}>Test Yourself</button>
+        <Link to={`/test/${deckName}`} className="flashcard-input-test-link">
+          <button
+            onClick={handleTestYourself}
+            className="flashcard-input-test-button"
+          >
+            Test Yourself
+          </button>
         </Link>
-        <Link to={`/review/${deckName}`} className="test-link">
-          <button>Review</button>
+        <Link
+          to={`/review/${deckName}`}
+          className="flashcard-input-review-link"
+        >
+          <button className="flashcard-input-review-button">Review</button>
         </Link>
-        <Link to={`/score-report/${deckName}`} className="test-link">
-          <button>View Scores</button>
+        <Link
+          to={`/score-report/${deckName}`}
+          className="flashcard-input-score-link"
+        >
+          <button className="flashcard-input-score-button">View Scores</button>
         </Link>
         <button
-          className="test-link"
+          className="flashcard-input-quizmaker-button"
           onClick={() => {
             if (localStorage.getItem(`${deckName}-generated`) === "true") {
               alert(
@@ -264,11 +302,11 @@ function FlashcardInput() {
         </button>
       </>
 
-      <div className="flashcard-list">
+      <div className="flashcard-input-list">
         {flashcards.map((flashcard, index) => (
-          <div key={index} className="flashcard">
-            <div className="flashcard-content">
-              <div className="flashcard-question">
+          <div key={index} className="flashcard-input-item">
+            <div className="flashcard-input-content">
+              <div className="flashcard-input-question">
                 <label>Question</label>
                 {editIndex === index ? (
                   <input
@@ -277,13 +315,16 @@ function FlashcardInput() {
                     onChange={(e) =>
                       handleInputChange(index, "question", e.target.value)
                     }
+                    className="flashcard-input-question-input"
                   />
                 ) : (
-                  <p>{flashcard.question}</p>
+                  <p className="flashcard-input-question-text">
+                    {flashcard.question}
+                  </p>
                 )}
               </div>
-              <div className="vertical-line"></div>
-              <div className="flashcard-answer">
+              <div className="flashcard-input-vertical-line"></div>
+              <div className="flashcard-input-answer">
                 <label>Answer</label>
                 {editIndex === index ? (
                   <input
@@ -292,14 +333,17 @@ function FlashcardInput() {
                     onChange={(e) =>
                       handleInputChange(index, "answer", e.target.value)
                     }
+                    className="flashcard-input-answer-input"
                   />
                 ) : (
-                  <p>{flashcard.answer}</p>
+                  <p className="flashcard-input-answer-text">
+                    {flashcard.answer}
+                  </p>
                 )}
               </div>
-              <div className="flashcard-buttons">
+              <div className="flashcard-input-buttons">
                 <button
-                  className="edit-button"
+                  className="flashcard-input-edit-button"
                   onClick={() => {
                     if (editIndex === index) {
                       handleSave();
@@ -312,7 +356,7 @@ function FlashcardInput() {
                 </button>
                 {editIndex === index && (
                   <button
-                    className="delete-button"
+                    className="flashcard-input-delete-button"
                     onClick={() => handleDelete(index)}
                   >
                     Delete
@@ -323,7 +367,10 @@ function FlashcardInput() {
           </div>
         ))}
       </div>
-      <button className="add-button" onClick={handleAddFlashcard}>
+      <button
+        className="flashcard-input-add-button"
+        onClick={handleAddFlashcard}
+      >
         + Add Flashcard
       </button>
     </div>

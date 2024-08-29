@@ -1,230 +1,263 @@
 /* Container for the flashcard input section */
-.flashcard-input {
-    max-width: 800px;
+.flashcard-input-container {
+    max-width: 90%;
+    width: 90vw;
     margin: 0 auto;
-    padding: 20px;
+    padding: 2em;
     background-color: #f3f4f6;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 1em;
+    box-shadow: 0 0.25em 0.75em rgba(0, 0, 0, 0.1);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
-.flashcard-input h3 {
+.flashcard-input-title {
     text-align: center;
-    margin-bottom: 20px;
-    font-size: 24px;
+    margin-bottom: 1.25em;
+    font-size: clamp(1.125rem, 4vw, 1.5rem);
     font-weight: 500;
     color: #333;
 }
 
-.flashcard-input h3 input {
+.flashcard-input-deck-name {
     width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+    padding: 0.625em;
+    border-radius: 0.375em;
+    border: 0.0625em solid #ccc;
     box-sizing: border-box;
-    font-size: 18px;
+    font-size: clamp(0.875rem, 3vw, 1.125rem);
 }
 
 /* Actions for deck management */
-.deck-actions {
+.flashcard-input-deck-actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    margin-bottom: 20px;
+    margin-bottom: 1.25em;
 }
 
-.deck-actions button {
-    padding: 10px 20px;
+.flashcard-input-deck-actions button {
+    padding: 0.625em 1.25em;
     border: none;
-    border-radius: 8px;
+    border-radius: 0.5em;
     background-color: #007bff;
     color: white;
     cursor: pointer;
-    transition: background-color 0.3s;
-    font-size: 16px;
+    transition:
+        background-color 0.3s,
+        transform 0.2s;
+    font-size: clamp(0.75rem, 2.5vw, 1rem);
 }
 
-.deck-actions button:hover {
+.flashcard-input-deck-actions button:hover {
     background-color: #0056b3;
+    transform: scale(1.05);
 }
 
-.deck-actions label {
+.flashcard-input-deck-actions label {
     display: flex;
     align-items: center;
-    font-size: 16px;
+    font-size: clamp(0.75rem, 2.5vw, 1rem);
     color: #333;
 }
 
-.deck-actions input[type="checkbox"] {
-    margin-right: 8px;
+.flashcard-input-deck-actions input[type="checkbox"] {
+    margin-right: 0.5em;
 }
 
 /* Add new flashcard button */
-.add-button {
+.flashcard-input-add-button {
     display: block;
     width: 100%;
-    padding: 12px;
+    padding: 0.75em;
     border: none;
-    border-radius: 8px;
+    border-radius: 0.5em;
     background-color: #28a745;
     color: white;
     cursor: pointer;
-    transition: background-color 0.3s;
-    font-size: 16px;
-    margin-bottom: 20px;
+    transition:
+        background-color 0.3s,
+        transform 0.2s;
+    font-size: clamp(0.875rem, 3vw, 1rem);
+    margin-bottom: 1.25em;
 }
 
-.add-button:hover {
+.flashcard-input-add-button:hover {
     background-color: #218838;
+    transform: scale(1.02);
 }
 
 /* Container for the list of flashcards */
-.flashcard-list {
-    margin-bottom: 20px;
+.flashcard-input-list {
+    margin-bottom: 1.25em;
+    max-height: 60vh;
+    overflow-y: auto;
 }
 
 /* Individual flashcard styling */
-.flashcard {
+.flashcard-input-item {
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    margin-bottom: 10px;
+    padding: 1.25em;
+    border: 0.0625em solid #ddd;
+    border-radius: 0.5em;
+    margin-bottom: 0.625em;
     background-color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 0.125em 0.5em rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.flashcard-input-item:hover {
+    transform: translateY(-0.125em);
 }
 
 /* Content area for each flashcard */
-.flashcard-content {
+.flashcard-input-content {
     display: flex;
     width: 100%;
     align-items: center;
+    flex-wrap: wrap;
 }
 
-.flashcard-question,
-.flashcard-answer {
-    flex: 1;
-    margin-right: 10px;
+.flashcard-input-question,
+.flashcard-input-answer {
+    flex: 1 1 12.5em;
+    margin-right: 0.625em;
 }
 
-.flashcard-question label,
-.flashcard-answer label {
+.flashcard-input-question label,
+.flashcard-input-answer label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 0.3125em;
     font-weight: 600;
-    font-size: 14px;
+    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
     color: #555;
 }
 
-.flashcard-question input,
-.flashcard-answer input {
+.flashcard-input-question-input,
+.flashcard-input-answer-input {
     width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    padding: 0.5em;
+    border: 0.0625em solid #ccc;
+    border-radius: 0.375em;
     box-sizing: border-box;
-    font-size: 14px;
+    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
 }
 
-.flashcard-question p,
-.flashcard-answer p {
+.flashcard-input-question-text,
+.flashcard-input-answer-text {
     margin: 0;
-    font-size: 14px;
+    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
     color: #333;
 }
 
-.vertical-line {
-    width: 1px;
+.flashcard-input-vertical-line {
+    width: 0.0625em;
     background-color: #ccc;
-    height: 60px;
-    margin: 0 10px;
+    height: 3.75em;
+    margin: 0 0.625em;
 }
 
-.flashcard-buttons {
+.flashcard-input-buttons {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
 }
 
-.edit-button,
-.delete-button {
-    margin-top: 10px;
-    padding: 8px 12px;
+.flashcard-input-edit-button,
+.flashcard-input-delete-button {
+    margin-top: 0.625em;
+    padding: 0.5em 0.75em;
     border: none;
-    border-radius: 6px;
+    border-radius: 0.375em;
     background-color: #007bff;
     color: white;
     cursor: pointer;
-    transition: background-color 0.3s;
-    font-size: 14px;
+    transition:
+        background-color 0.3s,
+        transform 0.2s;
+    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
 }
 
-.delete-button {
+.flashcard-input-delete-button {
     background-color: #dc3545;
 }
 
-.edit-button:hover {
+.flashcard-input-edit-button:hover,
+.flashcard-input-delete-button:hover {
+    transform: scale(1.05);
+}
+
+.flashcard-input-edit-button:hover {
     background-color: #0056b3;
 }
 
-.delete-button:hover {
+.flashcard-input-delete-button:hover {
     background-color: #c82333;
 }
 
 /* Link to the test page */
-.test-link {
+.flashcard-input-test-link {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 1.25em;
 }
 
-.test-link button {
-    padding: 12px 20px;
+.flashcard-input-test-button {
+    padding: 0.75em 1.25em;
     border: none;
-    border-radius: 8px;
+    border-radius: 0.5em;
     background-color: #28a745;
     color: white;
     cursor: pointer;
-    transition: background-color 0.3s;
-    font-size: 16px;
+    transition:
+        background-color 0.3s,
+        transform 0.2s;
+    font-size: clamp(0.875rem, 3vw, 1rem);
 }
 
-.test-link button:hover {
+.flashcard-input-test-button:hover {
     background-color: #218838;
+    transform: scale(1.05);
 }
 
 /* Styling for disclaimer modal */
-.disclaimer-modal {
+.flashcard-input-disclaimer-modal {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
-    max-width: 500px;
+    max-width: 31.25em;
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    border-radius: 0.5em;
+    box-shadow: 0 0.25em 0.75em rgba(0, 0, 0, 0.1);
+    padding: 1.25em;
     text-align: center;
 }
 
-.disclaimer-modal p {
-    margin-bottom: 20px;
-    font-size: 16px;
+.flashcard-input-disclaimer-modal p {
+    margin-bottom: 1.25em;
+    font-size: clamp(0.875rem, 3vw, 1rem);
     color: #333;
 }
 
-.disclaimer-modal button {
-    margin: 5px;
-    padding: 10px 20px;
+.flashcard-input-disclaimer-modal button {
+    margin: 0.3125em;
+    padding: 0.625em 1.25em;
     border: none;
-    border-radius: 8px;
+    border-radius: 0.5em;
     background-color: #007bff;
     color: white;
     cursor: pointer;
-    transition: background-color 0.3s;
-    font-size: 14px;
+    transition:
+        background-color 0.3s,
+        transform 0.2s;
+    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
 }
 
-.disclaimer-modal button:hover {
+.flashcard-input-disclaimer-modal button:hover {
     background-color: #0056b3;
+    transform: scale(1.05);
 }
