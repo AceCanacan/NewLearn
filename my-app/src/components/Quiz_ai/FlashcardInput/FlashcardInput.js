@@ -106,9 +106,9 @@ function FlashcardInput() {
     });
     await saveToFirestore("settings", `${deckName}-currentIndex`, {
       currentIndex: 0,
-    });
-    navigate(`/test/${deckName}`);
-  };
+        });
+        navigate(`/test/${deckName}`);
+      };
 
   const handleSave = () => {
     if (user) {

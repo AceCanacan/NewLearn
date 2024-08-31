@@ -77,8 +77,8 @@ const SavedTranscriptions = () => {
         prev.map((t) =>
           t.id === activeTranscription.title
             ? { ...t, title: editTitle, text: editText }
-            : t,
-        ),
+            : t
+        )
       );
       setIsEditing(false);
     }
@@ -91,7 +91,7 @@ const SavedTranscriptions = () => {
       try {
         await removeFromFirestore(docPath);
         setSavedTranscriptions((prev) =>
-          prev.filter((t) => t.title !== activeTranscription.title),
+          prev.filter((t) => t.title !== activeTranscription.title)
         );
         setActiveTranscription(null);
       } catch (error) {
@@ -101,110 +101,115 @@ const SavedTranscriptions = () => {
   };
 
   return (
-    <div>
+    <div className="deck-container">
       <div className="st-squircle-banner">Convert images and audio to text</div>
       <button className="st-back-button" onClick={() => navigate("/")}>
         <i className="fas fa-home"></i>
       </button>
-      <div className="st-container">
-        <ul className="st-transcriptions-list">
-          {savedTranscriptions.map((transcription) => (
-            <li key={transcription.id} className="st-transcription-item">
-              <div
-                className="st-transcription-container"
-                onClick={() => handleTranscriptionClick(transcription)}
-              >
-                <div className="st-transcription-header">
-                  {transcription.title}
-                </div>
-                <div className="st-transcription-content">
-                  <ReactMarkdown className="st-markdown-content">
-                    {transcription.text?.length > 300
-                      ? transcription.text.substring(0, 300) + "..."
-                      : transcription.text || ""}
-                  </ReactMarkdown>
-                </div>
-              </div>
-            </li>
-          ))}
-          <li className="st-transcription-item">
+      <ul className="deck-list">
+        {savedTranscriptions.map((transcription) => (
+          <li key={transcription.id} className="deck">
             <div
-              className="st-transcription-container st-add-card"
-              onClick={() => navigate("/transcribe")}
+              className="st-transcription-container"
+              onClick={() => handleTranscriptionClick(transcription)}
             >
-              <span className="st-plus-icon">+</span>
+              <div className="transcription-image">
+                <img
+                  src={transcription.imageUrl}
+                  alt="Transcription Image"
+                  style={{ width: "100%", height: "100%" }}
+                />
+              </div>
+              <div className="deck-details">
+                <ReactMarkdown className="st-markdown-content">
+                  {transcription.text?.length > 300
+                    ? transcription.text.substring(0, 300) + "..."
+                    : transcription.text || "No content available"}
+                </ReactMarkdown>
+              </div>
             </div>
           </li>
-        </ul>
-
-        {activeTranscription && (
+        ))}
+        <li className="deck">
           <div
-            className="st-transcription-modal"
-            onClick={() => setActiveTranscription(null)}
+            className="deck st-add-card"
+            onClick={() => navigate("/transcribe")}
           >
-            <div className="st-modal-content">
-              {isEditing ? (
-                <div style={{ position: "relative" }}>
-                  <h2
-                    className="st-active-transcription-header"
-                    style={{ visibility: "hidden" }}
-                  >
-                    {activeTranscription.title}
-                  </h2>
-                  <input
-                    type="text"
-                    className="st-title-input"
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                    }}
-                  />
-                </div>
-              ) : (
-                <h2 className="st-active-transcription-header">
+            <span className="st-plus-icon">+</span>
+          </div>
+        </li>
+      </ul>
+
+      {activeTranscription && (
+        <div
+          className="st-transcription-modal"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setActiveTranscription(null);
+            }
+          }}
+        >
+          <div className="st-modal-content">
+            {isEditing ? (
+              <div style={{ position: "relative" }}>
+                <h2
+                  className="st-active-transcription-header"
+                  style={{ visibility: "hidden" }}
+                >
                   {activeTranscription.title}
                 </h2>
-              )}
-
-              <textarea
-                className="st-textarea"
-                value={isEditing ? editText : activeTranscription.text}
-                rows="20"
-                onChange={
-                  isEditing ? (e) => setEditText(e.target.value) : undefined
-                }
-                readOnly={!isEditing}
-              />
-              <div className="st-button-group">
-                {isEditing ? (
-                  <>
-                    <button className="st-save-button" onClick={handleSave}>
-                      Save
-                    </button>
-                    <button
-                      className="st-cancel-button"
-                      onClick={() => setIsEditing(false)}
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <button className="st-edit-button" onClick={handleEdit}>
-                    Edit
-                  </button>
-                )}
-                <button className="st-delete-button" onClick={handleDelete}>
-                  Delete
-                </button>
+                <input
+                  type="text"
+                  className="st-title-input"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                  }}
+                />
               </div>
+            ) : (
+              <h2 className="st-active-transcription-header">
+                {activeTranscription.title}
+              </h2>
+            )}
+            <textarea
+              className="st-textarea"
+              value={isEditing ? editText : activeTranscription.text}
+              rows="20"
+              onChange={
+                isEditing ? (e) => setEditText(e.target.value) : undefined
+              }
+              readOnly={!isEditing}
+            />
+            <div className="st-button-group">
+              {isEditing ? (
+                <>
+                  <button className="st-save-button" onClick={handleSave}>
+                    Save
+                  </button>
+                  <button
+                    className="st-cancel-button"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button className="st-edit-button" onClick={handleEdit}>
+                  Edit
+                </button>
+              )}
+              <button className="st-delete-button" onClick={handleDelete}>
+                Delete
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

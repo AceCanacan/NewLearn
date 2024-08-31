@@ -259,3 +259,40 @@
   transform: scale(1.1); /* Slightly enlarge on hover */
 }
 
+.transcribe-result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Two cards per row */
+  gap: 2vw; /* Adjust the gap between cards */
+  margin-top: 4vw;
+}
+
+.transcribe-result-card {
+  background-color: #fff;
+  border: 0.5vw solid #ffa500;
+  border-radius: 2vw;
+  padding: 2vw;
+  box-sizing: border-box;
+}
+
+.transcribe-result-card-title {
+  font-size: 2vw;
+  font-weight: bold;
+  margin-bottom: 1vw;
+}
+
+.transcribe-result-card-content {
+  display: flex;
+  justify-content: space-between;
+}
+
+.transcribe-result-card-text {
+  width: 48%;
+  font-size: 1.4vw;
+  color: #333;
+}
+
+.transcribe-result-card-image img {
+  width: 48%;
+  border-radius: 1vw;
+  object-fit: cover;
+}
