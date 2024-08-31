@@ -109,26 +109,33 @@ const SavedTranscriptions = () => {
       <ul className="deck-list">
         {savedTranscriptions.map((transcription) => (
           <li key={transcription.id} className="deck">
-            <div
-              className="st-transcription-container"
-              onClick={() => handleTranscriptionClick(transcription)}
-            >
-              <div className="transcription-image">
-                <img
-                  src={transcription.imageUrl}
-                  alt="Transcription Image"
-                  style={{ width: "100%", height: "100%" }}
-                />
-              </div>
-              <div className="deck-details">
-                <ReactMarkdown className="st-markdown-content">
-                  {transcription.text?.length > 300
-                    ? transcription.text.substring(0, 300) + "..."
-                    : transcription.text || "No content available"}
-                </ReactMarkdown>
-              </div>
-            </div>
-          </li>
+  <div
+    className="st-transcription-container"
+    onClick={() => handleTranscriptionClick(transcription)} // Ensure this is here
+  >
+    <h2 className="st-active-transcription-header">
+      {transcription.title}
+    </h2>
+    <div className="transcription-content">
+      <div className="transcription-text-box">
+        <ReactMarkdown className="st-markdown-content">
+          {transcription.text?.length > 300
+            ? transcription.text.substring(0, 300) + "..."
+            : transcription.text || "No content available"}
+        </ReactMarkdown>
+      </div>
+      <div className="transcription-image-box">
+        <img
+          src={transcription.imageUrl}
+          alt="Transcription Image"
+          style={{ width: "100%", height: "100%" }}
+        />
+      </div>
+    </div>
+  </div>
+</li>
+
+
         ))}
         <li className="deck">
           <div
