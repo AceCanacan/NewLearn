@@ -109,33 +109,31 @@ const SavedTranscriptions = () => {
       <ul className="deck-list">
         {savedTranscriptions.map((transcription) => (
           <li key={transcription.id} className="deck">
-  <div
-    className="st-transcription-container"
-    onClick={() => handleTranscriptionClick(transcription)} // Ensure this is here
-  >
-    <h2 className="st-active-transcription-header">
-      {transcription.title}
-    </h2>
-    <div className="transcription-content">
-      <div className="transcription-text-box">
-        <ReactMarkdown className="st-markdown-content">
-          {transcription.text?.length > 300
-            ? transcription.text.substring(0, 300) + "..."
-            : transcription.text || "No content available"}
-        </ReactMarkdown>
-      </div>
-      <div className="transcription-image-box">
-        <img
-          src={transcription.imageUrl}
-          alt="Transcription Image"
-          style={{ width: "100%", height: "100%" }}
-        />
-      </div>
-    </div>
-  </div>
-</li>
-
-
+            <div
+              className="st-transcription-container"
+              onClick={() => handleTranscriptionClick(transcription)}
+            >
+              <h2 className="st-active-transcription-header">
+                {transcription.title}
+              </h2>
+              <div className="transcription-content">
+                <div className="transcription-text-box">
+                  <ReactMarkdown className="st-markdown-content">
+                    {transcription.text?.length > 300
+                      ? transcription.text.substring(0, 300) + "..."
+                      : transcription.text || "No content available"}
+                  </ReactMarkdown>
+                </div>
+                <div className="transcription-image-box">
+                  <img
+                    src={transcription.imageUrl}
+                    alt="Transcription Image"
+                    style={{ width: "100%", height: "100%" }}
+                  />
+                </div>
+              </div>
+            </div>
+          </li>
         ))}
         <li className="deck">
           <div
@@ -146,28 +144,28 @@ const SavedTranscriptions = () => {
           </div>
         </li>
       </ul>
-
+  
       {activeTranscription && (
         <div
-          className="st-transcription-modal"
+          className="sn-note-modal"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setActiveTranscription(null);
             }
           }}
         >
-          <div className="st-modal-content">
+          <div className="sn-modal-content">
             {isEditing ? (
               <div style={{ position: "relative" }}>
                 <h2
-                  className="st-active-transcription-header"
+                  className="sn-active-note-header"
                   style={{ visibility: "hidden" }}
                 >
                   {activeTranscription.title}
                 </h2>
                 <input
                   type="text"
-                  className="st-title-input"
+                  className="sn-title-input"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   style={{
@@ -179,12 +177,12 @@ const SavedTranscriptions = () => {
                 />
               </div>
             ) : (
-              <h2 className="st-active-transcription-header">
+              <h2 className="sn-active-note-header">
                 {activeTranscription.title}
               </h2>
             )}
             <textarea
-              className="st-textarea"
+              className="sn-textarea"
               value={isEditing ? editText : activeTranscription.text}
               rows="20"
               onChange={
@@ -192,25 +190,25 @@ const SavedTranscriptions = () => {
               }
               readOnly={!isEditing}
             />
-            <div className="st-button-group">
+            <div className="sn-button-group">
               {isEditing ? (
                 <>
-                  <button className="st-save-button" onClick={handleSave}>
+                  <button className="sn-save-button" onClick={handleSave}>
                     Save
                   </button>
                   <button
-                    className="st-cancel-button"
+                    className="sn-cancel-button"
                     onClick={() => setIsEditing(false)}
                   >
                     Cancel
                   </button>
                 </>
               ) : (
-                <button className="st-edit-button" onClick={handleEdit}>
+                <button className="sn-edit-button" onClick={handleEdit}>
                   Edit
                 </button>
               )}
-              <button className="st-delete-button" onClick={handleDelete}>
+              <button className="sn-delete-button" onClick={handleDelete}>
                 Delete
               </button>
             </div>
@@ -219,6 +217,6 @@ const SavedTranscriptions = () => {
       )}
     </div>
   );
-};
+    };
 
 export default SavedTranscriptions;
