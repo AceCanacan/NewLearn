@@ -11,7 +11,29 @@
   box-sizing: border-box;
 }
 
-/* Title styling */
+.screen-border-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    padding: 0; /* Remove padding from the main container */
+    box-sizing: border-box;
+    background-color: #ffcc66; /* Outer border color */
+}
+
+.screen-border-container::before {
+    content: '';
+    position: absolute;
+    top: 3vw; /* Adjust for inward border */
+    left: 3vw; /* Adjust for inward border */
+    width: calc(100% - 6vw); /* Subtract double the border width */
+    height: calc(100% - 6vw); /* Subtract double the border width */
+    box-sizing: border-box;
+    border-radius: 2vw; /* Inward curvature */
+    background-color: #fef3d7; /* Background color of the inner screen area */
+}
+
 
 .flashcard-input-title-bar {
     display: flex;
@@ -27,7 +49,11 @@
   font-weight: 500;
   color: #333;
 }
-
+.flashcard-input-description-text {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #666;
+  }
 
 .edit-icon-button {
     background: none;
@@ -233,7 +259,7 @@ flashcard-button-danger {
   display: flex;
   width: 100%;
   gap: 0.35vw; /* 0.5vw reduced by 30% */
-  margin-bottom: 1.75vw; /* 2.5vw reduced by 30% */
+
 }
 
 .flashcard-button-row > a {
@@ -245,3 +271,11 @@ flashcard-button-danger {
   box-sizing: border-box;
   text-align: center;
 }
+
+
+.lowkey-divider {
+    border: none; 
+    border-top: 1px solid #ccc; /* Light gray color for subtlety */
+    margin: 1vw 0; /* Space above and below the line */
+    width: 100%; /* Full width of the container */
+  }

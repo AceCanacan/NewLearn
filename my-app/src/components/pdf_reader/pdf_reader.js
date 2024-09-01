@@ -144,9 +144,9 @@ const PDFReader = () => {
 
   return (
     <div>
-      <button className="st-back-button" onClick={() => navigate("/")}>
-        <i className="fas fa-home"></i>
-      </button>
+<button className="st-back-button" onClick={() => navigate("/")}>
+    <i className="fas fa-arrow-left"></i>
+</button>
       <div className="pdf-reader-container">
         {isLoading && (
           <div className="modal">

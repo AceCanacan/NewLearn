@@ -100,7 +100,7 @@ const SavedNotes = () => {
     <div>
       <div className="sn-squircle-banner">Saved Notes</div>
       <button className="sn-back-button" onClick={() => navigate('/')}>
-        <i className="fas fa-home"></i>
+        <i className="fas fa-arrow-left"></i>
       </button>
       <div className="sn-container">
         <ul className="sn-notes-list">

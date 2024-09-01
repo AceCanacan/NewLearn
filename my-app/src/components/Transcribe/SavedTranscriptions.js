@@ -104,7 +104,7 @@ const SavedTranscriptions = () => {
     <div className="deck-container">
       <div className="st-squircle-banner">Convert images and audio to text</div>
       <button className="st-back-button" onClick={() => navigate("/")}>
-        <i className="fas fa-home"></i>
+        <i className="fas fa-arrow-left"></i>
       </button>
       <ul className="deck-list">
         {savedTranscriptions.map((transcription) => (

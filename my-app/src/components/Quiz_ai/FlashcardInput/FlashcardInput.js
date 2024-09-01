@@ -141,15 +141,7 @@ function FlashcardInput() {
     }
   };
 
-  const handleRenameDeck = async () => {
-    if (newDeckName && newDeckName !== deckName && user) {
-      const flashcards = await loadDeckFlashcards(user.uid, deckName);
-      await removeDeckFlashcards(user.uid, deckName);
-      await saveDeckFlashcards(user.uid, newDeckName, flashcards);
-      setIsEditingDeck(false);
-      navigate(`/deck/${newDeckName}/flashcard-input`);
-    }
-  };
+
 
   const handleDeleteDeck = async () => {
     if (
@@ -194,17 +186,23 @@ function FlashcardInput() {
 
   const handleInputChange = (index, field, value) => {
     const newFlashcards = [...flashcards];
-    newFlashcards[index][field] = value;
+    
+    if (field === "question") {
+      newFlashcards[index].question = value;
+    } else if (field === "answer") {
+      newFlashcards[index].answer = value;
+    } else if (field === "description") {
+      newFlashcards[index].description = value;
+    }
+  
     setFlashcards(newFlashcards);
-    // Remove the saveDeckFlashcards call from here
   };
-
+  
   return (
-    <div>
-      <button className="st-back-button" onClick={() => navigate("/")}>
-        <i className="fas fa-home"></i>
+    <div class="screen-border-container">
+      <button className="st-back-button" onClick={() => navigate("/deck/home")}>
+        <i className="fas fa-arrow-left"></i>
       </button>
-
       <div className="flashcard-input-container">
         <div className="flashcard-input-title-bar">
           <h3 className="flashcard-input-title">
@@ -219,19 +217,23 @@ function FlashcardInput() {
               newDeckName
             )}
           </h3>
-
-
-
-
-
-          <button
-  onClick={() => setIsEditingDeck(!isEditingDeck)}
-  className={`edit-icon-button ${isEditingDeck ? 'enabled' : ''}`}
->
-  <i className={`fas ${isEditingDeck ? 'fa-check' : 'fa-pen'}`}></i>
-</button>
-
-
+          <div className="title-bar-buttons">
+            {isEditingDeck && (
+              <button
+                onClick={handleDeleteDeck}
+                className="edit-icon-button"
+                style={{ color: "red" }}
+              >
+                <i className="fas fa-trash"></i>
+              </button>
+            )}
+            <button
+              onClick={() => setIsEditingDeck(!isEditingDeck)}
+              className={`edit-icon-button ${isEditingDeck ? "enabled" : ""}`}
+            >
+              <i className={`fas ${isEditingDeck ? "fa-check" : "fa-pen"}`}></i>
+            </button>
+          </div>
         </div>
 
         {showDisclaimer && (
@@ -264,149 +266,139 @@ function FlashcardInput() {
         )}
 
         <div className="flashcard-button-row">
-          {isEditingDeck ? (
-            <>
-              <button
-                onClick={handleRenameDeck}
-                className="flashcard-button flashcard-button-primary"
-                disabled={deckName === originalDeckName}
-              >
-                Save
-              </button>
-
-              <button
-                onClick={handleDeleteDeck}
-                className="flashcard-button flashcard-button-danger"
-              >
-                Delete Deck
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to={`/test/${deckName}`}>
-                <button
-                  onClick={handleTestYourself}
-                  className="flashcard-button flashcard-button-secondary"
-                >
-                  Test
-                </button>
-              </Link>
-              <Link to={`/review/${deckName}`}>
-                <button className="flashcard-button flashcard-button-secondary">
-                  Review
-                </button>
-              </Link>
-              <Link to={`/score-report/${deckName}`}>
-                <button className="flashcard-button flashcard-button-secondary">
-                  View Scores
-                </button>
-              </Link>
-              <Link
-                to={`/quizmaker/${deckName}`}
-                onClick={(e) => {
-                  if (
-                    localStorage.getItem(`${deckName}-generated`) === "true"
-                  ) {
-                    e.preventDefault(); // Prevent navigation
-                    alert(
-                      "You have already used the QuizMaker feature for this deck."
-                    );
-                  }
-                }}
-              >
-                <button className="flashcard-button flashcard-button-secondary">
-                  QuizMaker
-                </button>
-              </Link>
-            </>
-          )}
+          <Link to={`/test/${deckName}`}>
+            <button
+              onClick={handleTestYourself}
+              className="flashcard-button flashcard-button-secondary"
+            >
+              Test
+            </button>
+          </Link>
+          <Link to={`/review/${deckName}`}>
+            <button className="flashcard-button flashcard-button-secondary">
+              Review
+            </button>
+          </Link>
+          <Link to={`/score-report/${deckName}`}>
+            <button className="flashcard-button flashcard-button-secondary">
+              View Scores
+            </button>
+          </Link>
+          <Link
+            to={`/quizmaker/${deckName}`}
+            onClick={(e) => {
+              if (localStorage.getItem(`${deckName}-generated`) === "true") {
+                e.preventDefault(); // Prevent navigation
+                alert(
+                  "You have already used the QuizMaker feature for this deck."
+                );
+              }
+            }}
+          >
+            <button className="flashcard-button flashcard-button-secondary">
+              QuizMaker
+            </button>
+          </Link>
         </div>
-
-        <div className="flashcard-input-list">
-          {flashcards.map((flashcard, index) => (
-            <div key={index} className="flashcard-input-item">
-              <div className="flashcard-input-content">
-                <div className="flashcard-input-question">
-                  <label>Question</label>
-                  {editIndex === index ? (
-                    <input
-                      type="text"
-                      value={flashcard.question}
-                      onChange={(e) =>
-                        handleInputChange(index, "question", e.target.value)
-                      }
-                      className="flashcard-input-question-input"
-                    />
-                  ) : (
-                    <p className="flashcard-input-question-text">
-                      {flashcard.question}
-                    </p>
-                  )}
-                </div>
-                <div className="flashcard-input-vertical-line"></div>
-                <div className="flashcard-input-answer">
-                  <label>Answer</label>
-                  {editIndex === index ? (
-                    <input
-                      type="text"
-                      value={flashcard.answer}
-                      onChange={(e) =>
-                        handleInputChange(index, "answer", e.target.value)
-                      }
-                      className="flashcard-input-answer-input"
-                    />
-                  ) : (
-                    <p className="flashcard-input-answer-text">
-                      {flashcard.answer}
-                    </p>
-                  )}
-                </div>
-                <div className="flashcard-input-buttons">
-
-
-
-
-
-                  
-                <button
-  onClick={() => {
-    if (editIndex === index) {
-      handleSave(); // Save the changes
-    } else {
-      handleEdit(index); // Enter edit mode
-    }
-  }}
-  className={`edit-icon-button ${editIndex === index ? 'enabled' : ''}`}
->
-  <i className={`fas ${editIndex === index ? 'fa-check' : 'fa-pen'}`}></i>
-</button>
-
-
-
-
-
-
-                  {editIndex === index && (
-                    <button
-  onClick={() => handleDelete(index)}
-  className="edit-icon-button"
->
-  <i className="fas fa-trash"></i>
-</button>
-
-
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <hr className="lowkey-divider" />
         <button
           className="flashcard-input-add-button"
           onClick={handleAddFlashcard}
         >
           + Add Flashcard
         </button>
+
+
+
+        <div className="flashcard-input-list">
+  {flashcards.map((flashcard, index) => (
+    <div key={index} className="flashcard-input-item">
+      <div className="flashcard-input-content">
+        <div className="flashcard-input-question">
+          <label>Question</label>
+          {editIndex === index ? (
+  <>
+    <input
+      type="text"
+      value={flashcard.question}
+      onChange={(e) =>
+        handleInputChange(index, "question", e.target.value)
+      }
+      className="flashcard-input-question-input"
+    />
+    <input
+      type="text"
+      placeholder="Add a short description"
+      value={flashcard.description || ""}
+      onChange={(e) =>
+        handleInputChange(index, "description", e.target.value)
+      }
+      className="flashcard-input-description-input"
+    />
+  </>
+) : (
+  <>
+    <p className="flashcard-input-question-text">
+      {flashcard.question}
+    </p>
+    <p className="flashcard-input-description-text">
+      {flashcard.description}
+    </p>
+  </>
+)}
+        </div>
+        <div className="flashcard-input-vertical-line"></div>
+        <div className="flashcard-input-answer">
+          <label>Answer</label>
+          {editIndex === index ? (
+            <input
+              type="text"
+              value={flashcard.answer}
+              onChange={(e) =>
+                handleInputChange(index, "answer", e.target.value)
+              }
+              className="flashcard-input-answer-input"
+            />
+          ) : (
+            <p className="flashcard-input-answer-text">
+              {flashcard.answer}
+            </p>
+          )}
+        </div>
+        <div className="flashcard-input-buttons">
+          <button
+            onClick={() => {
+              if (editIndex === index) {
+                handleSave(); // Save the changes
+              } else {
+                handleEdit(index); // Enter edit mode
+              }
+            }}
+            className={`edit-icon-button ${
+              editIndex === index ? "enabled" : ""
+            }`}
+          >
+            <i
+              className={`fas ${
+                editIndex === index ? "fa-check" : "fa-pen"
+              }`}
+            ></i>
+          </button>
+
+          {editIndex === index && (
+            <button
+              onClick={() => handleDelete(index)}
+              className="edit-icon-button"
+            >
+              <i className="fas fa-trash"></i>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
       </div>
     </div>
   );

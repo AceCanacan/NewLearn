@@ -54,6 +54,10 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 1.5vw;
+    position: fixed; /* Make the button fixed */
+    top: 1vw; /* Distance from the top */
+    left: 1vw; /* Distance from the left */
+    z-index: 1000; /* Ensure it stays above other elements */
 }
 
 .st-back-button:hover {

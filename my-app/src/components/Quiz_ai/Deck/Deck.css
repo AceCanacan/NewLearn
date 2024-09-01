@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    height: 100vh; /* Full height for proper layout */
 }
 
 .deck-app-header {
@@ -15,8 +16,11 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
+    min-height: 100vh;
+    padding: 2vw;
+    box-sizing: border-box;
+    overflow: hidden; /* Prevent scrolling on this element */
 }
-
 .deck-recent-decks h2 {
     margin-bottom: 1vw;
     font-weight: 500;
@@ -26,14 +30,24 @@
 .deck-grid {
     display: grid;
     margin-top: 5vw;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(30%, 1fr));
     gap: 1vw;
     list-style-type: none;
-    padding: 0.5vw 0 0 0; /* Add padding to the top */
+    padding: 0.5vw 0 0 0;
     width: 100%;
     justify-content: center;
-    overflow-x: auto;
+    overflow-y: auto; /* Enable vertical scrolling */
+    max-height: 60vh; /* Limit the height to make it scrollable */
 }
+
+
+
+.deck-grid::after {
+    content: "";
+    visibility: hidden;
+    grid-column: span 3; /* Force it to span all columns to keep the grid full */
+}
+
 
 .deck-card {
     background-color: #ffa500;
@@ -41,6 +55,15 @@
     padding: 5vw 8vw;
     box-shadow: 0 0.4vw 0.6vw rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
+    min-height: 150px; /* Consistent height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center content vertically */
+}
+
+.deck-card {
+    flex: 1 1 calc(33.33% - 1vw); /* Ensure each card takes up 1/3 of the space */
+    min-width: 30%; /* Fallback for small screens */
 }
 
 .deck-card:hover {
@@ -72,8 +95,8 @@
     cursor: pointer;
     background-color: #ffa500;
     color: #ffffff;
+    min-height: 150px; /* Match the minimum height with other cards */
 }
-
 .deck-add-icon {
     font-size: 2.5vw;
     color: #ffffff;
@@ -139,4 +162,10 @@
 .deck-cancel-button {
     background-color: #f1f1f1;
     color: #333333;
+}
+
+.deck-modal-description {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #666;
 }
