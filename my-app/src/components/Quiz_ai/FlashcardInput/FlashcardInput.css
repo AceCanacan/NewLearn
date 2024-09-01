@@ -1,226 +1,247 @@
 /* Container for the flashcard input section */
 .flashcard-input-container {
-    max-width: 90vw;
-    width: 90vw;
-    margin: 0 auto;
-    padding: 4vw;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  max-width: 63vw; /* 90vw reduced by 30% */
+  width: 63vw; /* 90vw reduced by 30% */
+  margin: 0 auto;
+  padding: 2.8vw; /* 4vw reduced by 30% */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
 }
 
 /* Title styling */
-.flashcard-input-title {
-    text-align: center;
-    margin-bottom: 2.5vw;
-    font-size: 4vw;
-    font-weight: 500;
-    color: #333;
+
+.flashcard-input-title-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5vw; /* Adjust as needed */
 }
+
+.flashcard-input-title {
+  text-align: left;
+  margin-bottom: 1.75vw; /* 2.5vw reduced by 30% */
+  font-size: 2.8vw; /* 4vw reduced by 30% */
+  font-weight: 500;
+  color: #333;
+}
+
+
+.edit-icon-button {
+    background: none;
+    border: none;
+    font-size: 2vw;
+    color: #3666fb; /* Normal mode color */
+    cursor: pointer;
+  }
+  
+  .edit-icon-button.enabled {
+    color: #3666fb; /* Edit mode color */
+  }
 
 /* Input for deck name */
 .flashcard-input-deck-name {
-    width: 100%;
-    padding: 1.25vw;
-    border-radius: 0.75vw;
-    border: 0.125vw solid #ccc;
-    box-sizing: border-box;
-    font-size: 3vw;
+  width: 100%;
+  padding: 0.875vw; /* 1.25vw reduced by 30% */
+  border-radius: 0.525vw; /* 0.75vw reduced by 30% */
+  border: 0.0875vw solid #ccc; /* 0.125vw reduced by 30% */
+  box-sizing: border-box;
+  font-size: 2.1vw; /* 3vw reduced by 30% */
 }
 
 /* Actions for deck management */
 .flashcard-input-deck-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    margin-bottom: 2.5vw;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 1.75vw; /* 2.5vw reduced by 30% */
 }
 
 /* General button styling */
 .flashcard-button {
-    padding: 1.25vw 2.5vw;
-    border: none;
-    border-radius: 1vw;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-    font-size: 2.5vw;
+  padding: 0.875vw 1.75vw; /* 1.25vw 2.5vw reduced by 30% */
+  border: none;
+  border-radius: 0.7vw; /* 1vw reduced by 30% */
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  font-size: 1.75vw; /* 2.5vw reduced by 30% */
 }
 
 .flashcard-button:hover {
-    transform: scale(1.05);
+  transform: scale(1.05);
 }
 
 /* Primary button styles */
 .flashcard-button-primary {
-    background-color: #007bff;
+  background-color: #007bff;
 }
 
 .flashcard-button-primary:hover {
-    background-color: #0056b3;
+  background-color: #0056b3;
 }
 
 /* Secondary button styles */
 .flashcard-button-secondary {
-    background-color: #28a745;
+  background-color: #28a745;
 }
 
 .flashcard-button-secondary:hover {
-    background-color: #218838;
+  background-color: #218838;
 }
 
 /* Danger button styles */
-.flashcard-button-danger {
-    background-color: #dc3545;
+flashcard-button-danger {
+  background-color: #dc3545;
 }
 
 .flashcard-button-danger:hover {
-    background-color: #c82333;
+  background-color: #c82333;
 }
 
 /* Add new flashcard button */
 .flashcard-input-add-button {
-    display: block;
-    width: 100%;
-    padding: 1.5vw;
-    border: none;
-    border-radius: 1vw;
-    background-color: #28a745;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-    font-size: 3vw;
-    margin-bottom: 2.5vw;
+  display: block;
+  width: 100%;
+  padding: 1.05vw; /* 1.5vw reduced by 30% */
+  border: none;
+  border-radius: 0.7vw; /* 1vw reduced by 30% */
+  background-color: #28a745;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  font-size: 2.1vw; /* 3vw reduced by 30% */
+  margin-bottom: 1.75vw; /* 2.5vw reduced by 30% */
 }
 
 .flashcard-input-add-button:hover {
-    background-color: #218838;
-    transform: scale(1.02);
+  background-color: #218838;
+  transform: scale(1.02);
 }
 
 /* Container for the list of flashcards */
 .flashcard-input-list {
-    margin-bottom: 2.5vw;
-    max-height: 60vh;
-    overflow-y: auto;
+  margin-bottom: 1.75vw; /* 2.5vw reduced by 30% */
+  max-height: 42vh; /* 60vh reduced by 30% */
+  overflow-y: auto;
 }
 
 /* Individual flashcard styling */
 .flashcard-input-item {
-    display: flex;
-    flex-direction: column;
-    padding: 2.5vw;
-    border: 0.125vw solid #ddd;
-    border-radius: 1vw;
-    margin-bottom: 1.25vw;
-    background-color: #fff;
-    box-shadow: 0 0.25vw 1vw rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  padding: 1.75vw; /* 2.5vw reduced by 30% */
+  border: 0.0875vw solid #ddd; /* 0.125vw reduced by 30% */
+  border-radius: 0.7vw; /* 1vw reduced by 30% */
+  margin-bottom: 0.875vw; /* 1.25vw reduced by 30% */
+  background-color: #fff;
+  box-shadow: 0 0.175vw 0.7vw rgba(0, 0, 0, 0.05); /* 0.25vw 1vw reduced by 30% */
+  transition: transform 0.2s;
 }
 
 .flashcard-input-item:hover {
-    transform: translateY(-0.25vw);
+  transform: translateY(-0.175vw); /* 0.25vw reduced by 30% */
 }
 
 /* Content area for each flashcard */
 .flashcard-input-content {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    flex-wrap: wrap;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .flashcard-input-question,
 .flashcard-input-answer {
-    flex: 1 1 25vw;
-    margin-right: 1.25vw;
+  flex: 1 1 17.5vw; /* 25vw reduced by 30% */
+  margin-right: 0.875vw; /* 1.25vw reduced by 30% */
 }
 
 .flashcard-input-question label,
 .flashcard-input-answer label {
-    display: block;
-    margin-bottom: 0.625vw;
-    font-weight: 600;
-    font-size: 2.5vw;
-    color: #555;
+  display: block;
+  margin-bottom: 0.4375vw; /* 0.625vw reduced by 30% */
+  font-weight: 600;
+  font-size: 1.75vw; /* 2.5vw reduced by 30% */
+  color: #555;
 }
 
 .flashcard-input-question-input,
 .flashcard-input-answer-input {
-    width: 100%;
-    padding: 1vw;
-    border: 0.125vw solid #ccc;
-    border-radius: 0.75vw;
-    box-sizing: border-box;
-    font-size: 2.5vw;
+  width: 100%;
+  padding: 0.7vw; /* 1vw reduced by 30% */
+  border: 0.0875vw solid #ccc; /* 0.125vw reduced by 30% */
+  border-radius: 0.525vw; /* 0.75vw reduced by 30% */
+  box-sizing: border-box;
+  font-size: 1.75vw; /* 2.5vw reduced by 30% */
 }
 
 .flashcard-input-question-text,
 .flashcard-input-answer-text {
-    margin: 0;
-    font-size: 2.5vw;
-    color: #333;
+  margin: 0;
+  font-size: 1.75vw; /* 2.5vw reduced by 30% */
+  color: #333;
 }
 
 /* Vertical line between question and answer */
 .flashcard-input-vertical-line {
-    width: 0.125vw;
-    background-color: #ccc;
-    height: 7.5vw;
-    margin: 0 1.25vw;
+  width: 0.0875vw; /* 0.125vw reduced by 30% */
+  background-color: #ccc;
+  height: 5.25vw; /* 7.5vw reduced by 30% */
+  margin: 0 0.875vw; /* 1.25vw reduced by 30% */
 }
 
 /* Flashcard action buttons */
 .flashcard-input-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 /* Link to the test page */
 .flashcard-input-test-link {
-    text-align: center;
-    margin-top: 2.5vw;
+  text-align: center;
+  margin-top: 1.75vw; /* 2.5vw reduced by 30% */
 }
 
 /* Styling for disclaimer modal */
 .flashcard-input-disclaimer-modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90vw;
-    max-width: 62.5vw;
-    background-color: #fff;
-    border-radius: 1vw;
-    box-shadow: 0 0.5vw 1.5vw rgba(0, 0, 0, 0.1);
-    padding: 2.5vw;
-    text-align: center;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 63vw; /* 90vw reduced by 30% */
+  max-width: 43.75vw; /* 62.5vw reduced by 30% */
+  background-color: #fff;
+  border-radius: 0.7vw; /* 1vw reduced by 30% */
+  box-shadow: 0 0.35vw 1.05vw rgba(0, 0, 0, 0.1); /* 0.5vw 1.5vw reduced by 30% */
+  padding: 1.75vw; /* 2.5vw reduced by 30% */
+  text-align: center;
 }
 
 .flashcard-input-disclaimer-modal p {
-    margin-bottom: 2.5vw;
-    font-size: 3vw;
-    color: #333;
+  margin-bottom: 1.75vw; /* 2.5vw reduced by 30% */
+  font-size: 2.1vw; /* 3vw reduced by 30% */
+  color: #333;
 }
 
-
-
-
+/* Flashcard button row */
 .flashcard-button-row {
-    display: flex;
-    width: 100%;
-    gap: 0.5vw; /* Small gap between buttons */
-    margin-bottom: 2.5vw;
+  display: flex;
+  width: 100%;
+  gap: 0.35vw; /* 0.5vw reduced by 30% */
+  margin-bottom: 1.75vw; /* 2.5vw reduced by 30% */
 }
 
 .flashcard-button-row > a {
-    flex: 1; /* Each link takes up an equal share of the row's width */
+  flex: 1;
 }
 
 .flashcard-button-row button {
-    width: 100%; /* Ensure the button takes up the full width of the link */
-    box-sizing: border-box; /* Include padding and border in the element's total width and height */
-    text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
 }

@@ -117,8 +117,10 @@ function FlashcardInput() {
   };
 
   const handleSave = () => {
-    if (user) {
+    if (user && editIndex === null) {
       setShowDisclaimer(true);
+    } else if (user && editIndex !== null) {
+      handleConfirmSave();
     }
   };
 
@@ -171,6 +173,7 @@ function FlashcardInput() {
     const newFlashcards = [...flashcards, { question: "", answer: "" }];
     setFlashcards(newFlashcards);
     setEditIndex(newFlashcards.length - 1);
+    setShowDisclaimer(true);
   };
 
   const handleConfirmSave = async () => {
@@ -198,46 +201,39 @@ function FlashcardInput() {
 
   return (
     <div>
-      <button
-        className="flashcard-button flashcard-button-primary"
-        onClick={() => navigate("/")}
-      >
+      <button className="st-back-button" onClick={() => navigate("/")}>
         <i className="fas fa-home"></i>
       </button>
+
       <div className="flashcard-input-container">
-        <h3 className="flashcard-input-title">
-          {isEditingDeck ? (
-            <input
-              type="text"
-              value={newDeckName}
-              onChange={(e) => setNewDeckName(e.target.value)}
-              className="flashcard-input-deck-name"
-            />
-          ) : (
-            newDeckName
-          )}
-        </h3>
+        <div className="flashcard-input-title-bar">
+          <h3 className="flashcard-input-title">
+            {isEditingDeck ? (
+              <input
+                type="text"
+                value={newDeckName}
+                onChange={(e) => setNewDeckName(e.target.value)}
+                className="flashcard-input-deck-name"
+              />
+            ) : (
+              newDeckName
+            )}
+          </h3>
 
-        <div className="flashcard-input-deck-actions">
+
+
+
+
           <button
-            onClick={() => {
-              if (isEditingDeck) {
-                // Always exit editing mode
-                setIsEditingDeck(false);
+  onClick={() => setIsEditingDeck(!isEditingDeck)}
+  className={`edit-icon-button ${isEditingDeck ? 'enabled' : ''}`}
+>
+  <i className={`fas ${isEditingDeck ? 'fa-check' : 'fa-pen'}`}></i>
+</button>
 
-                // Only call Firestore to save if there are changes
-                if (newDeckName !== deckName) {
-                  handleRenameDeck();
-                }
-              } else {
-                setIsEditingDeck(true); // Enter editing mode
-              }
-            }}
-            className="flashcard-button flashcard-button-primary"
-          >
-            {isEditingDeck ? "Back" : "Edit"}
-          </button>
+
         </div>
+
         {showDisclaimer && (
           <div className="flashcard-input-disclaimer-modal">
             <div className="flashcard-input-disclaimer-content">
@@ -254,7 +250,7 @@ function FlashcardInput() {
                   onClick={handleConfirmSave}
                   className="flashcard-button flashcard-button-primary"
                 >
-                  Confirm Save
+                  Confirm Add
                 </button>
                 <button
                   onClick={() => setShowDisclaimer(false)}
@@ -366,25 +362,39 @@ function FlashcardInput() {
                   )}
                 </div>
                 <div className="flashcard-input-buttons">
-                  <button
-                    className="flashcard-button flashcard-button-primary"
-                    onClick={() => {
-                      if (editIndex === index) {
-                        handleSave();
-                      } else {
-                        handleEdit(index);
-                      }
-                    }}
-                  >
-                    {editIndex === index ? "Save" : "Edit"}
-                  </button>
+
+
+
+
+
+                  
+                <button
+  onClick={() => {
+    if (editIndex === index) {
+      handleSave(); // Save the changes
+    } else {
+      handleEdit(index); // Enter edit mode
+    }
+  }}
+  className={`edit-icon-button ${editIndex === index ? 'enabled' : ''}`}
+>
+  <i className={`fas ${editIndex === index ? 'fa-check' : 'fa-pen'}`}></i>
+</button>
+
+
+
+
+
+
                   {editIndex === index && (
                     <button
-                      className="flashcard-button flashcard-button-danger"
-                      onClick={() => handleDelete(index)}
-                    >
-                      Delete
-                    </button>
+  onClick={() => handleDelete(index)}
+  className="edit-icon-button"
+>
+  <i className="fas fa-trash"></i>
+</button>
+
+
                   )}
                 </div>
               </div>
