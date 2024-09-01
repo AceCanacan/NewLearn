@@ -1,33 +1,32 @@
 /* Container for the flashcard input section */
 .flashcard-input-container {
-    max-width: 90%;
+    max-width: 90vw;
     width: 90vw;
     margin: 0 auto;
-    padding: 2em;
-    background-color: #f3f4f6;
-    border-radius: 1em;
-    box-shadow: 0 0.25em 0.75em rgba(0, 0, 0, 0.1);
+    padding: 4vw;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
 }
 
+/* Title styling */
 .flashcard-input-title {
     text-align: center;
-    margin-bottom: 1.25em;
-    font-size: clamp(1.125rem, 4vw, 1.5rem);
+    margin-bottom: 2.5vw;
+    font-size: 4vw;
     font-weight: 500;
     color: #333;
 }
 
+/* Input for deck name */
 .flashcard-input-deck-name {
     width: 100%;
-    padding: 0.625em;
-    border-radius: 0.375em;
-    border: 0.0625em solid #ccc;
+    padding: 1.25vw;
+    border-radius: 0.75vw;
+    border: 0.125vw solid #ccc;
     box-sizing: border-box;
-    font-size: clamp(0.875rem, 3vw, 1.125rem);
+    font-size: 3vw;
 }
 
 /* Actions for deck management */
@@ -35,53 +34,64 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    margin-bottom: 1.25em;
+    margin-bottom: 2.5vw;
 }
 
-.flashcard-input-deck-actions button {
-    padding: 0.625em 1.25em;
+/* General button styling */
+.flashcard-button {
+    padding: 1.25vw 2.5vw;
     border: none;
-    border-radius: 0.5em;
-    background-color: #007bff;
+    border-radius: 1vw;
     color: white;
     cursor: pointer;
-    transition:
-        background-color 0.3s,
-        transform 0.2s;
-    font-size: clamp(0.75rem, 2.5vw, 1rem);
+    transition: background-color 0.3s, transform 0.2s;
+    font-size: 2.5vw;
 }
 
-.flashcard-input-deck-actions button:hover {
-    background-color: #0056b3;
+.flashcard-button:hover {
     transform: scale(1.05);
 }
 
-.flashcard-input-deck-actions label {
-    display: flex;
-    align-items: center;
-    font-size: clamp(0.75rem, 2.5vw, 1rem);
-    color: #333;
+/* Primary button styles */
+.flashcard-button-primary {
+    background-color: #007bff;
 }
 
-.flashcard-input-deck-actions input[type="checkbox"] {
-    margin-right: 0.5em;
+.flashcard-button-primary:hover {
+    background-color: #0056b3;
+}
+
+/* Secondary button styles */
+.flashcard-button-secondary {
+    background-color: #28a745;
+}
+
+.flashcard-button-secondary:hover {
+    background-color: #218838;
+}
+
+/* Danger button styles */
+.flashcard-button-danger {
+    background-color: #dc3545;
+}
+
+.flashcard-button-danger:hover {
+    background-color: #c82333;
 }
 
 /* Add new flashcard button */
 .flashcard-input-add-button {
     display: block;
     width: 100%;
-    padding: 0.75em;
+    padding: 1.5vw;
     border: none;
-    border-radius: 0.5em;
+    border-radius: 1vw;
     background-color: #28a745;
     color: white;
     cursor: pointer;
-    transition:
-        background-color 0.3s,
-        transform 0.2s;
-    font-size: clamp(0.875rem, 3vw, 1rem);
-    margin-bottom: 1.25em;
+    transition: background-color 0.3s, transform 0.2s;
+    font-size: 3vw;
+    margin-bottom: 2.5vw;
 }
 
 .flashcard-input-add-button:hover {
@@ -91,7 +101,7 @@
 
 /* Container for the list of flashcards */
 .flashcard-input-list {
-    margin-bottom: 1.25em;
+    margin-bottom: 2.5vw;
     max-height: 60vh;
     overflow-y: auto;
 }
@@ -100,17 +110,17 @@
 .flashcard-input-item {
     display: flex;
     flex-direction: column;
-    padding: 1.25em;
-    border: 0.0625em solid #ddd;
-    border-radius: 0.5em;
-    margin-bottom: 0.625em;
+    padding: 2.5vw;
+    border: 0.125vw solid #ddd;
+    border-radius: 1vw;
+    margin-bottom: 1.25vw;
     background-color: #fff;
-    box-shadow: 0 0.125em 0.5em rgba(0, 0, 0, 0.05);
+    box-shadow: 0 0.25vw 1vw rgba(0, 0, 0, 0.05);
     transition: transform 0.2s;
 }
 
 .flashcard-input-item:hover {
-    transform: translateY(-0.125em);
+    transform: translateY(-0.25vw);
 }
 
 /* Content area for each flashcard */
@@ -123,103 +133,55 @@
 
 .flashcard-input-question,
 .flashcard-input-answer {
-    flex: 1 1 12.5em;
-    margin-right: 0.625em;
+    flex: 1 1 25vw;
+    margin-right: 1.25vw;
 }
 
 .flashcard-input-question label,
 .flashcard-input-answer label {
     display: block;
-    margin-bottom: 0.3125em;
+    margin-bottom: 0.625vw;
     font-weight: 600;
-    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+    font-size: 2.5vw;
     color: #555;
 }
 
 .flashcard-input-question-input,
 .flashcard-input-answer-input {
     width: 100%;
-    padding: 0.5em;
-    border: 0.0625em solid #ccc;
-    border-radius: 0.375em;
+    padding: 1vw;
+    border: 0.125vw solid #ccc;
+    border-radius: 0.75vw;
     box-sizing: border-box;
-    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+    font-size: 2.5vw;
 }
 
 .flashcard-input-question-text,
 .flashcard-input-answer-text {
     margin: 0;
-    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+    font-size: 2.5vw;
     color: #333;
 }
 
+/* Vertical line between question and answer */
 .flashcard-input-vertical-line {
-    width: 0.0625em;
+    width: 0.125vw;
     background-color: #ccc;
-    height: 3.75em;
-    margin: 0 0.625em;
+    height: 7.5vw;
+    margin: 0 1.25vw;
 }
 
+/* Flashcard action buttons */
 .flashcard-input-buttons {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
 }
 
-.flashcard-input-edit-button,
-.flashcard-input-delete-button {
-    margin-top: 0.625em;
-    padding: 0.5em 0.75em;
-    border: none;
-    border-radius: 0.375em;
-    background-color: #007bff;
-    color: white;
-    cursor: pointer;
-    transition:
-        background-color 0.3s,
-        transform 0.2s;
-    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
-}
-
-.flashcard-input-delete-button {
-    background-color: #dc3545;
-}
-
-.flashcard-input-edit-button:hover,
-.flashcard-input-delete-button:hover {
-    transform: scale(1.05);
-}
-
-.flashcard-input-edit-button:hover {
-    background-color: #0056b3;
-}
-
-.flashcard-input-delete-button:hover {
-    background-color: #c82333;
-}
-
 /* Link to the test page */
 .flashcard-input-test-link {
     text-align: center;
-    margin-top: 1.25em;
-}
-
-.flashcard-input-test-button {
-    padding: 0.75em 1.25em;
-    border: none;
-    border-radius: 0.5em;
-    background-color: #28a745;
-    color: white;
-    cursor: pointer;
-    transition:
-        background-color 0.3s,
-        transform 0.2s;
-    font-size: clamp(0.875rem, 3vw, 1rem);
-}
-
-.flashcard-input-test-button:hover {
-    background-color: #218838;
-    transform: scale(1.05);
+    margin-top: 2.5vw;
 }
 
 /* Styling for disclaimer modal */
@@ -228,36 +190,37 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 31.25em;
+    width: 90vw;
+    max-width: 62.5vw;
     background-color: #fff;
-    border-radius: 0.5em;
-    box-shadow: 0 0.25em 0.75em rgba(0, 0, 0, 0.1);
-    padding: 1.25em;
+    border-radius: 1vw;
+    box-shadow: 0 0.5vw 1.5vw rgba(0, 0, 0, 0.1);
+    padding: 2.5vw;
     text-align: center;
 }
 
 .flashcard-input-disclaimer-modal p {
-    margin-bottom: 1.25em;
-    font-size: clamp(0.875rem, 3vw, 1rem);
+    margin-bottom: 2.5vw;
+    font-size: 3vw;
     color: #333;
 }
 
-.flashcard-input-disclaimer-modal button {
-    margin: 0.3125em;
-    padding: 0.625em 1.25em;
-    border: none;
-    border-radius: 0.5em;
-    background-color: #007bff;
-    color: white;
-    cursor: pointer;
-    transition:
-        background-color 0.3s,
-        transform 0.2s;
-    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+
+
+
+.flashcard-button-row {
+    display: flex;
+    width: 100%;
+    gap: 0.5vw; /* Small gap between buttons */
+    margin-bottom: 2.5vw;
 }
 
-.flashcard-input-disclaimer-modal button:hover {
-    background-color: #0056b3;
-    transform: scale(1.05);
+.flashcard-button-row > a {
+    flex: 1; /* Each link takes up an equal share of the row's width */
+}
+
+.flashcard-button-row button {
+    width: 100%; /* Ensure the button takes up the full width of the link */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    text-align: center;
 }

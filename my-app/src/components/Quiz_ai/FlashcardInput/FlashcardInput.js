@@ -51,7 +51,7 @@ const removeDeckFlashcards = async (userId, deckName) => {
 };
 
 function FlashcardInput() {
-  const { deckName } = useParams();
+  const { deckName, setDeckName } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
@@ -60,6 +60,12 @@ function FlashcardInput() {
   const [isEditingDeck, setIsEditingDeck] = useState(false);
   const [totalFlashcardsCreated, setTotalFlashcardsCreated] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
+
+  const [originalDeckName, setOriginalDeckName] = useState("");
+
+  const handleDeckNameChange = (event) => {
+    setDeckName(event.target.value);
+  };
 
   const MAX_FLASHCARDS = 10;
 
@@ -106,9 +112,9 @@ function FlashcardInput() {
     });
     await saveToFirestore("settings", `${deckName}-currentIndex`, {
       currentIndex: 0,
-        });
-        navigate(`/test/${deckName}`);
-      };
+    });
+    navigate(`/test/${deckName}`);
+  };
 
   const handleSave = () => {
     if (user) {
@@ -124,7 +130,7 @@ function FlashcardInput() {
     if (
       user &&
       window.confirm(
-        "Are you sure you want to delete this flashcard? This action cannot be undone.",
+        "Are you sure you want to delete this flashcard? This action cannot be undone."
       )
     ) {
       const newFlashcards = flashcards.filter((_, i) => i !== index);
@@ -139,14 +145,14 @@ function FlashcardInput() {
       await removeDeckFlashcards(user.uid, deckName);
       await saveDeckFlashcards(user.uid, newDeckName, flashcards);
       setIsEditingDeck(false);
-      navigate(`/deck/${newDeckName}`);
+      navigate(`/deck/${newDeckName}/flashcard-input`);
     }
   };
 
   const handleDeleteDeck = async () => {
     if (
       window.confirm(
-        "Are you sure you want to delete this deck? This action cannot be undone.",
+        "Are you sure you want to delete this deck? This action cannot be undone."
       ) &&
       user
     ) {
@@ -158,7 +164,7 @@ function FlashcardInput() {
   const handleAddFlashcard = () => {
     if (totalFlashcardsCreated >= MAX_FLASHCARDS) {
       alert(
-        `You have already created ${totalFlashcardsCreated} flashcards in this deck. You cannot create more.`,
+        `You have already created ${totalFlashcardsCreated} flashcards in this deck. You cannot create more.`
       );
       return;
     }
@@ -191,188 +197,207 @@ function FlashcardInput() {
   };
 
   return (
-    <div className="flashcard-input-container">
-      <h3 className="flashcard-input-title">
-        {isEditingDeck ? (
-          <input
-            type="text"
-            value={newDeckName}
-            onChange={(e) => setNewDeckName(e.target.value)}
-            className="flashcard-input-deck-name"
-          />
-        ) : (
-          newDeckName
-        )}
-      </h3>
+    <div>
       <button
-        onClick={() => navigate("/deck/home")}
-        className="flashcard-input-back-button"
+        className="flashcard-button flashcard-button-primary"
+        onClick={() => navigate("/")}
       >
-        Back
+        <i className="fas fa-home"></i>
       </button>
+      <div className="flashcard-input-container">
+        <h3 className="flashcard-input-title">
+          {isEditingDeck ? (
+            <input
+              type="text"
+              value={newDeckName}
+              onChange={(e) => setNewDeckName(e.target.value)}
+              className="flashcard-input-deck-name"
+            />
+          ) : (
+            newDeckName
+          )}
+        </h3>
 
-      <div className="flashcard-input-deck-actions">
-        <button
-          onClick={
-            isEditingDeck ? handleRenameDeck : () => setIsEditingDeck(true)
-          }
-          className="flashcard-input-edit-deck-button"
-        >
-          {isEditingDeck ? "Save" : "Edit Deck"}
-        </button>
-        {isEditingDeck && (
-          <>
-            <button
-              onClick={handleDeleteDeck}
-              className="flashcard-input-delete-deck-button"
-            >
-              Delete Deck
-            </button>
-            <button
-              onClick={() => setIsEditingDeck(false)}
-              className="flashcard-input-cancel-edit-button"
-            >
-              Cancel
-            </button>
-          </>
-        )}
-      </div>
-      {showDisclaimer && (
-        <div className="flashcard-input-disclaimer-modal">
-          <div className="flashcard-input-disclaimer-content">
-            <h3>Disclaimer</h3>
-            <p>
-              You are about to save {flashcards.length} flashcards in this deck.
-              The maximum allowed is {MAX_FLASHCARDS}. Remember, this is an
-              alpha version and every flashcard you create is permanent and
-              cannot be erased. Choose wisely as your actions have lasting
-              consequences.
-            </p>
-            <div className="flashcard-input-disclaimer-buttons">
-              <button
-                onClick={handleConfirmSave}
-                className="flashcard-input-confirm-save-button"
-              >
-                Confirm Save
-              </button>
-              <button
-                onClick={() => setShowDisclaimer(false)}
-                className="flashcard-input-cancel-save-button"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      <>
-        <Link to={`/test/${deckName}`} className="flashcard-input-test-link">
+        <div className="flashcard-input-deck-actions">
           <button
-            onClick={handleTestYourself}
-            className="flashcard-input-test-button"
-          >
-            Test Yourself
-          </button>
-        </Link>
-        <Link
-          to={`/review/${deckName}`}
-          className="flashcard-input-review-link"
-        >
-          <button className="flashcard-input-review-button">Review</button>
-        </Link>
-        <Link
-          to={`/score-report/${deckName}`}
-          className="flashcard-input-score-link"
-        >
-          <button className="flashcard-input-score-button">View Scores</button>
-        </Link>
-        <button
-          className="flashcard-input-quizmaker-button"
-          onClick={() => {
-            if (localStorage.getItem(`${deckName}-generated`) === "true") {
-              alert(
-                "You have already used the QuizMaker feature for this deck.",
-              );
-            } else {
-              navigate(`/quizmaker/${deckName}`);
-            }
-          }}
-        >
-          Go to QuizMaker
-        </button>
-      </>
+            onClick={() => {
+              if (isEditingDeck) {
+                // Always exit editing mode
+                setIsEditingDeck(false);
 
-      <div className="flashcard-input-list">
-        {flashcards.map((flashcard, index) => (
-          <div key={index} className="flashcard-input-item">
-            <div className="flashcard-input-content">
-              <div className="flashcard-input-question">
-                <label>Question</label>
-                {editIndex === index ? (
-                  <input
-                    type="text"
-                    value={flashcard.question}
-                    onChange={(e) =>
-                      handleInputChange(index, "question", e.target.value)
-                    }
-                    className="flashcard-input-question-input"
-                  />
-                ) : (
-                  <p className="flashcard-input-question-text">
-                    {flashcard.question}
-                  </p>
-                )}
-              </div>
-              <div className="flashcard-input-vertical-line"></div>
-              <div className="flashcard-input-answer">
-                <label>Answer</label>
-                {editIndex === index ? (
-                  <input
-                    type="text"
-                    value={flashcard.answer}
-                    onChange={(e) =>
-                      handleInputChange(index, "answer", e.target.value)
-                    }
-                    className="flashcard-input-answer-input"
-                  />
-                ) : (
-                  <p className="flashcard-input-answer-text">
-                    {flashcard.answer}
-                  </p>
-                )}
-              </div>
-              <div className="flashcard-input-buttons">
+                // Only call Firestore to save if there are changes
+                if (newDeckName !== deckName) {
+                  handleRenameDeck();
+                }
+              } else {
+                setIsEditingDeck(true); // Enter editing mode
+              }
+            }}
+            className="flashcard-button flashcard-button-primary"
+          >
+            {isEditingDeck ? "Back" : "Edit"}
+          </button>
+        </div>
+        {showDisclaimer && (
+          <div className="flashcard-input-disclaimer-modal">
+            <div className="flashcard-input-disclaimer-content">
+              <h3>Disclaimer</h3>
+              <p>
+                You are about to save {flashcards.length} flashcards in this
+                deck. The maximum allowed is {MAX_FLASHCARDS}. Remember, this is
+                an alpha version and every flashcard you create is permanent and
+                cannot be erased. Choose wisely as your actions have lasting
+                consequences.
+              </p>
+              <div className="flashcard-input-disclaimer-buttons">
                 <button
-                  className="flashcard-input-edit-button"
-                  onClick={() => {
-                    if (editIndex === index) {
-                      handleSave();
-                    } else {
-                      handleEdit(index);
-                    }
-                  }}
+                  onClick={handleConfirmSave}
+                  className="flashcard-button flashcard-button-primary"
                 >
-                  {editIndex === index ? "Save" : "Edit"}
+                  Confirm Save
                 </button>
-                {editIndex === index && (
-                  <button
-                    className="flashcard-input-delete-button"
-                    onClick={() => handleDelete(index)}
-                  >
-                    Delete
-                  </button>
-                )}
+                <button
+                  onClick={() => setShowDisclaimer(false)}
+                  className="flashcard-button flashcard-button-primary"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
-        ))}
+        )}
+
+        <div className="flashcard-button-row">
+          {isEditingDeck ? (
+            <>
+              <button
+                onClick={handleRenameDeck}
+                className="flashcard-button flashcard-button-primary"
+                disabled={deckName === originalDeckName}
+              >
+                Save
+              </button>
+
+              <button
+                onClick={handleDeleteDeck}
+                className="flashcard-button flashcard-button-danger"
+              >
+                Delete Deck
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to={`/test/${deckName}`}>
+                <button
+                  onClick={handleTestYourself}
+                  className="flashcard-button flashcard-button-secondary"
+                >
+                  Test
+                </button>
+              </Link>
+              <Link to={`/review/${deckName}`}>
+                <button className="flashcard-button flashcard-button-secondary">
+                  Review
+                </button>
+              </Link>
+              <Link to={`/score-report/${deckName}`}>
+                <button className="flashcard-button flashcard-button-secondary">
+                  View Scores
+                </button>
+              </Link>
+              <Link
+                to={`/quizmaker/${deckName}`}
+                onClick={(e) => {
+                  if (
+                    localStorage.getItem(`${deckName}-generated`) === "true"
+                  ) {
+                    e.preventDefault(); // Prevent navigation
+                    alert(
+                      "You have already used the QuizMaker feature for this deck."
+                    );
+                  }
+                }}
+              >
+                <button className="flashcard-button flashcard-button-secondary">
+                  QuizMaker
+                </button>
+              </Link>
+            </>
+          )}
+        </div>
+
+        <div className="flashcard-input-list">
+          {flashcards.map((flashcard, index) => (
+            <div key={index} className="flashcard-input-item">
+              <div className="flashcard-input-content">
+                <div className="flashcard-input-question">
+                  <label>Question</label>
+                  {editIndex === index ? (
+                    <input
+                      type="text"
+                      value={flashcard.question}
+                      onChange={(e) =>
+                        handleInputChange(index, "question", e.target.value)
+                      }
+                      className="flashcard-input-question-input"
+                    />
+                  ) : (
+                    <p className="flashcard-input-question-text">
+                      {flashcard.question}
+                    </p>
+                  )}
+                </div>
+                <div className="flashcard-input-vertical-line"></div>
+                <div className="flashcard-input-answer">
+                  <label>Answer</label>
+                  {editIndex === index ? (
+                    <input
+                      type="text"
+                      value={flashcard.answer}
+                      onChange={(e) =>
+                        handleInputChange(index, "answer", e.target.value)
+                      }
+                      className="flashcard-input-answer-input"
+                    />
+                  ) : (
+                    <p className="flashcard-input-answer-text">
+                      {flashcard.answer}
+                    </p>
+                  )}
+                </div>
+                <div className="flashcard-input-buttons">
+                  <button
+                    className="flashcard-button flashcard-button-primary"
+                    onClick={() => {
+                      if (editIndex === index) {
+                        handleSave();
+                      } else {
+                        handleEdit(index);
+                      }
+                    }}
+                  >
+                    {editIndex === index ? "Save" : "Edit"}
+                  </button>
+                  {editIndex === index && (
+                    <button
+                      className="flashcard-button flashcard-button-danger"
+                      onClick={() => handleDelete(index)}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button
+          className="flashcard-input-add-button"
+          onClick={handleAddFlashcard}
+        >
+          + Add Flashcard
+        </button>
       </div>
-      <button
-        className="flashcard-input-add-button"
-        onClick={handleAddFlashcard}
-      >
-        + Add Flashcard
-      </button>
     </div>
   );
 }
