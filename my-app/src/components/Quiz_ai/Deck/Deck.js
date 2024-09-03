@@ -151,10 +151,10 @@ function Deck() {
             to={`/deck/${deckName}/flashcard-input`}
             className="deck-card-link"
           >
-            <h3 className="deck-card-title">
-              {deckName} <span className="deck-card-description"> - {description}</span>
-            </h3>
-            <span className="deck-card-count">{numCards} cards</span>
+<h3 className="deck-card-title">{deckName}</h3>
+<p className="deck-card-description">{description}</p>
+<hr className="deck-card-divider" />
+<p className="deck-card-count">{numCards} cards</p>
           </Link>
         </li>
       ))}

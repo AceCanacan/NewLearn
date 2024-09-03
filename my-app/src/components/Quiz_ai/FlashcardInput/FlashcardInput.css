@@ -3,13 +3,16 @@
   max-width: 63vw; /* 90vw reduced by 30% */
   width: 63vw; /* 90vw reduced by 30% */
   margin: 0 auto;
-  padding: 2.8vw; /* 4vw reduced by 30% */
+  padding: 2vw; /* Reduce padding to make the container shorter */
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   box-sizing: border-box;
+  max-height: 78.5vh; /* Set a maximum height to limit the vertical coverage */
+  overflow-y: auto; /* Enable scrolling if content exceeds max height */
 }
+
 
 .screen-border-container {
     position: fixed;
@@ -23,16 +26,17 @@
 }
 
 .screen-border-container::before {
-    content: '';
-    position: absolute;
-    top: 3vw; /* Adjust for inward border */
-    left: 3vw; /* Adjust for inward border */
-    width: calc(100% - 6vw); /* Subtract double the border width */
-    height: calc(100% - 6vw); /* Subtract double the border width */
-    box-sizing: border-box;
-    border-radius: 2vw; /* Inward curvature */
-    background-color: #fef3d7; /* Background color of the inner screen area */
+  content: '';
+  position: absolute;
+  top: 4vw; /* Increase the top offset for a thicker border */
+  left: 4vw; /* Increase the left offset for a thicker border */
+  width: calc(100% - 10vw); /* Adjust the width based on the new border thickness */
+  height: calc(100% - 10vw); /* Adjust the height based on the new border thickness */
+  box-sizing: border-box;
+  border-radius: 2vw; /* Inward curvature */
+  background-color: #fef3d7; /* Background color of the inner screen area */
 }
+
 
 
 .flashcard-input-title-bar {

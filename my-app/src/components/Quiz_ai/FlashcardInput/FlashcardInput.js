@@ -326,7 +326,7 @@ function FlashcardInput() {
       }
       className="flashcard-input-question-input"
     />
-    <input
+    {/* <input
       type="text"
       placeholder="Add a short description"
       value={flashcard.description || ""}
@@ -334,7 +334,7 @@ function FlashcardInput() {
         handleInputChange(index, "description", e.target.value)
       }
       className="flashcard-input-description-input"
-    />
+    /> */}
   </>
 ) : (
   <>
