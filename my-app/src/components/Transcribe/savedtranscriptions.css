@@ -75,7 +75,7 @@ body {
     grid-gap: 3vw; /* Reduce space between cards */
     padding: 3vw; /* Adjust padding to balance the space around the grid */
     max-width: 85vw; /* Set a max-width to prevent overflowing */
-    margin-top: 3vw;
+    margin-top: 5vw;
 }
 
 /* Deck container adjustments */

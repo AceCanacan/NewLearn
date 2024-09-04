@@ -60,8 +60,8 @@ function FlashcardInput() {
   const [isEditingDeck, setIsEditingDeck] = useState(false);
   const [totalFlashcardsCreated, setTotalFlashcardsCreated] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-
-  const [originalDeckName, setOriginalDeckName] = useState("");
+  const [description, setDescription] = useState("");
+  const [newDeckDescription, setNewDeckDescription] = useState("");
 
   const handleDeckNameChange = (event) => {
     setDeckName(event.target.value);
@@ -96,8 +96,16 @@ function FlashcardInput() {
   useEffect(() => {
     const fetchFlashcards = async () => {
       if (user) {
-        const storedFlashcards = await loadDeckFlashcards(user.uid, deckName);
-        setFlashcards(storedFlashcards);
+        const docPath = `users/${user.uid}/decks/${deckName}`;
+        const deckData = await loadFromFirestore(docPath, {
+          flashcards: [],
+          description: "",
+        });
+        const flashcards = deckData.flashcards || [];
+        const description = deckData.description || "No description available";
+
+        setFlashcards(flashcards);
+        setDescription(description); // Assuming you have a state for description
       }
     };
 
@@ -140,8 +148,6 @@ function FlashcardInput() {
       saveDeckFlashcards(user.uid, deckName, newFlashcards);
     }
   };
-
-
 
   const handleDeleteDeck = async () => {
     if (
@@ -186,7 +192,7 @@ function FlashcardInput() {
 
   const handleInputChange = (index, field, value) => {
     const newFlashcards = [...flashcards];
-    
+
     if (field === "question") {
       newFlashcards[index].question = value;
     } else if (field === "answer") {
@@ -194,47 +200,64 @@ function FlashcardInput() {
     } else if (field === "description") {
       newFlashcards[index].description = value;
     }
-  
+
     setFlashcards(newFlashcards);
   };
-  
+
   return (
     <div class="screen-border-container">
       <button className="st-back-button" onClick={() => navigate("/deck/home")}>
         <i className="fas fa-arrow-left"></i>
       </button>
+
       <div className="flashcard-input-container">
-        <div className="flashcard-input-title-bar">
-          <h3 className="flashcard-input-title">
-            {isEditingDeck ? (
-              <input
-                type="text"
-                value={newDeckName}
-                onChange={(e) => setNewDeckName(e.target.value)}
-                className="flashcard-input-deck-name"
-              />
-            ) : (
-              newDeckName
-            )}
-          </h3>
-          <div className="title-bar-buttons">
-            {isEditingDeck && (
-              <button
-                onClick={handleDeleteDeck}
-                className="edit-icon-button"
-                style={{ color: "red" }}
-              >
-                <i className="fas fa-trash"></i>
-              </button>
-            )}
-            <button
-              onClick={() => setIsEditingDeck(!isEditingDeck)}
-              className={`edit-icon-button ${isEditingDeck ? "enabled" : ""}`}
-            >
-              <i className={`fas ${isEditingDeck ? "fa-check" : "fa-pen"}`}></i>
-            </button>
-          </div>
-        </div>
+
+
+
+        
+      <div className="flashcard-input-title-bar">
+    <div className="title-description-container">
+      {isEditingDeck ? (
+        <>
+          <input
+            type="text"
+            value={newDeckName}
+            onChange={(e) => setNewDeckName(e.target.value)}
+            className="flashcard-input-deck-name"
+          />
+          <textarea
+            value={newDeckDescription}
+            onChange={(e) => setNewDeckDescription(e.target.value)}
+            className="flashcard-input-deck-description"
+            placeholder="Edit the description"
+          />
+        </>
+      ) : (
+        <>
+          <h3 className="flashcard-input-title">{newDeckName}</h3>
+          <p className="deck-card-description">{description}</p>
+        </>
+      )}
+    </div>
+    <div className="title-bar-buttons">
+      {isEditingDeck && (
+        <button
+          onClick={handleDeleteDeck}
+          className="edit-icon-button"
+          style={{ color: "red" }}
+        >
+          <i className="fas fa-trash"></i>
+        </button>
+      )}
+      <button
+        onClick={() => setIsEditingDeck(!isEditingDeck)}
+        className={`edit-icon-button ${isEditingDeck ? "enabled" : ""}`}
+      >
+        <i className={`fas ${isEditingDeck ? "fa-check" : "fa-pen"}`}></i>
+      </button>
+    </div>
+  </div>
+
 
         {showDisclaimer && (
           <div className="flashcard-input-disclaimer-modal">
@@ -308,25 +331,23 @@ function FlashcardInput() {
           + Add Flashcard
         </button>
 
-
-
         <div className="flashcard-input-list">
-  {flashcards.map((flashcard, index) => (
-    <div key={index} className="flashcard-input-item">
-      <div className="flashcard-input-content">
-        <div className="flashcard-input-question">
-          <label>Question</label>
-          {editIndex === index ? (
-  <>
-    <input
-      type="text"
-      value={flashcard.question}
-      onChange={(e) =>
-        handleInputChange(index, "question", e.target.value)
-      }
-      className="flashcard-input-question-input"
-    />
-    {/* <input
+          {flashcards.map((flashcard, index) => (
+            <div key={index} className="flashcard-input-item">
+              <div className="flashcard-input-content">
+                <div className="flashcard-input-question">
+                  <label>Question</label>
+                  {editIndex === index ? (
+                    <>
+                      <input
+                        type="text"
+                        value={flashcard.question}
+                        onChange={(e) =>
+                          handleInputChange(index, "question", e.target.value)
+                        }
+                        className="flashcard-input-question-input"
+                      />
+                      {/* <input
       type="text"
       placeholder="Add a short description"
       value={flashcard.description || ""}
@@ -335,70 +356,69 @@ function FlashcardInput() {
       }
       className="flashcard-input-description-input"
     /> */}
-  </>
-) : (
-  <>
-    <p className="flashcard-input-question-text">
-      {flashcard.question}
-    </p>
-    <p className="flashcard-input-description-text">
-      {flashcard.description}
-    </p>
-  </>
-)}
-        </div>
-        <div className="flashcard-input-vertical-line"></div>
-        <div className="flashcard-input-answer">
-          <label>Answer</label>
-          {editIndex === index ? (
-            <input
-              type="text"
-              value={flashcard.answer}
-              onChange={(e) =>
-                handleInputChange(index, "answer", e.target.value)
-              }
-              className="flashcard-input-answer-input"
-            />
-          ) : (
-            <p className="flashcard-input-answer-text">
-              {flashcard.answer}
-            </p>
-          )}
-        </div>
-        <div className="flashcard-input-buttons">
-          <button
-            onClick={() => {
-              if (editIndex === index) {
-                handleSave(); // Save the changes
-              } else {
-                handleEdit(index); // Enter edit mode
-              }
-            }}
-            className={`edit-icon-button ${
-              editIndex === index ? "enabled" : ""
-            }`}
-          >
-            <i
-              className={`fas ${
-                editIndex === index ? "fa-check" : "fa-pen"
-              }`}
-            ></i>
-          </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="flashcard-input-question-text">
+                        {flashcard.question}
+                      </p>
+                      <p className="flashcard-input-description-text">
+                        {flashcard.description}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div className="flashcard-input-vertical-line"></div>
+                <div className="flashcard-input-answer">
+                  <label>Answer</label>
+                  {editIndex === index ? (
+                    <input
+                      type="text"
+                      value={flashcard.answer}
+                      onChange={(e) =>
+                        handleInputChange(index, "answer", e.target.value)
+                      }
+                      className="flashcard-input-answer-input"
+                    />
+                  ) : (
+                    <p className="flashcard-input-answer-text">
+                      {flashcard.answer}
+                    </p>
+                  )}
+                </div>
+                <div className="flashcard-input-buttons">
+                  <button
+                    onClick={() => {
+                      if (editIndex === index) {
+                        handleSave(); // Save the changes
+                      } else {
+                        handleEdit(index); // Enter edit mode
+                      }
+                    }}
+                    className={`edit-icon-button ${
+                      editIndex === index ? "enabled" : ""
+                    }`}
+                  >
+                    <i
+                      className={`fas ${
+                        editIndex === index ? "fa-check" : "fa-pen"
+                      }`}
+                    ></i>
+                  </button>
 
-          {editIndex === index && (
-            <button
-              onClick={() => handleDelete(index)}
-              className="edit-icon-button"
-            >
-              <i className="fas fa-trash"></i>
-            </button>
-          )}
+                  {editIndex === index && (
+                    <button
+                      onClick={() => handleDelete(index)}
+                      className="edit-icon-button"
+                    >
+                      <i className="fas fa-trash"></i>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
-    </div>
-  ))}
-</div>
-
       </div>
     </div>
   );

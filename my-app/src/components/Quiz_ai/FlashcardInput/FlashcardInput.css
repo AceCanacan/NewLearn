@@ -40,15 +40,37 @@
 
 
 .flashcard-input-title-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2.5vw; /* Adjust as needed */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 2vw;
+}
+.title-description-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.deck-card-description {
+  margin-top: 0.5vw; /* Adjust as necessary */
+  font-size: 1.75vw; /* Adjust as necessary */
+  color: #666;
+}
+
+
+
+.title-bar-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.flashcard-input-title-bar .deck-card-description {
+  margin-right: 10px;
 }
 
 .flashcard-input-title {
   text-align: left;
-  margin-bottom: 1.75vw; /* 2.5vw reduced by 30% */
+
   font-size: 2.8vw; /* 4vw reduced by 30% */
   font-weight: 500;
   color: #333;
@@ -100,9 +122,7 @@
   font-size: 1.75vw; /* 2.5vw reduced by 30% */
 }
 
-.flashcard-button:hover {
-  transform: scale(1.05);
-}
+
 
 /* Primary button styles */
 .flashcard-button-primary {
@@ -115,11 +135,11 @@
 
 /* Secondary button styles */
 .flashcard-button-secondary {
-  background-color: #28a745;
+  background-color: #3666fb;
 }
 
 .flashcard-button-secondary:hover {
-  background-color: #218838;
+  background-color: #1b298d  ;
 }
 
 /* Danger button styles */
@@ -138,7 +158,7 @@ flashcard-button-danger {
   padding: 1.05vw; /* 1.5vw reduced by 30% */
   border: none;
   border-radius: 0.7vw; /* 1vw reduced by 30% */
-  background-color: #28a745;
+  background-color: #3666fb;
   color: white;
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
@@ -147,8 +167,7 @@ flashcard-button-danger {
 }
 
 .flashcard-input-add-button:hover {
-  background-color: #218838;
-  transform: scale(1.02);
+  background-color: #1b298d  ;
 }
 
 /* Container for the list of flashcards */
@@ -283,3 +302,4 @@ flashcard-button-danger {
     margin: 1vw 0; /* Space above and below the line */
     width: 100%; /* Full width of the container */
   }
+  

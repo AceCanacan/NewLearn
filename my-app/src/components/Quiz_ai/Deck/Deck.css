@@ -37,7 +37,7 @@
     width: 100%;
     justify-content: center;
     overflow-y: auto; /* Enable vertical scrolling */
-    max-height: 60vh; /* Limit the height to make it scrollable */
+    max-height: 80vh; /* Limit the height to make it scrollable */
 }
 
 
@@ -50,7 +50,7 @@
 
 
 .deck-card {
-    min-height: 10vw; /* Reduce the minimum height to make the card shorter */
+    min-height: 20vw; /* Reduce the minimum height to make the card shorter */
     padding: 2vw 8vw; /* Keep the width padding the same, but reduce the top/bottom padding */
     background-color: #ffa500; /* Ensure the background color remains intact */
     border-radius: 1vw;
@@ -82,7 +82,7 @@
     color: white; /* Optional: title color */
 }
 
-.deck-card-description {
+.deck-card-description-view {
     font-size: 1vw; /* Smaller size for the description */
     color: white; /* Optional: lighter color for description */
 }
