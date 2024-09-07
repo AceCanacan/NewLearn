@@ -36,11 +36,12 @@
 /* Flashcard Buttons */
 .flashcard-buttons {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 1vw;
   margin-top: 1vw;
 }
+
 
 .flashcard-buttons button,
 .flashcard-secondary-buttons button {
