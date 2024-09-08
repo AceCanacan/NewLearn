@@ -78,6 +78,8 @@ const Test = () => {
   const [sendButtonDisabled, setSendButtonDisabled] = useState(false);
   const [user, setUser] = useState(null);
   const [showCardModal, setShowCardModal] = useState(false);
+  const [showHintModal, setShowHintModal] = useState(false);
+  const [hintGenerated, setHintGenerated] = useState({});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -952,8 +954,8 @@ const Test = () => {
     if (mediaRecorder) {
       mediaRecorder.onstop = () => {
         const tracks = mediaRecorder.stream.getTracks();
-        tracks.forEach((track) => track.stop()); 
-        setIsRecording(false); 
+        tracks.forEach((track) => track.stop());
+        setIsRecording(false);
         setMediaRecorder(null);
         setIsLoading(true);
         saveProgress();
@@ -961,53 +963,51 @@ const Test = () => {
       mediaRecorder.stop();
     }
   };
-  
 
-const processRecording = async (audioBlob) => {
-  const formData = new FormData();
-  formData.append("model", "whisper-1");
-  formData.append(
-    "file",
-    new Blob([audioBlob], { type: "audio/mp3" }),
-    "audio/mp3"
-  );
-
-  try {
-    const response = await fetch(
-      "https://api.openai.com/v1/audio/transcriptions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-        },
-        body: formData,
-      }
+  const processRecording = async (audioBlob) => {
+    const formData = new FormData();
+    formData.append("model", "whisper-1");
+    formData.append(
+      "file",
+      new Blob([audioBlob], { type: "audio/mp3" }),
+      "audio/mp3"
     );
 
-    if (!response.ok) {
-      const errorDetail = await response.json();
-      throw new Error(
-        `Error: ${response.status} ${response.statusText} - ${JSON.stringify(
-          errorDetail
-        )}`
+    try {
+      const response = await fetch(
+        "https://api.openai.com/v1/audio/transcriptions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
+          },
+          body: formData,
+        }
       );
+
+      if (!response.ok) {
+        const errorDetail = await response.json();
+        throw new Error(
+          `Error: ${response.status} ${response.statusText} - ${JSON.stringify(
+            errorDetail
+          )}`
+        );
+      }
+
+      const data = await response.json();
+
+      // Log the transcription to the console
+      console.log("Transcription:", data.text);
+
+      // Instead of comparing, set the transcription into the typedAnswer
+      setTypedAnswer(data.text);
+    } catch (error) {
+      setComparisonResult(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+      saveProgress();
     }
-
-    const data = await response.json();
-
-    // Log the transcription to the console
-    console.log("Transcription:", data.text);
-
-    // Instead of comparing, set the transcription into the typedAnswer
-    setTypedAnswer(data.text);
-  } catch (error) {
-    setComparisonResult(`Error: ${error.message}`);
-  } finally {
-    setIsLoading(false);
-    saveProgress();
-  }
-};
-
+  };
 
   useEffect(() => {
     // console.log("Question States:", questionStates);
@@ -1112,49 +1112,64 @@ const processRecording = async (audioBlob) => {
     }
   };
 
-  const NavigationBar = ({ totalCards, currentCardIndex, navigateToCard }) => (
-    <div className="navigation-bar">
-      {Array.from({ length: totalCards }).map((_, index) => (
-        <button
-          key={index}
-          className={`nav-button ${index === currentCardIndex ? "active" : ""}`}
-          onClick={() => navigateToCard(index)}
-        >
-          {index + 1}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <div className="test-yourself">
-<button onClick={() => setShowCardModal(true)}>Show Cards</button>
-{showCardModal && (
-  <div className="modal">
-    <div className="modal-content">
-      {flashcards.map((_, index) => (
-        <button
-          key={index}
-          className={`nav-button ${index === currentCardIndex ? "active" : ""}`}
-          onClick={() => {
-            navigateToCard(index);
-            setShowCardModal(false);
-          }}
-        >
-          {index + 1}
-        </button>
-      ))}
-      <button className="btn btn-danger" onClick={() => setShowCardModal(false)}>
-        Close
-      </button>
-    </div>
-  </div>
-)}
-      
-      <h3>{deckName}</h3>
+      <button onClick={() => setShowCardModal(true)}>Show Cards</button>
+      {showCardModal && (
+        <div className="modal">
+          <div className="modal-content">
+            {flashcards.map((_, index) => (
+              <button
+                key={index}
+                className={`nav-button ${
+                  index === currentCardIndex ? "active" : ""
+                }`}
+                onClick={() => {
+                  navigateToCard(index);
+                  setShowCardModal(false);
+                }}
+              >
+                {index + 1}
+              </button>
+            ))}
+            <button
+              className="btn btn-danger"
+              onClick={() => setShowCardModal(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="question-status-row">
+        <p className="question-status">
+          <strong>Question {currentCardIndex + 1}:</strong>
+        </p>
+        <p className="question-status">
+          {comparisonResult === "Correct"
+            ? "Correct"
+            : comparisonResult === "Incorrect"
+            ? "Incorrect"
+            : questionStates[currentCardIndex]?.skipped
+            ? "Skipped"
+            : "No answer"}
+        </p>
+        <div className="progress-bar-container">
+          <div
+            className="progress-bar"
+            style={{
+              width: `${
+                (correctlyAnsweredQuestions.size / flashcards.length) * 100
+              }%`,
+            }}
+          ></div>
+        </div>
+      </div>
+
       {!finished && (
-        <button className="btn btn-secondary" onClick={handleDone}>
-          Done
+        <button className="st-back-button" onClick={handleDone}>
+          <i className="fas fa-check"></i>
         </button>
       )}
       {isLoading ? (
@@ -1178,87 +1193,32 @@ const processRecording = async (audioBlob) => {
             </div>
           </div>
         ) : (
-          
           <>
-            <div className="comparison-result">
-              <p>
-                <strong>Result:</strong>{" "}
-                {comparisonResult === "Correct" &&
-                questionStates[currentCardIndex]?.skipped
-                  ? "Correct (Skipped)"
-                  : comparisonResult}
-              </p>
-              {questionStates[currentCardIndex]?.skipped && (
-                <p>
-                  <em>
-                    Note: This question was skipped, and the result does not
-                    count towards your score.
-                  </em>
-                </p>
-              )}
-              {(showAnswer ||
-                wasCorrect ||
-                correctlyAnsweredQuestions.has(currentCardIndex)) && (
-                <>
-                  {currentCardIndex < flashcards.length - 1 ? (
-                    <button
-                      className="btn btn-primary"
-                      onClick={handleNextCard}
-                    >
-                      Next
-                    </button>
-                  ) : (
-                    <button className="btn btn-success" onClick={handleFinish}>
-                      Finish
-                    </button>
-                  )}
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      setShowFeedbacks((prev) => ({
-                        ...prev,
-                        [currentCardIndex]: true,
-                      }));
-                      provideFeedback();
-                    }}
-                    disabled={
-                      isFeedbackLoading ||
-                      (feedbackButtonDisabled[currentCardIndex] &&
-                        hasFeedbackBeenProvided[currentCardIndex])
-                    }
-                  >
-                    {isFeedbackLoading ? "Loading..." : "Get Feedback"}
-                  </button>
-                  {showFeedbacks[currentCardIndex] &&
-                    feedbacks[currentCardIndex] && (
-                      <div className="feedback-modal">
-                        <p>{feedbacks[currentCardIndex]}</p>
-                      </div>
-                    )}
-                </>
-              )}
-            </div>
-
             <div className="flashcard">
               <p>
                 <strong>Q:</strong> {flashcards[currentCardIndex].question}
               </p>
-              {showAnswer && (
-                <p>
-                  <strong>A:</strong> {flashcards[currentCardIndex].answer}
-                </p>
-              )}
 
-              {(hint || questionStates[currentCardIndex]?.hint) && (
-                <p className="hint">
-                  <strong>Hint:</strong>{" "}
-                  {hint || questionStates[currentCardIndex]?.hint}
-                </p>
+              {showHintModal && (
+                <div className="modal">
+                  <div className="modal-content">
+                    <p className="hint">
+                      <strong>Hint:</strong>{" "}
+                      {hint || questionStates[currentCardIndex]?.hint}
+                    </p>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => setShowHintModal(false)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
-            <div className="flashcard-buttons">
-              <div className="flashcard-answer-container">
+            <div className="answer-container">
+              <div className="flashcard-answer-input">
                 <input
                   type="text"
                   value={typedAnswer}
@@ -1269,64 +1229,86 @@ const processRecording = async (audioBlob) => {
                 />
               </div>
 
-              {renderSendButton()}
-
-              <button
-                className={`btn ${isRecording ? "btn-danger" : "btn-primary"}`}
-                onClick={isRecording ? finishRecording : startRecording}
-                disabled={isLoading} // Disable the button if loading
-              >
-                {isRecording ? "Recording..." : "Start Recording"}
-              </button>
-
-              {comparisonResult === "Incorrect" &&
-                !isRecording &&
-                !isLoading && (
-                  <button className="btn btn-primary" onClick={startRecording}>
-                    Try Again
+              <div className="button-stack">
+                {comparisonResult !== "Correct" && !showAnswer && (
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      if (!hint) getHint();
+                      setShowHintModal(true);
+                    }}
+                    disabled={showAnswer} // Disable if the answer has been shown
+                  >
+                    <i className="fas fa-question"></i>{" "}
+                    {/* Question mark icon */}
                   </button>
                 )}
+
+                <button
+                  className={`btn ${
+                    typedAnswer ? "btn-primary" : "btn-secondary"
+                  }`}
+                  onClick={() => {
+                    if (typedAnswer) {
+                      setIsLoading(true);
+                      compareQuestion(typedAnswer);
+                    } else if (!isRecording) {
+                      startRecording();
+                    } else {
+                      finishRecording();
+                    }
+                  }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    "Loading..."
+                  ) : typedAnswer ? (
+                    <i className="fas fa-paper-plane"></i>
+                  ) : (
+                    <i className="fas fa-microphone"></i>
+                  )}
+                </button>
+              </div>
             </div>
 
 
 
+{currentCardIndex < flashcards.length - 1 ? (
+  <button className="btn btn-primary" onClick={handleNextCard}>
+    Next
+  </button>
+) : (
+  <button className="btn btn-success" onClick={handleFinish}>
+    Finish
+  </button>
+)}
 
+{showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
+  <div className="feedback-modal">
+    <p>{feedbacks[currentCardIndex]}</p>
+  </div>
+)}
 
-            
             {isLoading && <p>Loading...</p>}
-            {comparisonResult !== "Correct" && !showAnswer && (
-              <button
-                className="btn btn-secondary"
-                onClick={getHint}
-                disabled={
-                  hintUsed || questionStates[currentCardIndex]?.hintUsed
+
+            <button
+              className="btn btn-warning"
+              onClick={() => {
+                const confirmShowAnswer = window.confirm(
+                  "Are you sure you want to show the answer? Your score will be zero for this question."
+                );
+                if (confirmShowAnswer) {
+                  setTypedAnswer(flashcards[currentCardIndex].answer); // Input the answer into the answer box
+                  setCorrectlyAnsweredQuestions((prev) =>
+                    new Set(prev).add(currentCardIndex)
+                  ); // Marks the question as done
+                  setShowAnswer(true); // Disable buttons
                 }
-              >
-                Get Hint
-              </button>
-            )}
-            <button className="btn btn-warning" onClick={handleShowAnswer}>
+              }}
+              disabled={showAnswer} // Disables the button if answer has been shown
+            >
               Show Answer
             </button>
-
-
-            <div className="progress-tracker">
-              <div className="progress-bar-container">
-                <div
-                  className="progress-bar"
-                  style={{
-                    width: `${
-                      (correctlyAnsweredQuestions.size / flashcards.length) *
-                      100
-                    }%`,
-                  }}
-                ></div>
-              </div>
-              <p>
-                {correctlyAnsweredQuestions.size} out of {flashcards.length}{" "}
-                completed
-              </p>
-            </div>
           </>
         )
       ) : (
@@ -1348,7 +1330,6 @@ const processRecording = async (audioBlob) => {
             >
               Cancel
             </button>
-            
           </div>
         </div>
       )}
