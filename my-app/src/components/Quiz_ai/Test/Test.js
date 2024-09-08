@@ -77,6 +77,7 @@ const Test = () => {
   const [questionStates, setQuestionStates] = useState({});
   const [sendButtonDisabled, setSendButtonDisabled] = useState(false);
   const [user, setUser] = useState(null);
+  const [showCardModal, setShowCardModal] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -951,9 +952,9 @@ const Test = () => {
     if (mediaRecorder) {
       mediaRecorder.onstop = () => {
         const tracks = mediaRecorder.stream.getTracks();
-        tracks.forEach((track) => track.stop()); // Stop all tracks
-        setIsRecording(false); // Update recording state
-        setMediaRecorder(null); // Reset mediaRecorder
+        tracks.forEach((track) => track.stop()); 
+        setIsRecording(false); 
+        setMediaRecorder(null);
         setIsLoading(true);
         saveProgress();
       };
@@ -1127,11 +1128,28 @@ const processRecording = async (audioBlob) => {
 
   return (
     <div className="test-yourself">
-      <NavigationBar
-        totalCards={flashcards.length}
-        currentCardIndex={currentCardIndex}
-        navigateToCard={navigateToCard}
-      />
+<button onClick={() => setShowCardModal(true)}>Show Cards</button>
+{showCardModal && (
+  <div className="modal">
+    <div className="modal-content">
+      {flashcards.map((_, index) => (
+        <button
+          key={index}
+          className={`nav-button ${index === currentCardIndex ? "active" : ""}`}
+          onClick={() => {
+            navigateToCard(index);
+            setShowCardModal(false);
+          }}
+        >
+          {index + 1}
+        </button>
+      ))}
+      <button className="btn btn-danger" onClick={() => setShowCardModal(false)}>
+        Close
+      </button>
+    </div>
+  </div>
+)}
       
       <h3>{deckName}</h3>
       {!finished && (
@@ -1330,6 +1348,7 @@ const processRecording = async (audioBlob) => {
             >
               Cancel
             </button>
+            
           </div>
         </div>
       )}

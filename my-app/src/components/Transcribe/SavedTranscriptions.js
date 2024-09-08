@@ -7,7 +7,6 @@ import {
   doc,
   setDoc,
   deleteDoc,
-  getDoc,
 } from "firebase/firestore";
 import { db, auth } from "../../firebase/firebase";
 import { useNavigate } from "react-router-dom";
