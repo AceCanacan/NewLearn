@@ -934,42 +934,26 @@ const Test = () => {
   };
 
   const startRecording = async () => {
-    let chunks = []; // Initialize chunks array to store audio data
     setIsRecording(true);
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const recorder = new MediaRecorder(stream);
     setMediaRecorder(recorder);
-  
+
     recorder.ondataavailable = (event) => {
-      chunks.push(event.data); // Collect each audio chunk
+      const audioBlob = event.data;
+      processRecording(audioBlob);
     };
-  
-    recorder.onstop = () => {
-      console.time("Blob Creation");
-      const audioBlob = new Blob(chunks, { type: 'audio/mp3' });
-      console.timeEnd("Blob Creation");
-  
-      // Create a URL for the recorded MP3 blob and play it
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.play();
-  
-      console.time("Process Recording");
-      processRecording(audioBlob); // Track how long the transcription process takes
-      console.timeEnd("Process Recording");
-    };
-  
+
     recorder.start();
   };
-  
-  
 
   const finishRecording = () => {
     if (mediaRecorder) {
       mediaRecorder.onstop = () => {
         const tracks = mediaRecorder.stream.getTracks();
-        tracks.forEach((track) => track.stop());
-        setIsRecording(false);
+        tracks.forEach((track) => track.stop()); // Stop all tracks
+        setIsRecording(false); // Update recording state
+        setMediaRecorder(null); // Reset mediaRecorder
         setIsLoading(true);
         saveProgress();
       };
@@ -988,7 +972,6 @@ const processRecording = async (audioBlob) => {
   );
 
   try {
-    console.time("API Request"); // Start timer for API request
     const response = await fetch(
       "https://api.openai.com/v1/audio/transcriptions",
       {
@@ -999,7 +982,6 @@ const processRecording = async (audioBlob) => {
         body: formData,
       }
     );
-    console.timeEnd("API Request"); // End timer for API request
 
     if (!response.ok) {
       const errorDetail = await response.json();
@@ -1050,10 +1032,6 @@ const processRecording = async (audioBlob) => {
 
   const provideFeedback = async () => {
     if (feedbackButtonDisabled[currentCardIndex]) {
-      // console.log("Feedback button disabled, conditions not met:", {
-      //   isFeedbackLoading,
-      //   feedbackButtonDisabled: feedbackButtonDisabled[currentCardIndex],
-      // });
       return;
     }
 
