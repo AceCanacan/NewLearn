@@ -1271,7 +1271,12 @@ const Test = () => {
               </div>
             </div>
 
-
+            <p>
+  <strong>Result:</strong>{" "}
+  {comparisonResult === "Correct" && questionStates[currentCardIndex]?.skipped
+    ? "Correct (Skipped)"
+    : comparisonResult}
+</p>
 
 {currentCardIndex < flashcards.length - 1 ? (
   <button className="btn btn-primary" onClick={handleNextCard}>
