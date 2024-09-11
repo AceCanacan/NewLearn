@@ -1114,7 +1114,6 @@ const Test = () => {
 
   return (
     <div className="test-yourself">
-      <button onClick={() => setShowCardModal(true)}>Show Cards</button>
       {showCardModal && (
         <div className="modal">
           <div className="modal-content">
@@ -1155,6 +1154,7 @@ const Test = () => {
             ? "Skipped"
             : "No answer"}
         </p>
+
         <div className="progress-bar-container">
           <div
             className="progress-bar"
@@ -1165,6 +1165,13 @@ const Test = () => {
             }}
           ></div>
         </div>
+
+        <button
+          onClick={() => setShowCardModal(true)}
+          className="circular-button"
+        >
+          <i className="fas fa-ellipsis-h"></i>
+        </button>
       </div>
 
       {!finished && (
@@ -1230,19 +1237,15 @@ const Test = () => {
               </div>
 
               <div className="button-stack">
-                {comparisonResult !== "Correct" && !showAnswer && (
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      if (!hint) getHint();
-                      setShowHintModal(true);
-                    }}
-                    disabled={showAnswer} // Disable if the answer has been shown
-                  >
-                    <i className="fas fa-question"></i>{" "}
-                    {/* Question mark icon */}
-                  </button>
-                )}
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    if (!hint) getHint();
+                    setShowHintModal(true);
+                  }}
+                >
+                  <i className="fas fa-question"></i>
+                </button>
 
                 <button
                   className={`btn ${
@@ -1271,28 +1274,21 @@ const Test = () => {
               </div>
             </div>
 
-            <p>
-  <strong>Result:</strong>{" "}
-  {comparisonResult === "Correct" && questionStates[currentCardIndex]?.skipped
-    ? "Correct (Skipped)"
-    : comparisonResult}
-</p>
+            {currentCardIndex < flashcards.length - 1 ? (
+              <button className="btn btn-primary" onClick={handleNextCard}>
+                Next
+              </button>
+            ) : (
+              <button className="btn btn-success" onClick={handleFinish}>
+                Finish
+              </button>
+            )}
 
-{currentCardIndex < flashcards.length - 1 ? (
-  <button className="btn btn-primary" onClick={handleNextCard}>
-    Next
-  </button>
-) : (
-  <button className="btn btn-success" onClick={handleFinish}>
-    Finish
-  </button>
-)}
-
-{showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
-  <div className="feedback-modal">
-    <p>{feedbacks[currentCardIndex]}</p>
-  </div>
-)}
+            {showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
+              <div className="feedback-modal">
+                <p>{feedbacks[currentCardIndex]}</p>
+              </div>
+            )}
 
             {isLoading && <p>Loading...</p>}
 
