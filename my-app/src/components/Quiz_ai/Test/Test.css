@@ -274,8 +274,26 @@
   text-align: center;
 }
 
-.test-yourself {
-  max-width: 80vw;
+
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between; /* Distribute the buttons evenly */
+  align-items: center; /* Vertically align the buttons */
+  width: 100%; /* Ensure the container spans the full width */
+  padding: 1vw 0; /* Add some padding for spacing */
+}
+
+.test-component {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Vertically center */
+  align-items: center; /* Horizontally center */
+  height: 100vh; /* Full height of the viewport */
+}
+
+.test-container {
+  width: 80vw; /* Set the container width to 80% of the viewport width */
+  max-width: 90vw; /* You can still keep this max-width to avoid overflow on smaller screens */
   margin: 0 auto;
   padding: 2vw;
   background-color: #f9f9f9;

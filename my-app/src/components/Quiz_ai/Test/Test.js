@@ -936,6 +936,24 @@ const Test = () => {
     saveProgress();
   };
 
+  const handlePreviousCard = () => {
+    preserveCurrentQuestionState();
+    let prevIndex = currentCardIndex;
+
+    do {
+      prevIndex = (prevIndex - 1 + flashcards.length) % flashcards.length;
+    } while (
+      correctlyAnsweredQuestions.has(prevIndex) &&
+      prevIndex !== currentCardIndex
+    );
+
+    setCurrentCardIndex(prevIndex);
+    loadQuestionState(prevIndex);
+    setWasCorrect(false); // Reset wasCorrect state
+    setComparisonResult(""); // Reset comparisonResult state
+    saveProgress();
+  };
+
   const startRecording = async () => {
     setIsRecording(true);
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1113,227 +1131,235 @@ const Test = () => {
   };
 
   return (
-    <div className="test-yourself">
-      {showCardModal && (
-        <div className="modal">
-          <div className="modal-content">
-            {flashcards.map((_, index) => (
-              <button
-                key={index}
-                className={`nav-button ${
-                  index === currentCardIndex ? "active" : ""
-                }`}
-                onClick={() => {
-                  navigateToCard(index);
-                  setShowCardModal(false);
-                }}
-              >
-                {index + 1}
-              </button>
-            ))}
-            <button
-              className="btn btn-danger"
-              onClick={() => setShowCardModal(false)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="question-status-row">
-        <p className="question-status">
-          <strong>Question {currentCardIndex + 1}:</strong>
-        </p>
-        <p className="question-status">
-          {comparisonResult === "Correct"
-            ? "Correct"
-            : comparisonResult === "Incorrect"
-            ? "Incorrect"
-            : questionStates[currentCardIndex]?.skipped
-            ? "Skipped"
-            : "No answer"}
-        </p>
-
-        <div className="progress-bar-container">
-          <div
-            className="progress-bar"
-            style={{
-              width: `${
-                (correctlyAnsweredQuestions.size / flashcards.length) * 100
-              }%`,
-            }}
-          ></div>
-        </div>
-
-        <button
-          onClick={() => setShowCardModal(true)}
-          className="circular-button"
-        >
-          <i className="fas fa-ellipsis-h"></i>
-        </button>
-      </div>
-
-      {!finished && (
-        <button className="st-back-button" onClick={handleDone}>
-          <i className="fas fa-check"></i>
-        </button>
-      )}
-      {isLoading ? (
-        <p>Loading flashcards...</p>
-      ) : flashcards.length > 0 && currentCardIndex < flashcards.length ? (
-        finished ? (
-          <div className="completion-message">
-            <h2>Way to go! You've reviewed all {flashcards.length} cards.</h2>
-            <div className="score-display">{generateReportContent()}</div>
-            <div className="final-score">
-              <h2>Final Score: {calculateFinalScore().toFixed(2)}%</h2>
-              <button className="btn btn-primary" onClick={retakeTest}>
-                Retake Test
-              </button>
-              <button
-                className="btn btn-secondary"
-                onClick={wipeProgressAndNavigate}
-              >
-                Go Back
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flashcard">
-              <p>
-                <strong>Q:</strong> {flashcards[currentCardIndex].question}
-              </p>
-
-              {showHintModal && (
-                <div className="modal">
-                  <div className="modal-content">
-                    <p className="hint">
-                      <strong>Hint:</strong>{" "}
-                      {hint || questionStates[currentCardIndex]?.hint}
-                    </p>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => setShowHintModal(false)}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="answer-container">
-              <div className="flashcard-answer-input">
-                <input
-                  type="text"
-                  value={typedAnswer}
-                  onChange={(e) => {
-                    setTypedAnswer(e.target.value);
-                  }}
-                  placeholder="Type your answer here"
-                />
-              </div>
-
-              <div className="button-stack">
+    <div className="test-component">
+      <div className="test-container">
+        {showCardModal && (
+          <div className="modal">
+            <div className="modal-content">
+              {flashcards.map((_, index) => (
                 <button
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    if (!hint) getHint();
-                    setShowHintModal(true);
-                  }}
-                >
-                  <i className="fas fa-question"></i>
-                </button>
-
-                <button
-                  className={`btn ${
-                    typedAnswer ? "btn-primary" : "btn-secondary"
+                  key={index}
+                  className={`nav-button ${
+                    index === currentCardIndex ? "active" : ""
                   }`}
                   onClick={() => {
-                    if (typedAnswer) {
-                      setIsLoading(true);
-                      compareQuestion(typedAnswer);
-                    } else if (!isRecording) {
-                      startRecording();
-                    } else {
-                      finishRecording();
-                    }
+                    navigateToCard(index);
+                    setShowCardModal(false);
                   }}
-                  disabled={isLoading}
                 >
-                  {isLoading ? (
-                    "Loading..."
-                  ) : typedAnswer ? (
-                    <i className="fas fa-paper-plane"></i>
-                  ) : (
-                    <i className="fas fa-microphone"></i>
-                  )}
+                  {index + 1}
+                </button>
+              ))}
+              <button
+                className="btn btn-danger"
+                onClick={() => setShowCardModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="question-status-row">
+          <p className="question-status">
+            <strong>Question {currentCardIndex + 1}:</strong>
+          </p>
+          <p className="question-status">
+            {comparisonResult === "Correct"
+              ? "Correct"
+              : comparisonResult === "Incorrect"
+              ? "Incorrect"
+              : questionStates[currentCardIndex]?.skipped
+              ? "Skipped"
+              : "No answer"}
+          </p>
+
+          <div className="progress-bar-container">
+            <div
+              className="progress-bar"
+              style={{
+                width: `${
+                  (correctlyAnsweredQuestions.size / flashcards.length) * 100
+                }%`,
+              }}
+            ></div>
+          </div>
+
+          <button
+            onClick={() => setShowCardModal(true)}
+            className="circular-button"
+          >
+            <i className="fas fa-ellipsis-h"></i>
+          </button>
+        </div>
+
+        {!finished && (
+          <button className="st-back-button" onClick={handleDone}>
+            <i className="fas fa-check"></i>
+          </button>
+        )}
+        {isLoading ? (
+          <p>Loading flashcards...</p>
+        ) : flashcards.length > 0 && currentCardIndex < flashcards.length ? (
+          finished ? (
+            <div className="completion-message">
+              <h2>Way to go! You've reviewed all {flashcards.length} cards.</h2>
+              <div className="score-display">{generateReportContent()}</div>
+              <div className="final-score">
+                <h2>Final Score: {calculateFinalScore().toFixed(2)}%</h2>
+                <button className="btn btn-primary" onClick={retakeTest}>
+                  Retake Test
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={wipeProgressAndNavigate}
+                >
+                  Go Back
                 </button>
               </div>
             </div>
+          ) : (
+            <>
+              <div className="flashcard">
+                <p>
+                  <strong>Q:</strong> {flashcards[currentCardIndex].question}
+                </p>
 
-            {currentCardIndex < flashcards.length - 1 ? (
-              <button className="btn btn-primary" onClick={handleNextCard}>
-                Next
-              </button>
-            ) : (
-              <button className="btn btn-success" onClick={handleFinish}>
-                Finish
-              </button>
-            )}
-
-            {showFeedbacks[currentCardIndex] && feedbacks[currentCardIndex] && (
-              <div className="feedback-modal">
-                <p>{feedbacks[currentCardIndex]}</p>
+                {showHintModal && (
+                  <div className="modal">
+                    <div className="modal-content">
+                      <p className="hint">
+                        <strong>Hint:</strong>{" "}
+                        {hint || questionStates[currentCardIndex]?.hint}
+                      </p>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => setShowHintModal(false)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
 
-            {isLoading && <p>Loading...</p>}
+              <div className="answer-container">
+                <div className="flashcard-answer-input">
+                  <input
+                    type="text"
+                    value={typedAnswer}
+                    onChange={(e) => {
+                      setTypedAnswer(e.target.value);
+                    }}
+                    placeholder="Type your answer here"
+                  />
+                </div>
 
-            <button
-              className="btn btn-warning"
-              onClick={() => {
-                const confirmShowAnswer = window.confirm(
-                  "Are you sure you want to show the answer? Your score will be zero for this question."
-                );
-                if (confirmShowAnswer) {
-                  setTypedAnswer(flashcards[currentCardIndex].answer); // Input the answer into the answer box
-                  setCorrectlyAnsweredQuestions((prev) =>
-                    new Set(prev).add(currentCardIndex)
-                  ); // Marks the question as done
-                  setShowAnswer(true); // Disable buttons
-                }
-              }}
-              disabled={showAnswer} // Disables the button if answer has been shown
-            >
-              Show Answer
-            </button>
-          </>
-        )
-      ) : (
-        <p>No flashcards available in this deck.</p>
-      )}
-      {showSaveProgressModal && (
-        <div className="modal">
-          <div className="modal-content">
-            <p>Are you sure you want to leave?</p>
-            <button
-              className="btn btn-primary"
-              onClick={saveProgressAndNavigate}
-            >
-              Leave and Save
-            </button>
-            <button
-              className="btn btn-danger"
-              onClick={() => setShowSaveProgressModal(false)}
-            >
-              Cancel
-            </button>
+                <div className="button-stack">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      if (!hint) getHint();
+                      setShowHintModal(true);
+                    }}
+                  >
+                    <i className="fas fa-question"></i>
+                  </button>
+
+                  <button
+                    className={`btn ${
+                      typedAnswer ? "btn-primary" : "btn-secondary"
+                    }`}
+                    onClick={() => {
+                      if (typedAnswer) {
+                        setIsLoading(true);
+                        compareQuestion(typedAnswer);
+                      } else if (!isRecording) {
+                        startRecording();
+                      } else {
+                        finishRecording();
+                      }
+                    }}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      "Loading..."
+                    ) : typedAnswer ? (
+                      <i className="fas fa-paper-plane"></i>
+                    ) : (
+                      <i className="fas fa-microphone"></i>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="navigation-buttons">
+  <button
+    className="circular-button"
+    onClick={handlePreviousCard} // For going back
+    disabled={currentCardIndex === 0} // Disable when on the first card
+  >
+    <i className="fas fa-arrow-left"></i>
+  </button>
+
+  <button
+    className="btn btn-warning"
+    onClick={handleShowAnswer} // Use the handleShowAnswer function
+    disabled={showAnswer} // Disables the button if the answer has been shown
+  >
+    Show Answer
+  </button>
+
+  <button
+    className="circular-button"
+    onClick={
+      currentCardIndex < flashcards.length - 1
+        ? handleNextCard // Go to the next card
+        : handleFinish // Finish the flashcard session
+    }
+    disabled={currentCardIndex < flashcards.length - 1 ? false : showAnswer} // Enable Finish on the last card, and only disable if the answer hasn't been shown
+  >
+    {currentCardIndex < flashcards.length - 1 ? (
+      <i className="fas fa-arrow-right"></i>
+    ) : (
+      <i className="fas fa-check"></i> // Check icon for the last card (finish)
+    )}
+  </button>
+</div>
+
+              {showFeedbacks[currentCardIndex] &&
+                feedbacks[currentCardIndex] && (
+                  <div className="feedback-modal">
+                    <p>{feedbacks[currentCardIndex]}</p>
+                  </div>
+                )}
+
+              {isLoading && <p>Loading...</p>}
+            </>
+          )
+        ) : (
+          <p>No flashcards available in this deck.</p>
+        )}
+        {showSaveProgressModal && (
+          <div className="modal">
+            <div className="modal-content">
+              <p>Are you sure you want to leave?</p>
+              <button
+                className="btn btn-primary"
+                onClick={saveProgressAndNavigate}
+              >
+                Leave and Save
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={() => setShowSaveProgressModal(false)}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
