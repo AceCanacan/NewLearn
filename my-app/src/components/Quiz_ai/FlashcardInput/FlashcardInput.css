@@ -15,28 +15,29 @@
 
 
 .screen-border-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    padding: 0; /* Remove padding from the main container */
-    box-sizing: border-box;
-    background-color: #ffcc66; /* Outer border color */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  box-sizing: border-box;
+  background-color: #ffcc66; /* Outer border color */
+  z-index: -1; /* Ensure it stays in the background */
 }
 
 .screen-border-container::before {
-  content: '';
-  position: absolute;
-  top: 4vw; /* Increase the top offset for a thicker border */
-  left: 4vw; /* Increase the left offset for a thicker border */
-  width: calc(100% - 10vw); /* Adjust the width based on the new border thickness */
-  height: calc(100% - 10vw); /* Adjust the height based on the new border thickness */
-  box-sizing: border-box;
-  border-radius: 2vw; /* Inward curvature */
-  background-color: #fef3d7; /* Background color of the inner screen area */
+content: '';
+position: absolute;
+top: 4vw;
+left: 4vw;
+width: calc(100% - 8vw); /* Updated based on your desired thickness */
+height: calc(100% - 8vw); /* Updated based on your desired thickness */
+box-sizing: border-box;
+border-radius: 2vw;
+background-color: #fef3d7;
+z-index: -1; /* Ensure it stays below content */
 }
-
 
 
 .flashcard-input-title-bar {

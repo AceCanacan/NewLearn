@@ -1,56 +1,120 @@
+/* src/components/Quiz_ai/ScoreReport.css */
+
 .score-report {
   padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
   background-color: #f9f9f9;
-  font-family: Arial, sans-serif;
+  border-radius: 12px;
 }
 
 .score-report h2 {
+  text-align: center;
   margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: bold;
   color: #333;
 }
 
-.score-report ul {
-  list-style: none;
-  padding: 0;
+.attempts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.score-report li {
-  margin-bottom: 20px;
-}
-
-.score-report .score-entry {
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+.attempt-card {
   background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  position: relative;
 }
 
-.score-report .score-entry p {
-  margin: 10px 0;
-  font-size: 16px;
+.attempt-card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.attempt-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  cursor: pointer;
+  background-color: #fafafa;
+}
+
+.summary-left p {
+  margin: 5px 0;
   color: #555;
 }
 
-.score-report .score-entry ul {
-  list-style: none;
-  padding: 0;
+.summary-right {
+  font-size: 1.2em;
+  color: #777;
 }
 
-.score-report .score-entry ul li {
-  margin: 5px 0;
+.attempt-details {
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+  background-color: #fff;
 }
 
-.score-report a {
+.delete-button {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background-color: #ff4d4d;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s ease;
+}
+
+.delete-button:hover {
+  background-color: #e60000;
+}
+
+.back-link {
   display: inline-block;
-  margin-top: 20px;
+  margin-top: 30px;
+  color: #2196f3;
   text-decoration: none;
-  color: #007bff;
-  font-size: 16px;
+  font-weight: bold;
+  transition: color 0.3s ease;
 }
 
-.score-report a:hover {
-  text-decoration: underline;
+.back-link:hover {
+  color: #0b7dda;
+}
+
+@media (max-width: 768px) {
+  .score-report {
+    padding: 15px;
+  }
+
+  .attempt-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .summary-right {
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .delete-button {
+    top: 10px;
+    right: 15px;
+    padding: 4px 10px;
+    font-size: 0.8em;
+  }
+
+  .attempt-details {
+    padding: 15px;
+  }
 }
