@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useHistory } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import "./Test.css";
-import { setDoc, doc, deleteDoc, getDoc } from "firebase/firestore";
+import { setDoc, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../../../firebase/firebase"; // Adjust the path as needed
 import { onAuthStateChanged } from "firebase/auth";
 import TestResults from "./TestResults"; // Import the new component

@@ -34,12 +34,7 @@ const removeFromFirestore = async (docPath) => {
   } catch (error) {}
 };
 
-const loadDeckFlashcards = async (userId, deckName) => {
-  const docPath = `users/${userId}/decks/${deckName}`;
-  const deckData = await loadFromFirestore(docPath, { flashcards: [] });
-  const flashcards = deckData.flashcards || [];
-  return flashcards;
-};
+
 
 const saveDeckFlashcards = async (userId, deckName, flashcards) => {
   const deckData = { flashcards };
@@ -51,7 +46,7 @@ const removeDeckFlashcards = async (userId, deckName) => {
 };
 
 function FlashcardInput() {
-  const { deckName, setDeckName } = useParams();
+  const { deckName } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
@@ -63,9 +58,6 @@ function FlashcardInput() {
   const [description, setDescription] = useState("");
   const [newDeckDescription, setNewDeckDescription] = useState("");
 
-  const handleDeckNameChange = (event) => {
-    setDeckName(event.target.value);
-  };
 
   const MAX_FLASHCARDS = 10;
 
