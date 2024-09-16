@@ -69,8 +69,11 @@ const AttemptCard = ({ scoreEntry, index, onDelete }) => {
           <TestResults
             results={testResults.results}
             flashcards={testResults.flashcards}
-            onRetake={() => {}}
             deckName={testResults.deckName}
+            onRetake={() => {
+              // Optional: Implement retake functionality if needed
+              // For example, navigate to the test page with the deckName
+            }}
           />
         </div>
       )}

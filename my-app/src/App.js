@@ -15,6 +15,7 @@ import SavedTranscriptions from './components/Transcribe/SavedTranscriptions';
 
 import NotesMaker from './components/NotesMaker/Notesmaker';
 import SavedNotes from './components/NotesMaker/Savednotes';
+import TestResults from './components/Quiz_ai/Test/TestResults';
 
 import PDFReader from './components/pdf_reader/pdf_reader';
 
@@ -134,6 +135,7 @@ function App() {
                 <Route path="/savednotes" element={<SavedNotes />} />
                 <Route path="/deck/:deckName/flashcard-input" element={<FlashcardInput />} />
                 <Route path="/pdfreader" element={<PDFReader />} />
+                <Route path="/testresults" element={<TestResults />} />
               </Routes>
             </>
           ) : (

@@ -365,8 +365,10 @@ const Test = () => {
       // **Corrected Code Ends Here**
     }
 
-    setResults(newResults);
-    setFinished(true);
+    navigate("/testresults", {
+      state: { results: newResults, flashcards, deckName },
+    });
+    
   };
 
   const retakeTest = () => {
@@ -435,6 +437,7 @@ const Test = () => {
                 <i className="fas fa-ellipsis-h"></i>
               </button>
             </div>
+
             <button
               className="st-back-button"
               onClick={() => navigate(`/deck/${deckName}/flashcard-input`)}
@@ -478,7 +481,7 @@ const Test = () => {
                 />
               </div>
 
-              <div className="button-stack">
+              <div className="button-stack small-buttons">
                 <button
                   className="btn btn-secondary"
                   onClick={() => {

@@ -34,8 +34,6 @@ const removeFromFirestore = async (docPath) => {
   } catch (error) {}
 };
 
-
-
 const saveDeckFlashcards = async (userId, deckName, flashcards) => {
   const deckData = { flashcards };
   await saveToFirestore(`users/${userId}/decks/${deckName}`, deckData);
@@ -46,7 +44,7 @@ const removeDeckFlashcards = async (userId, deckName) => {
 };
 
 function FlashcardInput() {
-  const { deckName } = useParams();
+  const { deckName, setDeckName } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
@@ -57,7 +55,6 @@ function FlashcardInput() {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [description, setDescription] = useState("");
   const [newDeckDescription, setNewDeckDescription] = useState("");
-
 
   const MAX_FLASHCARDS = 10;
 
@@ -201,84 +198,49 @@ function FlashcardInput() {
       <button className="st-back-button" onClick={() => navigate("/deck/home")}>
         <i className="fas fa-arrow-left"></i>
       </button>
-
       <div className="flashcard-input-container">
-
-
-
-        
-      <div className="flashcard-input-title-bar">
-    <div className="title-description-container">
-      {isEditingDeck ? (
-        <>
-          <input
-            type="text"
-            value={newDeckName}
-            onChange={(e) => setNewDeckName(e.target.value)}
-            className="flashcard-input-deck-name"
-          />
-          <textarea
-            value={newDeckDescription}
-            onChange={(e) => setNewDeckDescription(e.target.value)}
-            className="flashcard-input-deck-description"
-            placeholder="Edit the description"
-          />
-        </>
-      ) : (
-        <>
-          <h3 className="flashcard-input-title">{newDeckName}</h3>
-          <p className="deck-card-description">{description}</p>
-        </>
-      )}
-    </div>
-    <div className="title-bar-buttons">
-      {isEditingDeck && (
-        <button
-          onClick={handleDeleteDeck}
-          className="edit-icon-button"
-          style={{ color: "red" }}
-        >
-          <i className="fas fa-trash"></i>
-        </button>
-      )}
-      <button
-        onClick={() => setIsEditingDeck(!isEditingDeck)}
-        className={`edit-icon-button ${isEditingDeck ? "enabled" : ""}`}
-      >
-        <i className={`fas ${isEditingDeck ? "fa-check" : "fa-pen"}`}></i>
-      </button>
-    </div>
-  </div>
-
-
-        {showDisclaimer && (
-          <div className="flashcard-input-disclaimer-modal">
-            <div className="flashcard-input-disclaimer-content">
-              <h3>Disclaimer</h3>
-              <p>
-                You are about to save {flashcards.length} flashcards in this
-                deck. The maximum allowed is {MAX_FLASHCARDS}. Remember, this is
-                an alpha version and every flashcard you create is permanent and
-                cannot be erased. Choose wisely as your actions have lasting
-                consequences.
-              </p>
-              <div className="flashcard-input-disclaimer-buttons">
-                <button
-                  onClick={handleConfirmSave}
-                  className="flashcard-button flashcard-button-primary"
-                >
-                  Confirm Add
-                </button>
-                <button
-                  onClick={() => setShowDisclaimer(false)}
-                  className="flashcard-button flashcard-button-primary"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+        <div className="flashcard-input-title-bar">
+          <div className="title-description-container">
+            {isEditingDeck ? (
+              <>
+                <input
+                  type="text"
+                  value={newDeckName}
+                  onChange={(e) => setNewDeckName(e.target.value)}
+                  className="flashcard-input-deck-name"
+                />
+                <textarea
+                  value={newDeckDescription}
+                  onChange={(e) => setNewDeckDescription(e.target.value)}
+                  className="flashcard-input-deck-description"
+                  placeholder="Edit the description"
+                />
+              </>
+            ) : (
+              <>
+                <h3 className="flashcard-input-title">{newDeckName}</h3>
+                <p className="deck-card-description">{description}</p>
+              </>
+            )}
           </div>
-        )}
+          <div className="title-bar-buttons">
+            {isEditingDeck && (
+              <button
+                onClick={handleDeleteDeck}
+                className="edit-icon-button"
+                style={{ color: "red" }}
+              >
+                <i className="fas fa-trash"></i>
+              </button>
+            )}
+            <button
+              onClick={() => setIsEditingDeck(!isEditingDeck)}
+              className={`edit-icon-button ${isEditingDeck ? "enabled" : ""}`}
+            >
+              <i className={`fas ${isEditingDeck ? "fa-check" : "fa-pen"}`}></i>
+            </button>
+          </div>
+        </div>
 
         <div className="flashcard-button-row">
           <Link to={`/test/${deckName}`}>
@@ -316,13 +278,21 @@ function FlashcardInput() {
           </Link>
         </div>
         <hr className="lowkey-divider" />
+
         <button
           className="flashcard-input-add-button"
-          onClick={handleAddFlashcard}
+          onClick={() => {
+            if (
+              window.confirm(
+                "You are about to add a new flashcard. This action cannot be undone. Do you wish to proceed?"
+              )
+            ) {
+              handleAddFlashcard();
+            }
+          }}
         >
           + Add Flashcard
         </button>
-
         <div className="flashcard-input-list">
           {flashcards.map((flashcard, index) => (
             <div key={index} className="flashcard-input-item">
@@ -340,14 +310,14 @@ function FlashcardInput() {
                         className="flashcard-input-question-input"
                       />
                       {/* <input
-      type="text"
-      placeholder="Add a short description"
-      value={flashcard.description || ""}
-      onChange={(e) =>
-        handleInputChange(index, "description", e.target.value)
-      }
-      className="flashcard-input-description-input"
-    /> */}
+              type="text"
+              placeholder="Add a short description"
+              value={flashcard.description || ""}
+              onChange={(e) =>
+                handleInputChange(index, "description", e.target.value)
+              }
+              className="flashcard-input-description-input"
+            /> */}
                     </>
                   ) : (
                     <>

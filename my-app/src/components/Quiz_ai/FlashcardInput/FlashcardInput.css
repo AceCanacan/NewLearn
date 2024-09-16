@@ -1,42 +1,27 @@
 /* Container for the flashcard input section */
 .flashcard-input-container {
-  max-width: 63vw; /* 90vw reduced by 30% */
-  width: 63vw; /* 90vw reduced by 30% */
+  max-width: 70vw;
+  width: 70vw;
+  height: 78.5vh; /* Fixed height */
   margin: 0 auto;
-  padding: 2vw; /* Reduce padding to make the container shorter */
+  padding: 2vw;
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   box-sizing: border-box;
-  max-height: 78.5vh; /* Set a maximum height to limit the vertical coverage */
-  overflow-y: auto; /* Enable scrolling if content exceeds max height */
+  background-color: #fff;
+  border-radius: 2vw;
+  overflow: hidden; /* Prevent the container from scrolling */
 }
 
 
 .screen-border-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   height: 100vh;
-  padding: 0;
-  box-sizing: border-box;
-  background-color: #ffcc66; /* Outer border color */
-  z-index: -1; /* Ensure it stays in the background */
-}
-
-.screen-border-container::before {
-content: '';
-position: absolute;
-top: 4vw;
-left: 4vw;
-width: calc(100% - 8vw); /* Updated based on your desired thickness */
-height: calc(100% - 8vw); /* Updated based on your desired thickness */
-box-sizing: border-box;
-border-radius: 2vw;
-background-color: #fef3d7;
-z-index: -1; /* Ensure it stays below content */
+  background-color: #feca57; /* Change this color to your desired background */
 }
 
 
@@ -57,8 +42,6 @@ z-index: -1; /* Ensure it stays below content */
   font-size: 1.75vw; /* Adjust as necessary */
   color: #666;
 }
-
-
 
 .title-bar-buttons {
   display: flex;
@@ -173,21 +156,19 @@ flashcard-button-danger {
 
 /* Container for the list of flashcards */
 .flashcard-input-list {
-  margin-bottom: 1.75vw; /* 2.5vw reduced by 30% */
-  max-height: 42vh; /* 60vh reduced by 30% */
-  overflow-y: auto;
+  height: 100%; /* Make the list take up the remaining space */
+  overflow-y: auto; /* Scroll only the content inside this list */
 }
 
-/* Individual flashcard styling */
 .flashcard-input-item {
   display: flex;
   flex-direction: column;
-  padding: 1.75vw; /* 2.5vw reduced by 30% */
-  border: 0.0875vw solid #ddd; /* 0.125vw reduced by 30% */
-  border-radius: 0.7vw; /* 1vw reduced by 30% */
-  margin-bottom: 0.875vw; /* 1.25vw reduced by 30% */
+  padding: 1vw;
+  border: 0.0875vw solid #ddd;
+  border-radius: 0.7vw;
+  margin-bottom: 0.875vw;
   background-color: #fff;
-  box-shadow: 0 0.175vw 0.7vw rgba(0, 0, 0, 0.05); /* 0.25vw 1vw reduced by 30% */
+  box-shadow: 0 0.175vw 0.7vw rgba(0, 0, 0, 0.05);
   transition: transform 0.2s;
 }
 
