@@ -1,99 +1,100 @@
-/* src/components/Quiz_ai/ScoreReport.css */
-
 .score-report {
-  padding: 20px;
-  max-width: 900px;
+  padding: 2vw;
+  max-width: 80vw;
   margin: 0 auto;
-  background-color: #f9f9f9;
-  border-radius: 12px;
+  background: linear-gradient(to bottom, #f5f7fa, #ffffff);
+  border-radius: 1vw;
 }
 
 .score-report h2 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 2vw;
   color: #333;
+  font-size: 2vw;
 }
 
 .attempts-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 2vw;
 }
 
 .attempt-card {
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fafafa;
+  border: 0.1vw solid #ddd;
+  border-radius: 1vw;
+  box-shadow: 0 0.4vw 0.8vw rgba(0, 0, 0, 0.05);
   overflow: hidden;
   transition: box-shadow 0.3s ease, transform 0.3s ease;
   position: relative;
 }
 
 .attempt-card:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  transform: translateY(-2px);
+  box-shadow: 0 0.6vw 1.2vw rgba(0, 0, 0, 0.1);
+  transform: translateY(-0.5vw);
 }
 
 .attempt-summary {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
+  padding: 1.5vw 2vw;
   cursor: pointer;
-  background-color: #fafafa;
+  background-color: #f0f4f8;
 }
 
 .summary-left p {
-  margin: 5px 0;
+  margin: 0.5vw 0;
   color: #555;
+  font-size: 1.2vw;
 }
 
 .summary-right {
-  font-size: 1.2em;
+  font-size: 1.5vw;
   color: #777;
 }
 
 .attempt-details {
-  padding: 20px;
-  border-top: 1px solid #e0e0e0;
+  padding: 2vw;
+  border-top: 0.1vw solid #ddd;
   background-color: #fff;
 }
 
 .delete-button {
   position: absolute;
-  top: 15px;
-  right: 20px;
-  background-color: #ff4d4d;
+  top: 1.5vw;
+  right: 2vw;
+  background-color: #e74c3c;
   color: #fff;
   border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 0.8vw 1.5vw;
+  border-radius: 0.5vw;
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: 1vw;
   transition: background-color 0.3s ease;
 }
 
 .delete-button:hover {
-  background-color: #e60000;
+  background-color: #c0392b;
 }
 
-.back-link {
-  display: inline-block;
-  margin-top: 30px;
-  color: #2196f3;
-  text-decoration: none;
-  font-weight: bold;
+.st-back-button {
+  background-color: transparent;
+  border: none;
+  color: #3498db;
+  font-size: 2vw;
+  cursor: pointer;
   transition: color 0.3s ease;
+  margin-bottom: 1vw;
 }
 
-.back-link:hover {
-  color: #0b7dda;
+.st-back-button:hover {
+  color: #2980b9;
 }
 
 @media (max-width: 768px) {
   .score-report {
-    padding: 15px;
+    padding: 4vw;
   }
 
   .attempt-summary {
@@ -102,19 +103,19 @@
   }
 
   .summary-right {
-    margin-top: 10px;
+    margin-top: 1vw;
   }
 }
 
 @media (max-width: 480px) {
   .delete-button {
-    top: 10px;
-    right: 15px;
-    padding: 4px 10px;
-    font-size: 0.8em;
+    top: 3vw;
+    right: 4vw;
+    padding: 1vw 2vw;
+    font-size: 1.5vw;
   }
 
   .attempt-details {
-    padding: 15px;
+    padding: 4vw;
   }
 }
