@@ -251,11 +251,11 @@ function FlashcardInput() {
               Test
             </button>
           </Link>
-          {/* <Link to={`/review/${deckName}`}> */}
-            {/* <button className="flashcard-button flashcard-button-secondary">
+          <Link to={`/review/${deckName}`}>
+            <button className="flashcard-button flashcard-button-secondary">
               Review
-            </button> */}
-          {/* </Link> */}
+            </button>
+          </Link>
           <Link to={`/score-report/${deckName}`}>
             <button className="flashcard-button flashcard-button-secondary">
               View Scores

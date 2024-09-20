@@ -18,25 +18,25 @@ const Home = () => {
   const cards = [
     {
       title: "Quiz Maker",
-      description: "Create personalized quizzes",
+      description: "Automatically create  evaluate personalized quizzes",
       route: "/deck/home",
       logo: quizmakerLogo,
     },
     {
       title: "Transcriber",
-      description: "Convert audio and video to text",
+      description: "Convert audio recordings into text automatically",
       route: "/savedtranscriptions",
       logo: transcriberLogo,
     },
     {
       title: "Notes",
-      description: "Generate notes instantly",
+      description: "Save and organize your notes efficiently",
       route: "/savednotes",
       logo: notesmakerLogo,
     },
     {
       title: "PDF Reader",
-      description: "Ask your own PDF anything",
+      description: "Read and annotate PDF documents with ease",
       route: "/pdfreader",
       logo: pdfReaderLogo,
     }, // Add this line
