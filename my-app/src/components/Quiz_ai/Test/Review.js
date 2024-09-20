@@ -1,10 +1,10 @@
+// Review.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../../firebase/firebase'; // Ensure this path is correct
 import { onAuthStateChanged } from 'firebase/auth';
 import './Review.css';
-
 
 const Review = () => {
   const { deckName } = useParams();
@@ -14,42 +14,40 @@ const Review = () => {
   const [showAnswer, setShowAnswer] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [comparisonResult, setComparisonResult] = useState('');
   const [hint, setHint] = useState('');
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [typingMode, setTypingMode] = useState(false);
   const [typedAnswer, setTypedAnswer] = useState('');
-  const [ setWasCorrect] = useState(false);
-  const [ setCorrectAnswers] = useState(0);
-  const [correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions] = useState(new Set());
+  const [comparisonResult, setComparisonResult] = useState('');
+  const [hintUsed, setHintUsed] = useState(false);
   const [user, setUser] = useState(null);
 
+  // Authenticate User
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        console.log('User signed in:', currentUser);
-      } else {
-        setUser(null);
-        console.log('User signed out');
-      }
+      setUser(currentUser ? currentUser : null);
     });
 
     return () => unsubscribe();
   }, []);
 
+  // Fetch Flashcards from Firestore
   useEffect(() => {
     const fetchFlashcards = async () => {
       if (user) {
         setIsLoading(true);
-        const flashcardsDocRef = doc(db, `users/${user.uid}/decks`, deckName);
-        const flashcardsDoc = await getDoc(flashcardsDocRef);
+        try {
+          const flashcardsDocRef = doc(db, `users/${user.uid}/decks`, deckName);
+          const flashcardsDoc = await getDoc(flashcardsDocRef);
 
-        if (flashcardsDoc.exists()) {
-          const flashcardsData = flashcardsDoc.data().flashcards || [];
-          setFlashcards(flashcardsData);
-        } else {
-          console.error('No such document!');
+          if (flashcardsDoc.exists()) {
+            const flashcardsData = flashcardsDoc.data().flashcards || [];
+            setFlashcards(flashcardsData);
+          } else {
+            console.error('No such document!');
+          }
+        } catch (error) {
+          console.error('Error fetching flashcards:', error);
         }
         setIsLoading(false);
       }
@@ -58,38 +56,28 @@ const Review = () => {
     fetchFlashcards();
   }, [user, deckName]);
 
-  // with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-
-
-  const startRecording = async (setIsRecording, setMediaRecorder, processRecording) => {
+  // Start Recording Audio
+  const startRecording = async () => {
     setIsRecording(true);
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
-    setMediaRecorder(recorder);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
 
-    recorder.ondataavailable = (event) => {
-      const audioBlob = event.data;
-      processRecording(audioBlob);
-    };
+      recorder.ondataavailable = (event) => {
+        const audioBlob = event.data;
+        processRecording(audioBlob);
+      };
 
-    recorder.start();
+      recorder.start();
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      setIsRecording(false);
+    }
   };
 
-  const finishRecording = (mediaRecorder, setIsRecording, setIsLoading) => {
+  // Finish Recording Audio
+  const finishRecording = () => {
     if (mediaRecorder) {
       mediaRecorder.onstop = () => {
         const tracks = mediaRecorder.stream.getTracks();
@@ -101,10 +89,11 @@ const Review = () => {
     }
   };
 
+  // Process Recorded Audio
   const processRecording = async (audioBlob) => {
     const formData = new FormData();
     formData.append('model', 'whisper-1');
-    formData.append('file', new Blob([audioBlob], { type: 'audio/mp3' }), 'audio/mp3');
+    formData.append('file', new Blob([audioBlob], { type: 'audio/mp3' }), 'audio.mp3');
 
     try {
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -121,24 +110,25 @@ const Review = () => {
       }
 
       const data = await response.json();
-      compareQuestion(data.text);
+      compareAnswer(data.text);
     } catch (error) {
       setComparisonResult(`Error: ${error.message}`);
       setIsLoading(false);
     }
   };
 
-  const compareQuestion = async (userQuestion) => {
+  // Compare User Answer with Correct Answer using OpenAI API
+  const compareAnswer = async (userAnswerText) => {
     const originalQuestion = flashcards[currentCardIndex].question;
     const originalAnswer = flashcards[currentCardIndex].answer;
-    const userAnswer = typingMode ? typedAnswer : userQuestion;
+    const userAnswer = typingMode ? typedAnswer : userAnswerText;
 
     const messages = [
       { role: 'system', content: 'You are a helpful assistant. Answer strictly yes or no.' },
       { role: 'user', content: `Original Question: ${originalQuestion}` },
       { role: 'user', content: `Original Answer: ${originalAnswer}` },
       { role: 'user', content: `User Answer: ${userAnswer}` },
-      { role: 'user', content: 'Do the user answer and the original answer convey similar meanings or support the same idea? Answer strictly yes or no.' }
+      { role: 'user', content: 'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".' }
     ];
 
     try {
@@ -149,7 +139,7 @@ const Review = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4',
           messages: messages,
           max_tokens: 10
         })
@@ -164,16 +154,7 @@ const Review = () => {
 
       if (data.choices && data.choices.length > 0) {
         const result = data.choices[0].message.content.trim().replace('.', '').toLowerCase();
-        if (result === 'yes') {
-          if (!correctlyAnsweredQuestions.has(currentCardIndex)) {
-            setCorrectAnswers(prev => prev + 1);
-            setCorrectlyAnsweredQuestions(prev => new Set(prev).add(currentCardIndex));
-          }
-          setComparisonResult('Correct');
-          setWasCorrect(true);
-        } else {
-          setComparisonResult('Incorrect');
-        }
+        setComparisonResult(result === 'yes' ? 'Correct' : 'Incorrect');
       } else {
         setComparisonResult('Error: No response from model');
       }
@@ -184,33 +165,7 @@ const Review = () => {
     }
   };
 
-  const handleNextCard = () => {
-    setCurrentCardIndex((prevIndex) => (prevIndex + 1) % flashcards.length);
-    resetState();
-  };
-
-  const handlePreviousCard = () => {
-    setCurrentCardIndex((prevIndex) => (prevIndex - 1 + flashcards.length) % flashcards.length);
-    resetState();
-  };
-
-  const handleCardClick = (index) => {
-    setCurrentCardIndex(index);
-    resetState();
-  };
-
-  const resetState = () => {
-    setShowAnswer(false);
-    setComparisonResult('');
-    setHint('');
-    setWasCorrect(false);
-    setTypedAnswer('');
-  };
-
-  const handleShowAnswer = () => {
-    setShowAnswer(!showAnswer);
-  };
-
+  // Get Hint from OpenAI API
   const getHint = async () => {
     setIsLoading(true);
     setHint('');
@@ -221,7 +176,7 @@ const Review = () => {
       { role: 'system', content: 'You are a helpful assistant.' },
       { role: 'user', content: `Original Question: ${originalQuestion}` },
       { role: 'user', content: `Original Answer: ${originalAnswer}` },
-      { role: 'user', content: 'The user\'s answer was incorrect. Provide a hint that will help the user get closer to the answer but does not directly reveal it.' }
+      { role: 'user', content: 'Provide a hint that will help the user get closer to the answer but does not directly reveal it.' }
     ];
 
     try {
@@ -232,7 +187,7 @@ const Review = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4',
           messages: messages,
           max_tokens: 50
         })
@@ -247,6 +202,7 @@ const Review = () => {
 
       if (data.choices && data.choices.length > 0) {
         setHint(data.choices[0].message.content.trim());
+        setHintUsed(true);
       } else {
         setHint('Error: No response from model');
       }
@@ -257,29 +213,43 @@ const Review = () => {
     }
   };
 
-  const handleRecordingProcess = async (audioBlob) => {
-    await processRecording(audioBlob, (text) => 
-      compareQuestion(
-        text, 
-        flashcards, 
-        currentCardIndex, 
-        typingMode, 
-        typedAnswer, 
-        setCorrectAnswers, 
-        correctlyAnsweredQuestions, 
-        setCorrectlyAnsweredQuestions, 
-        setComparisonResult, 
-        setWasCorrect, 
-        setIsLoading
-      )
-    );
+  // Handle Next Flashcard
+  const handleNextCard = () => {
+    setCurrentCardIndex((prevIndex) => (prevIndex + 1) % flashcards.length);
+    resetState();
+  };
+
+  // Handle Previous Flashcard
+  const handlePreviousCard = () => {
+    setCurrentCardIndex((prevIndex) => (prevIndex - 1 + flashcards.length) % flashcards.length);
+    resetState();
+  };
+
+  // Handle Flashcard Selection from Sidebar
+  const handleCardClick = (index) => {
+    setCurrentCardIndex(index);
+    resetState();
+  };
+
+  // Reset State for New Flashcard
+  const resetState = () => {
+    setShowAnswer(false);
+    setComparisonResult('');
+    setHint('');
+    setHintUsed(false);
+    setTypedAnswer('');
+  };
+
+  // Toggle Answer Visibility
+  const handleShowAnswer = () => {
+    setShowAnswer(!showAnswer);
   };
 
   return (
     <div className="review-container">
       <div className="sidebar">
         <h3>{deckName}</h3>
-        <button className="top-right-button" onClick={() => navigate(`/Deck/${deckName}`)}>
+        <button className="done-button" onClick={() => navigate(`/Deck/${deckName}`)}>
           Done
         </button>
         <ul className="card-list">
@@ -295,62 +265,113 @@ const Review = () => {
         </ul>
       </div>
       <div className="main-content">
-        {flashcards.length > 0 ? (
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : flashcards.length > 0 ? (
           <>
             <div className="flashcard">
               <p><strong>Q:</strong> {flashcards[currentCardIndex].question}</p>
               {showAnswer && (
                 <p><strong>A:</strong> {flashcards[currentCardIndex].answer}</p>
               )}
-              <div className="flashcard-buttons">
-                <button onClick={() => setTypingMode(!typingMode)}>
-                  {typingMode ? 'Voice Mode' : 'Type Mode'}
-                </button>
-                {!typingMode && !isRecording && !isLoading && comparisonResult !== 'Incorrect' && (
-                  <button onClick={() => startRecording(setIsRecording, setMediaRecorder, handleRecordingProcess)}>Start</button>
-                )}
-                {typingMode && (
-                  <>
-                    <input
-                      type="text"
-                      value={typedAnswer}
-                      onChange={(e) => setTypedAnswer(e.target.value)}
-                      placeholder="Type your answer here"
-                    />
-                    <button
-                      onClick={() => compareQuestion(typedAnswer, flashcards, currentCardIndex, typingMode, typedAnswer, setCorrectAnswers, correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions, setComparisonResult, setWasCorrect, setIsLoading)}
-                      disabled={!typedAnswer.trim()}
-                    >
-                      Send
-                    </button>
-                  </>
-                )}
-                {!typingMode && isRecording && (
-                  <button onClick={() => finishRecording(mediaRecorder, setIsRecording, setIsLoading)}>Finish</button>
-                )}
-                {comparisonResult === 'Incorrect' && !isRecording && !isLoading && (
-                  <button onClick={() => startRecording(setIsRecording, setMediaRecorder, handleRecordingProcess)}>Try Again</button>
-                )}
-                {comparisonResult === 'Incorrect' && (
-                  <>
-                    <button onClick={getHint}>Get Hint</button>
-                    {hint && <p><strong>Hint:</strong> {hint}</p>}
-                  </>
-                )}
-              </div>
-              <div className="flashcard-secondary-buttons">
-                <button onClick={handlePreviousCard} className="secondary-button">Back</button>
-                <button onClick={handleNextCard} className="secondary-button">Next</button>
-                <button onClick={handleShowAnswer} className="secondary-button">
-                  {showAnswer ? 'Hide Answer' : 'Show Answer'}
-                </button>
-              </div>
             </div>
 
-            {isLoading && <p>Loading...</p>}
-            <div className="comparison-result">
-              <p><strong>Result:</strong> {comparisonResult}</p>
+            <div className="flashcard-buttons">
+              <button 
+                className="toggle-mode-button" 
+                onClick={() => setTypingMode(!typingMode)}
+              >
+                {typingMode ? 'Voice Mode' : 'Type Mode'}
+              </button>
+
+              {typingMode ? (
+                <>
+                  <input
+                    type="text"
+                    value={typedAnswer}
+                    onChange={(e) => setTypedAnswer(e.target.value)}
+                    placeholder="Type your answer here"
+                    className="answer-input"
+                  />
+                  <button
+                    className="submit-answer-button"
+                    onClick={() => {
+                      if (typedAnswer.trim()) {
+                        setIsLoading(true);
+                        compareAnswer(typedAnswer);
+                      }
+                    }}
+                    disabled={!typedAnswer.trim()}
+                  >
+                    Submit
+                  </button>
+                </>
+              ) : (
+                <>
+                  {!isRecording && !isLoading && comparisonResult !== 'Correct' && (
+                    <button 
+                      className="record-button" 
+                      onClick={startRecording}
+                    >
+                      Start Recording
+                    </button>
+                  )}
+                  {isRecording && (
+                    <button 
+                      className="stop-button" 
+                      onClick={finishRecording}
+                    >
+                      Stop Recording
+                    </button>
+                  )}
+                </>
+              )}
+
+              {comparisonResult === 'Incorrect' && (
+                <button 
+                  className="hint-button" 
+                  onClick={getHint}
+                >
+                  Get Hint
+                </button>
+              )}
             </div>
+
+            {hint && (
+              <div className="hint-section">
+                <p><strong>Hint:</strong> {hint}</p>
+              </div>
+            )}
+
+            {comparisonResult && (
+              <div className={`result ${comparisonResult.toLowerCase()}`}>
+                <p><strong>Result:</strong> {comparisonResult}</p>
+              </div>
+            )}
+
+            <div className="navigation-buttons">
+              <button 
+                className="nav-button previous-button" 
+                onClick={handlePreviousCard}
+                disabled={flashcards.length <= 1}
+              >
+                Previous
+              </button>
+              <button 
+                className="nav-button next-button" 
+                onClick={handleNextCard}
+                disabled={flashcards.length <= 1}
+              >
+                Next
+              </button>
+            </div>
+
+            <button 
+              className="toggle-answer-button" 
+              onClick={handleShowAnswer}
+            >
+              {showAnswer ? 'Hide Answer' : 'Show Answer'}
+            </button>
           </>
         ) : (
           <p>No flashcards available in this deck.</p>

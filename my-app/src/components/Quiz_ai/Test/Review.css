@@ -1,33 +1,251 @@
-/* ReviewComponent.css */
+/* Review.css */
 
 .review-container {
   display: flex;
+  width: 100vw;
+  height: 100vh;
+  background-color: #feca57;
 }
 
 .sidebar {
-  width: 250px;
+  width: 20vw;
   background-color: #f4f4f4;
-  padding: 10px;
+  padding: 2vw;
   overflow-y: auto;
-  height: 100vh;
+  box-shadow: 0 0.2vw 0.4vw rgba(0, 0, 0, 0.1);
+}
+
+.sidebar h3 {
+  font-size: 2vw;
+  margin-bottom: 2vw;
+  text-align: center;
+}
+
+.done-button {
+  width: 100%;
+  padding: 1vw 0;
+  margin-bottom: 2vw;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 0.8vw;
+  cursor: pointer;
+  font-size: 1.2vw;
+  transition: background-color 0.2s;
+}
+
+.done-button:hover {
+  background-color: #0056b3;
 }
 
 .card-list {
   list-style-type: none;
   padding: 0;
+  margin: 0;
 }
 
 .card-item {
-  padding: 10px;
+  padding: 1vw;
+  margin-bottom: 0.5vw;
   cursor: pointer;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 0.1vw solid #ccc;
+  border-radius: 0.4vw;
+  transition: background-color 0.2s;
+}
+
+.card-item:hover {
+  background-color: #ddd;
 }
 
 .card-item.active {
-  background-color: #ddd;
+  background-color: #007bff;
+  color: white;
 }
 
 .main-content {
   flex: 1;
-  padding: 20px;
+  padding: 2vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.flashcard {
+  width: 60vw;
+  padding: 2vw;
+  border: 0.1vw solid #ccc;
+  border-radius: 0.8vw;
+  background-color: #fff;
+  box-shadow: 0 0.2vw 0.4vw rgba(0, 0, 0, 0.1);
+  margin-bottom: 2vw;
+  text-align: left;
+}
+
+.flashcard p {
+  margin: 0;
+  font-size: 1.5vw;
+  color: #555;
+}
+
+.flashcard-buttons {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1vw;
+}
+
+.toggle-mode-button, .record-button, .stop-button, .submit-answer-button, .hint-button {
+  margin-right: 1vw;
+  padding: 0.8vw 1.5vw;
+  border: none;
+  border-radius: 0.8vw;
+  cursor: pointer;
+  font-size: 1vw;
+  transition: background-color 0.2s;
+}
+
+.toggle-mode-button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.toggle-mode-button:hover {
+  background-color: #5a6268;
+}
+
+.record-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.record-button:hover {
+  background-color: #218838;
+}
+
+.stop-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.stop-button:hover {
+  background-color: #c82333;
+}
+
+.submit-answer-button {
+  background-color: #007bff;
+  color: white;
+}
+
+.submit-answer-button:hover {
+  background-color: #0056b3;
+}
+
+.hint-button {
+  background-color: #ffc107;
+  color: white;
+}
+
+.hint-button:hover {
+  background-color: #e0a800;
+}
+
+.answer-input {
+  flex-grow: 1;
+  padding: 0.8vw;
+  border: 0.1vw solid #ccc;
+  border-radius: 0.4vw;
+  margin-right: 1vw;
+  font-size: 1vw;
+}
+
+.hint-section {
+  width: 60vw;
+  padding: 1vw;
+  background-color: #fff3cd;
+  border: 0.1vw solid #ffeeba;
+  border-radius: 0.8vw;
+  margin-bottom: 1vw;
+  text-align: left;
+}
+
+.result {
+  width: 60vw;
+  padding: 1vw;
+  border-radius: 0.8vw;
+  text-align: center;
+  font-size: 1.2vw;
+  margin-bottom: 1vw;
+}
+
+.result.correct {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.result.incorrect {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between;
+  width: 60vw;
+  margin-bottom: 2vw;
+}
+
+.nav-button {
+  padding: 1vw 2vw;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 0.8vw;
+  cursor: pointer;
+  font-size: 1vw;
+  transition: background-color 0.2s;
+}
+
+.nav-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.nav-button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.toggle-answer-button {
+  padding: 1vw 2vw;
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 0.8vw;
+  cursor: pointer;
+  font-size: 1vw;
+  transition: background-color 0.2s;
+  margin-top: 1vw;
+}
+
+.toggle-answer-button:hover {
+  background-color: #138496;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .review-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+  }
+
+  .main-content {
+    width: 100%;
+  }
+
+  .flashcard, .hint-section, .result, .navigation-buttons {
+    width: 90vw;
+  }
 }

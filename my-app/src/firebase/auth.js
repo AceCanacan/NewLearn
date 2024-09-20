@@ -143,7 +143,7 @@ const LogIn = ({ setUser, setAuthMode }) => {
 
   return (
     <div className="authpage-container">
-      <h2 className="authpage-title">Log In</h2>
+      <h2 className="authpage-title">Welcome to NewLearn!</h2>
       <form onSubmit={handleSubmit} className="authpage-form">
         <div className="authpage-form-group">
           <input
