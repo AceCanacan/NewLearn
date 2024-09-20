@@ -153,13 +153,18 @@ const SavedNotes = () => {
               ) : (
                 <h2 className="sn-active-note-header">{activeNote.title}</h2>
               )}
-              <textarea
-                className="sn-textarea"
-                value={isEditing ? editText : activeNote.text}
-                rows="20"
-                onChange={isEditing ? (e) => setEditText(e.target.value) : undefined}
-                readOnly={!isEditing}
-              />
+{isEditing ? (
+  <textarea
+    className="sn-textarea"
+    value={editText}
+    rows="20"
+    onChange={(e) => setEditText(e.target.value)}
+  />
+) : (
+  <ReactMarkdown className="sn-markdown-content">
+    {activeNote.text || "No content available"}
+  </ReactMarkdown>
+)}
               <div className="sn-button-group">
                 {isEditing ? (
                   <>

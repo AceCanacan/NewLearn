@@ -143,7 +143,7 @@ const SavedTranscriptions = () => {
           </div>
         </li>
       </ul>
-  
+
       {activeTranscription && (
         <div
           className="sn-note-modal"
@@ -180,15 +180,18 @@ const SavedTranscriptions = () => {
                 {activeTranscription.title}
               </h2>
             )}
-            <textarea
-              className="sn-textarea"
-              value={isEditing ? editText : activeTranscription.text}
-              rows="20"
-              onChange={
-                isEditing ? (e) => setEditText(e.target.value) : undefined
-              }
-              readOnly={!isEditing}
-            />
+            {isEditing ? (
+              <textarea
+                className="sn-textarea"
+                value={editText}
+                rows="20"
+                onChange={(e) => setEditText(e.target.value)}
+              />
+            ) : (
+              <ReactMarkdown className="st-markdown-content">
+                {activeTranscription.text || "No content available"}
+              </ReactMarkdown>
+            )}
             <div className="sn-button-group">
               {isEditing ? (
                 <>
@@ -216,6 +219,6 @@ const SavedTranscriptions = () => {
       )}
     </div>
   );
-    };
+};
 
 export default SavedTranscriptions;
