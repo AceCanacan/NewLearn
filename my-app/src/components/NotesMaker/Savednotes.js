@@ -1,44 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './savednotes.css'; // Import the custom styles
-import { collection, getDocs, setDoc, doc,deleteDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase/firebase';
+import { auth } from '../../firebase/firebase';
 import { useNavigate } from 'react-router-dom';
 
-const loadFromFirestore = async (collectionPath, defaultValue) => {
-  try {
-    const user = auth.currentUser;
-    if (!user) return defaultValue;
-    const collectionRef = collection(db, ...collectionPath.split('/'));
-    const querySnapshot = await getDocs(collectionRef);
-    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    return data.length ? data : defaultValue;
-  } catch (error) {
-    console.error("Error loading data from Firestore:", error);
-    return defaultValue;
-  }
-};
-
-const saveToFirestore = async (docPath, value) => {
-  try {
-    const user = auth.currentUser;
-    if (!user) return;
-    const docRef = doc(db, ...docPath.split('/'));
-    await setDoc(docRef, value, { merge: true });
-  } catch (error) {
-    console.error("Error saving data to Firestore:", error);
-  }
-};
-
-const removeFromFirestore = async (docPath) => {
-  try {
-    const docRef = doc(db, docPath);
-    await deleteDoc(docRef);
-  } catch (error) {
-    console.error("Error deleting data from Firestore:", error);
-    throw error;
-  }
-};
+import { saveToFirestore, loadFromFirestore, removeFromFirestore } from '../../firebase/firebase';
 
 const SavedNotes = () => {
   const [savedNotes, setSavedNotes] = useState([]);
@@ -153,13 +119,18 @@ const SavedNotes = () => {
               ) : (
                 <h2 className="sn-active-note-header">{activeNote.title}</h2>
               )}
-              <textarea
-                className="sn-textarea"
-                value={isEditing ? editText : activeNote.text}
-                rows="20"
-                onChange={isEditing ? (e) => setEditText(e.target.value) : undefined}
-                readOnly={!isEditing}
-              />
+{isEditing ? (
+  <textarea
+    className="sn-textarea"
+    value={editText}
+    rows="20"
+    onChange={(e) => setEditText(e.target.value)}
+  />
+) : (
+  <ReactMarkdown className="sn-markdown-content">
+    {activeNote.text || "No content available"}
+  </ReactMarkdown>
+)}
               <div className="sn-button-group">
                 {isEditing ? (
                   <>

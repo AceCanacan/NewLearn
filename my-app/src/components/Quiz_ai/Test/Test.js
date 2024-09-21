@@ -6,30 +6,7 @@ import { db, auth } from "../../../firebase/firebase"; // Adjust the path as nee
 import { onAuthStateChanged } from "firebase/auth";
 import TestResults from "./TestResults"; // Import the new component
 
-const loadFromFirestore = async (docPath, defaultValue) => {
-  try {
-    const docRef = doc(db, ...docPath.split("/"));
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data();
-    } else {
-      return defaultValue;
-    }
-  } catch (error) {
-    console.error(
-      `Error loading data from Firestore document: ${docPath}`,
-      error
-    );
-    return defaultValue;
-  }
-};
-
-const saveToFirestore = async (docPath, value) => {
-  try {
-    const docRef = doc(db, ...docPath.split("/"));
-    await setDoc(docRef, value);
-  } catch (error) {}
-};
+import { saveToFirestore, loadFromFirestore } from '../../../firebase/firebase';
 
 const Test = () => {
   const { deckName } = useParams();

@@ -121,16 +121,7 @@
     font-size: 1em; /* Adjusted for better responsiveness */
 }
 
-.homepage-start-button {
-    background-color: #3666fb;
-    color: white;
-    border: none;
-    border-radius: 5%;
-    padding: 1% 2%; /* Adjusted for better responsiveness */
-    font-size: 1em; /* Adjusted for better responsiveness */
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
+
 
 .homepage-start-button:hover {
     background-color: #2851a3;

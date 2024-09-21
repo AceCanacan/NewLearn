@@ -4,21 +4,11 @@ import "./savedtranscriptions.css"; // Your custom styles
 import {
   collection,
   getDocs,
-  doc,
-  setDoc,
-  deleteDoc,
 } from "firebase/firestore";
 import { db, auth } from "../../firebase/firebase";
 import { useNavigate } from "react-router-dom";
+import { saveToFirestore,removeFromFirestore } from '../../firebase/firebase';
 
-const saveToFirestore = async (docPath, value) => {
-  try {
-    const docRef = doc(db, docPath);
-    await setDoc(docRef, value);
-  } catch (error) {
-    console.error("Error saving data to Firestore:", error);
-  }
-};
 
 const SavedTranscriptions = () => {
   const [savedTranscriptions, setSavedTranscriptions] = useState([]);
@@ -28,15 +18,6 @@ const SavedTranscriptions = () => {
   const navigate = useNavigate();
   const [editTitle, setEditTitle] = useState("");
 
-  const removeFromFirestore = async (docPath) => {
-    try {
-      const docRef = doc(db, docPath);
-      await deleteDoc(docRef);
-    } catch (error) {
-      console.error("Error deleting data from Firestore:", error);
-      throw error;
-    }
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -143,7 +124,7 @@ const SavedTranscriptions = () => {
           </div>
         </li>
       </ul>
-  
+
       {activeTranscription && (
         <div
           className="sn-note-modal"
@@ -180,15 +161,18 @@ const SavedTranscriptions = () => {
                 {activeTranscription.title}
               </h2>
             )}
-            <textarea
-              className="sn-textarea"
-              value={isEditing ? editText : activeTranscription.text}
-              rows="20"
-              onChange={
-                isEditing ? (e) => setEditText(e.target.value) : undefined
-              }
-              readOnly={!isEditing}
-            />
+            {isEditing ? (
+              <textarea
+                className="sn-textarea"
+                value={editText}
+                rows="20"
+                onChange={(e) => setEditText(e.target.value)}
+              />
+            ) : (
+              <ReactMarkdown className="st-markdown-content">
+                {activeTranscription.text || "No content available"}
+              </ReactMarkdown>
+            )}
             <div className="sn-button-group">
               {isEditing ? (
                 <>
@@ -216,6 +200,6 @@ const SavedTranscriptions = () => {
       )}
     </div>
   );
-    };
+};
 
 export default SavedTranscriptions;

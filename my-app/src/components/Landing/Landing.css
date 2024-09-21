@@ -1,0 +1,41 @@
+.landing-container {
+    text-align: center;
+    padding: 5vw;
+    background-color: #FFF4DC;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .landing-logo {
+    width: 10vw;  /* Adjust size as needed */
+    margin-bottom: 2vw;  /* Adjust spacing between logo and heading */
+  }
+  
+  .landing-main-heading {
+    font-size: 6vw; /* Equivalent to 100 size in Canva */
+    color: #1A73E8;
+    font-weight: bold;
+    max-width: 55vw;
+    line-height: 1.1; /* Adjust line height to reduce space between lines */
+  }
+  
+  .landing-description {
+    font-size: 1.5vw; /* Equivalent to 30 size in Canva */
+    max-width: 60vw;
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 4vw;
+  }
+  
+  .landing-start-button {
+    font-size: 2vw;
+    padding: 1vw 2vw;
+    background-color: #1A73E8;
+    color: #fff;
+    border: none;
+    border-radius: 2vw;
+    cursor: pointer;
+  }

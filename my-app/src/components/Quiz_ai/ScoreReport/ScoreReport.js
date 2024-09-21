@@ -7,38 +7,7 @@ import "./ScoreReport.css";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import TestResults from "../Test/TestResults";
 
-const loadFromFirestore = async (docPath, defaultValue) => {
-  try {
-    const docRef = doc(db, ...docPath.split("/"));
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data();
-    } else {
-      return defaultValue;
-    }
-  } catch (error) {
-    console.error(
-      `Error loading data from Firestore document: ${docPath}`,
-      error
-    );
-    return defaultValue;
-  }
-};
-
-const deleteScoreFromFirestore = async (userId, deckName, index) => {
-  const docRef = doc(db, `users/${userId}/settings/scores`);
-  const docSnap = await getDoc(docRef);
-
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    if (data[deckName]) {
-      data[deckName].splice(index, 1); // Remove the score entry at the specified index
-      await updateDoc(docRef, {
-        [deckName]: data[deckName],
-      });
-    }
-  }
-};
+import { loadFromFirestore, deleteScoreFromFirestore } from '../../../firebase/firebase';
 
 const AttemptCard = ({ scoreEntry, index, onDelete }) => {
   const [isExpanded, setIsExpanded] = useState(false);

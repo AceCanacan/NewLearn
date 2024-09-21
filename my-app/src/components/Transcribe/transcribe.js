@@ -7,12 +7,7 @@ import { setDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../../firebase/firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-const saveToFirestore = async (docPath, value) => {
-  try {
-    const docRef = doc(db, ...docPath.split("/"));
-    await setDoc(docRef, value, { merge: true }); // Ensure merging to avoid overwriting the entire document
-  } catch (error) {}
-};
+import { saveToFirestore } from "../../firebase/firebase";
 
 function Transcribe() {
   const [file, setFile] = useState(null);

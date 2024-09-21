@@ -18,7 +18,7 @@ const Home = () => {
   const cards = [
     {
       title: "Quiz Maker",
-      description: "Automatically create  evaluate personalized quizzes",
+      description: "Generate and evaluate your quizzes",
       route: "/deck/home",
       logo: quizmakerLogo,
     },
