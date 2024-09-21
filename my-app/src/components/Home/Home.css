@@ -33,6 +33,7 @@
     width: 100%;
     text-align: left; /* Ensure both title and description are left-justified */
     margin: 2% 0; /* Adjust this value to set the space between elements */
+    color: white;
 }
 
 .homepage-card {
