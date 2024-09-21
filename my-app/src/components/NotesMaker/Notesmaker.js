@@ -3,17 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import "./Notesmaker.css";
 
-import { setDoc, doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../../firebase/firebase";
 
-const saveToFirestore = async (docPath, value) => {
-  try {
-    const docRef = doc(db, ...docPath.split("/"));
-    await setDoc(docRef, value, { merge: true }); // Ensure merging to avoid overwriting the entire document
-  } catch (error) {
-    console.error("Error saving to Firestore:", error);
-  }
-};
+import "../../global.css"
+
+import { saveToFirestore } from '../../firebase/firebase';
 
 const NotesMaker = () => {
   const [inputText, setInputText] = useState("");

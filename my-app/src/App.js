@@ -25,79 +25,6 @@ import PDFReader from './components/pdf_reader/pdf_reader';
 import { logFirebaseConfig } from './firebase/firebase';
 import { onAuthChange, AuthPage } from './firebase/auth';
 
-// ---------------------- Custom Router ----------------------
-
-const CustomRouter = ({ children }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
-
-  useEffect(() => {
-    const handleBeforeUnload = (event) => {
-      if (location.pathname.includes('/test/')) {
-        event.preventDefault();
-        event.returnValue = 'Please make sure that you have saved your progress.';
-      }
-    };
-
-    const handlePopState = (event) => {
-      if (location.pathname === '/') {
-        event.preventDefault();
-        window.history.pushState(null, '', window.location.pathname);
-      } else if (location.pathname.startsWith('/deck/')) {
-        event.preventDefault();
-        navigate('/');
-      } else if (location.pathname.includes('/test/')) {
-        event.preventDefault();
-        window.dispatchEvent(new Event('showBackDisclaimer'));
-      } else if (location.pathname.includes('/score-report/')) {
-        const deckName = location.pathname.split('/').pop();
-        navigate(`/deck/${deckName}`);
-      } else if (location.pathname.includes('/quizmaker/')) {
-        const deckName = location.pathname.split('/').pop();
-        navigate(`/deck/${deckName}`);
-      } else {
-        window.history.go(-1);
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [location.pathname, navigate]);
-
-  useEffect(() => {
-    const showDisclaimer = (event) => {
-      const userConfirmed = window.confirm(
-        'Please make sure that you have saved your progress. Press OK to leave, Cancel to stay.'
-      );
-      if (userConfirmed) {
-        setIsNavigatingBack(true);
-        window.history.go(-1);
-      } else {
-        event.preventDefault();
-        window.history.pushState(null, '', window.location.pathname);
-      }
-    };
-
-    if (isNavigatingBack) {
-      setIsNavigatingBack(false);
-    } else {
-      window.addEventListener('showBackDisclaimer', showDisclaimer);
-    }
-
-    return () => {
-      window.removeEventListener('showBackDisclaimer', showDisclaimer);
-    };
-  }, [isNavigatingBack]);
-
-  return children;
-};
-
 // ---------------------- Main App Component ----------------------
 
 function App() {
@@ -116,7 +43,6 @@ function App() {
 
   return (
     <Router>
-      <CustomRouter>
         <div className="App">
           <Routes>
             {/* Public Routes */}
@@ -156,7 +82,6 @@ function App() {
             )}
           </Routes>
         </div>
-      </CustomRouter>
     </Router>
   );
 }

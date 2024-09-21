@@ -1,38 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { setDoc, doc, deleteDoc, getDoc, updateDoc } from "firebase/firestore";
+import { setDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../../../firebase/firebase"; // Adjust the path as needed
 import { onAuthStateChanged } from "firebase/auth";
 import "./FlashcardInput.css";
 
-// Utility functions for Firestore operations
-const loadFromFirestore = async (docPath, defaultValue) => {
-  try {
-    const docRef = doc(db, docPath);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data();
-    } else {
-      return defaultValue;
-    }
-  } catch (error) {
-    return defaultValue;
-  }
-};
-
-const saveToFirestore = async (docPath, value) => {
-  try {
-    const docRef = doc(db, docPath);
-    await setDoc(docRef, value);
-  } catch (error) {}
-};
-
-const removeFromFirestore = async (docPath) => {
-  try {
-    const docRef = doc(db, docPath);
-    await deleteDoc(docRef);
-  } catch (error) {}
-};
+import { saveToFirestore, loadFromFirestore, removeFromFirestore } from '../../../firebase/firebase';
 
 const saveDeckFlashcards = async (userId, deckName, flashcards) => {
   const deckData = { flashcards };
