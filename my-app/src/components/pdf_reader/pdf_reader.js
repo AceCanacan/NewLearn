@@ -11,8 +11,7 @@ const PDFReader = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState("");
 
-  const API_KEY =
-    "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";
+  const API_KEY = `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`;
 
   console.log("API Key in component:", API_KEY); // Log the API key
 
