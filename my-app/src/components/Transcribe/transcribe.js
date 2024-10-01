@@ -67,34 +67,34 @@ function Transcribe() {
       alert("You have reached the maximum number of generations.");
       return;
     }
-
+  
     alert(
       `You have ${
         3 - generationCount
       } transcriptions left. This action cannot be undone.`
     );
-
+  
     setIsProcessing(true);
     setError("");
     try {
       let transcribedText = "";
-
+  
       if (fileType === "image") {
         transcribedText = await processImage(file);
       } else if (fileType === "audio") {
         transcribedText = await processAudio(file);
       }
-
+  
       const organizedText = await organizeText(transcribedText);
       setResult(organizedText);
-
+  
       // Fetch the current user's document
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
-
+  
       if (userDoc.exists()) {
         let currentCount = userDoc.data().generationCount || 0;
-
+  
         // Update the generation count in Firestore
         await updateDoc(userDocRef, { generationCount: currentCount + 1 });
         setGenerationCount(currentCount + 1);
@@ -103,7 +103,19 @@ function Transcribe() {
       }
     } catch (error) {
       console.error("Error during processing:", error);
-      setError(`An error occurred during processing: ${error.message}`);
+  
+      // Check for specific error types related to API keys
+      if (error.message.includes("invalid key") || error.message.includes("Invalid API key")) {
+        setError("The provided API key is invalid. Please check your key and try again.");
+      } else if (
+        error.message.includes("no key") ||
+        error.message.includes("missing key") ||
+        error.message.includes("No API key provided")
+      ) {
+        setError("No API key provided. Please provide a valid API key to proceed.");
+      } else {
+        setError(`An error occurred during processing: ${error.message}`);
+      }
     } finally {
       setIsProcessing(false);
     }
