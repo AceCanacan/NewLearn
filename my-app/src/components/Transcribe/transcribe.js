@@ -114,7 +114,7 @@ function Transcribe() {
       ) {
         setError("No API key provided. Please provide a valid API key to proceed.");
       } else {
-        setError(`An error occurred during processing: ${error.message}`);
+        setError(`Tehhh may error UwU: ${error.message}`);
       }
     } finally {
       setIsProcessing(false);
