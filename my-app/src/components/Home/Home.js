@@ -23,7 +23,7 @@ const Home = () => {
       logo: quizmakerLogo,
     },
     {
-      title: "Transcriber",
+      title: "ITS WORKING",
       description: "Convert audio recordings into text automatically",
       route: "/savedtranscriptions",
       logo: transcriberLogo,
