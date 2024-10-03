@@ -1,13 +1,13 @@
-# NewLearn - The All-in-One AI Learning Platform
+# NewLearn - An All in One AI Learning Platform
 
-NewLearn is a learning tool integrating AI features designed to enhance your learning experience. Created by Ace as an open-source project, it aims to provide powerful AI tools to students, offering a usage-based payment model to make the platform more accessible.
+NewLearn is a learning tool that integrates multiple AI features to assist with studying. Created by Ace a BS Information Systems student in Ateneo de Davao University, it is designed for students looking for accessible AI tools, offering a usage-based payment model to make it more affordable.
 
 ## Main Features
 
-1. **AI-Enabled Quiz Creation**: Generate insightful quiz questions from the text you input using AI.
-2. **Flashcard Generation**: Convert content into easy-to-study flashcards with automatic question-answer pairs.
-3. **Transcription & Note Making**: Transform images and audio files into editable, organized notes.
-4. **PDF Querying**: Upload PDFs and ask questions to extract specific information quickly.
+- **AI-Enabled Quiz Creation**: Input text and use AI to generate quiz questions based on the content.
+- **Flashcard Generation**: Automatically create flashcards with question-answer pairs for easy studying.
+- **Transcription & Note Making**: Convert images and audio files into editable, organized text.
+- **PDF Querying**: Upload PDFs and ask questions to retrieve specific information quickly.
 
 ---
 
