@@ -1,14 +1,13 @@
-```markdown
 # NewLearn - The All-in-One AI Learning Platform
 
-NewLearn is a learning tool that integrates various AI-powered features to enhance your study experience. Created as an open-source project by Ace, it aims to make AI tools easily accessible for students and learners, offering a usage-based payment model.
+NewLearn is a learning tool integrating AI features designed to enhance your learning experience. Created by Ace as an open-source project, it aims to provide powerful AI tools to students, offering a usage-based payment model to make the platform more accessible.
 
 ## Main Features
 
-1. **AI-Enabled Quiz Creation**: Generate quizzes with questions and answers from your provided text, using AI for interactive learning.
-2. **Flashcard Generation**: Transform content into AI-generated flashcards for efficient review and memorization.
-3. **Transcription & Note Making**: Convert images and audio into organized text for quick notes and easy storage.
-4. **PDF Querying**: Ask questions to your uploaded PDFs and quickly find relevant answers.
+1. **AI-Enabled Quiz Creation**: Generate insightful quiz questions from the text you input using AI.
+2. **Flashcard Generation**: Convert content into easy-to-study flashcards with automatic question-answer pairs.
+3. **Transcription & Note Making**: Transform images and audio files into editable, organized notes.
+4. **PDF Querying**: Upload PDFs and ask questions to extract specific information quickly.
 
 ---
 
@@ -20,16 +19,14 @@ To start using or contributing to NewLearn, here's a quick guide to set up your 
 
 ### Requirements
 
-Before you begin, make sure you have the following tools installed:
-
-- **Node.js** (v14 or higher) - To run the frontend and manage packages.
-- **npm** - Node Package Manager, usually bundled with Node.js.
+- **Node.js** (v14 or higher)
+- **npm**
 
 ### Quick Start
 
 1. **Fork the Repository**
 
-   - Head over to the [NewLearn GitHub repository](https://github.com/yourusername/newlearn) and click the "Fork" button to create a personal copy of the repo.
+   - Go to the [NewLearn GitHub repo](https://github.com/yourusername/newlearn) and fork it.
 
 2. **Clone the Forked Repository**
 
@@ -40,62 +37,49 @@ Before you begin, make sure you have the following tools installed:
 
 3. **Install Dependencies**
 
-   Use `npm` to install all necessary packages for the app.
-
    ```bash
    npm install
    ```
 
 4. **Run the Development Server**
 
-   After installing the dependencies, start the development server.
-
    ```bash
    npm start
    ```
 
-   The app will run on `http://localhost:3000` by default. Open this link in your browser to access NewLearn.
+   Access the app at `http://localhost:3000`.
 
 ---
 
 ### Contributing Basics
 
-1. **Make Your Changes**
-
-   After cloning and installing dependencies, create a new branch for your feature or bug fix.
+1. **Create a New Branch**
 
    ```bash
    git checkout -b feature-or-fix-name
    ```
 
-   Once you've made your changes, add them to your branch:
+2. **Make Changes and Commit**
 
    ```bash
    git add .
    git commit -m "Describe your changes"
    ```
 
-2. **Push and Create a Pull Request**
-
-   Push your branch to your forked repository.
+3. **Push and Create a Pull Request**
 
    ```bash
    git push origin feature-or-fix-name
    ```
 
-   Then, open a Pull Request (PR) from your forked repo's branch to the main branch of the original NewLearn repo.
-
-3. **Review and Feedback**
-
-   After submitting your PR, it will be reviewed, and feedback may be provided. Please make any requested changes, and once approved, your contributions will be merged into NewLearn!
+   Then open a Pull Request to the main branch.
 
 ---
 
 ### Requirements for Contributions
 
-- **Code Quality**: Ensure your code follows clean coding practices.
-- **Comments and Documentation**: Add meaningful comments and update any necessary documentation related to your changes.
-- **Testing**: Test your changes thoroughly to make sure nothing breaks in the app.
+- **Code Quality**: Keep your code clean and readable.
+- **Comments and Documentation**: Provide meaningful comments.
+- **Testing**: Test thoroughly to prevent breaking changes.
 
-That's it! Once you've set everything up, you're ready to explore, improve, and contribute to NewLearn. Happy coding! 🚀
-```
+Enjoy contributing to NewLearn! 🚀
