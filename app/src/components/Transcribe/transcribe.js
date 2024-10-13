@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import "./transcribe.css";
 import { useNavigate } from "react-router-dom";
-
+import {
+  Button,
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
+  Modal,
+  Alert,
+  Spinner,
+} from "react-bootstrap";
 import { setDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../../firebase/firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-
 import { saveToFirestore } from "../../firebase/firebase";
 
 function Transcribe() {
@@ -67,34 +75,34 @@ function Transcribe() {
       alert("You have reached the maximum number of generations.");
       return;
     }
-  
+
     alert(
       `You have ${
         3 - generationCount
       } transcriptions left. This action cannot be undone.`
     );
-  
+
     setIsProcessing(true);
     setError("");
     try {
       let transcribedText = "";
-  
+
       if (fileType === "image") {
         transcribedText = await processImage(file);
       } else if (fileType === "audio") {
         transcribedText = await processAudio(file);
       }
-  
+
       const organizedText = await organizeText(transcribedText);
       setResult(organizedText);
-  
+
       // Fetch the current user's document
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
-  
+
       if (userDoc.exists()) {
         let currentCount = userDoc.data().generationCount || 0;
-  
+
         // Update the generation count in Firestore
         await updateDoc(userDocRef, { generationCount: currentCount + 1 });
         setGenerationCount(currentCount + 1);
@@ -103,16 +111,23 @@ function Transcribe() {
       }
     } catch (error) {
       console.error("Error during processing:", error);
-  
+
       // Check for specific error types related to API keys
-      if (error.message.includes("invalid key") || error.message.includes("Invalid API key")) {
-        setError("The provided API key is invalid. Please check your key and try again.");
+      if (
+        error.message.includes("invalid key") ||
+        error.message.includes("Invalid API key")
+      ) {
+        setError(
+          "The provided API key is invalid. Please check your key and try again."
+        );
       } else if (
         error.message.includes("no key") ||
         error.message.includes("missing key") ||
         error.message.includes("No API key provided")
       ) {
-        setError("No API key provided. Please provide a valid API key to proceed.");
+        setError(
+          "No API key provided. Please provide a valid API key to proceed."
+        );
       } else {
         setError(`Tehhh may error UwU: ${error.message}`);
       }
@@ -142,34 +157,31 @@ function Transcribe() {
           ""
         )
       );
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: "What's in this image?" },
-                  {
-                    type: "image_url",
-                    image_url: {
-                      url: `data:image/jpeg;base64,${base64Image}`,
-                    },
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "What's in this image?" },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Image}`,
                   },
-                ],
-              },
-            ],
-            max_tokens: 300,
-          }),
-        }
-      );
+                },
+              ],
+            },
+          ],
+          max_tokens: 300,
+        }),
+      });
 
       const data = await response.json();
 
@@ -338,138 +350,170 @@ function Transcribe() {
   };
 
   return (
-    <div>
-      <button
-        className="rt-back-button"
-        onClick={() => navigate("/savedtranscriptions")}
-      >
-        &#9664;
-      </button>
+    <Container className="my-4">
+      <Row className="mb-3">
+        <Col>
+          <Button variant="outline-secondary" onClick={() => navigate("/savedtranscriptions")}>
+            &#9664; Back
+          </Button>
+        </Col>
+      </Row>
 
-      <div className="transcribe-result-upload-wrapper">
-        <div className="st-squircle-banner">
-          Convert images and audio to text
-        </div>
-        {!file && !result && (
-          <div
-            className="transcribe-result-upload-container"
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
-            <div className="transcribe-result-arrow-up-logo">
-              <i className="fas fa-upload"></i>
-            </div>
-            <div className="transcribe-result-text">
-              Drag and drop your audio file here
-            </div>
-            <button
-              className="transcribe-result-upload-button"
+      <Card className="mb-4">
+        <Card.Body>
+          <Card.Title className="text-center">Convert Images and Audio to Text</Card.Title>
+        </Card.Body>
+      </Card>
+
+      {!file && !result && (
+        <Card
+          className="mb-4 p-4 text-center border-primary"
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          style={{ cursor: "pointer" }}
+        >
+          <Card.Body>
+            <i className="fas fa-upload fa-3x mb-3 text-primary"></i>
+            <Card.Text>Drag and drop your audio or image file here</Card.Text>
+            <Button
+              variant="primary"
               onClick={() => document.getElementById("fileInput").click()}
+              className="mt-3"
             >
               Select from Device
-            </button>
-            <input
+            </Button>
+            <Form.Control
               id="fileInput"
               type="file"
               accept=".png,.jpg,.jpeg,.mp3"
               onChange={handleFileChange}
-              className="transcribe-result-hidden"
+              className="d-none"
             />
-            <div className="transcribe-result-drag-and-drop-text">
-              MP3, WAV, M4A, MP4, MPEG, MPGA, WEBM
-            </div>
-          </div>
-        )}
+            <Card.Text className="mt-2 text-muted">
+              Supported formats: PNG, JPG, JPEG, MP3. Max size: 2MB
+            </Card.Text>
+          </Card.Body>
+        </Card>
+      )}
 
-        {file && (
-          <div className="transcribe-result-wrapper">
-            <div className="transcribe-result-container">
-              <div className="transcribe-result-preview">
+      {file && (
+        <Card className="mb-4">
+          <Card.Body>
+            <Row className="align-items-center">
+              <Col md={4} className="text-center">
                 {fileType === "image" ? (
                   <img
                     src={URL.createObjectURL(file)}
                     alt="Uploaded file preview"
-                    className="transcribe-result-uploaded-image"
+                    className="img-fluid rounded"
                   />
                 ) : (
-                  <div className="transcribe-result-audio-logo">🎵</div>
+                  <i className="fas fa-music fa-5x text-secondary"></i>
                 )}
-              </div>
-              {result ? (
-                <div className="transcribe-result-transcription">
-                  <h3>Transcription Result:</h3>
-                  <ReactMarkdown className="transcribe-result-markdown-result">
-                    {result}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                <button
-                  className="transcribe-result-generate-button"
-                  onClick={handleUpload}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? "Loading..." : "Generate"}
-                </button>
-              )}
-            </div>
+              </Col>
+              <Col md={8}>
+                {result ? (
+                  <>
+                    <Card.Title>Transcription Result:</Card.Title>
+                    <ReactMarkdown className="mb-3">{result}</ReactMarkdown>
+                    <Button variant="success" className="me-2" onClick={handleSaveClick}>
+                      Save
+                    </Button>
+                    <Button variant="danger" onClick={handleDeleteClick}>
+                      Delete
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="primary"
+                    onClick={handleUpload}
+                    disabled={isProcessing}
+                    className="w-100"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                        />{" "}
+                        Processing...
+                      </>
+                    ) : (
+                      "Generate Transcription"
+                    )}
+                  </Button>
+                )}
+                {!result && (
+                  <Button
+                    variant="outline-secondary"
+                    onClick={resetUpload}
+                    disabled={isProcessing}
+                    className="mt-3 w-100"
+                  >
+                    Upload Another File
+                  </Button>
+                )}
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      )}
 
-            {!result && (
-              <button
-                className="transcribe-result-upload-another-button"
-                onClick={resetUpload}
-                disabled={isProcessing}
-              >
-                Upload Another File
-              </button>
-            )}
+      {error && (
+        <Alert variant="danger" className="text-center">
+          {error}
+        </Alert>
+      )}
 
-            {result && (
-              <div className="transcribe-result-buttons-container">
-                <button onClick={handleSaveClick}>Save</button>
-                <button onClick={handleDeleteClick}>Delete</button>
-              </div>
-            )}
-          </div>
-        )}
+      {/* Save Disclaimer Modal */}
+      <Modal show={showSaveDisclaimer} onHide={() => setShowSaveDisclaimer(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Save Transcription</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="saveName">
+              <Form.Label>Provide a name for your transcription:</Form.Label>
+              <Form.Control
+                type="text"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder="Enter name"
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowSaveDisclaimer(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={confirmSave} disabled={!saveName.trim()}>
+            Save
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
-        {result && (
-          <div className="transcribe-result-disclaimer-container">
-            {showSaveDisclaimer && (
-              <div className="transcribe-result-disclaimer-overlay">
-                <div className="transcribe-result-disclaimer-content">
-                  <p>Please provide a name for your transcription:</p>
-                  <input
-                    type="text"
-                    value={saveName}
-                    onChange={(e) => setSaveName(e.target.value)}
-                    placeholder="Enter name"
-                  />
-                  <button onClick={confirmSave}>Save</button>
-                  <button onClick={() => setShowSaveDisclaimer(false)}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {showDisclaimer && (
-              <div className="transcribe-result-disclaimer-overlay">
-                <div className="transcribe-result-disclaimer-content">
-                  <p>
-                    Are you sure you want to delete this transcription? This
-                    action cannot be undone.
-                  </p>
-                  <button onClick={confirmDelete}>Yes, Delete</button>
-                  <button onClick={cancelDelete}>Cancel</button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {error && <p className="transcribe-result-error-text">{error}</p>}
-      </div>
-    </div>
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDisclaimer} onHide={cancelDelete} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Transcription</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete this transcription? This action cannot be undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={cancelDelete}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Yes, Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </Container>
   );
 }
 

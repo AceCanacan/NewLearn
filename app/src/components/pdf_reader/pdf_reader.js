@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
-import "./pdf_reader_styles.css";
 import { useNavigate } from "react-router-dom";
+import {
+  Container,
+  Button,
+  Form,
+  Modal,
+  Spinner,
+  Alert,
+  Card,
+} from "react-bootstrap";
+import { FaArrowLeft } from "react-icons/fa"; // Importing from react-icons
 
 const PDFReader = () => {
   const navigate = useNavigate();
@@ -134,6 +143,7 @@ const PDFReader = () => {
       console.error("Error name:", error.name);
       console.error("Error message:", error.message);
       console.error("Error stack:", error.stack);
+      setUploadStatus("Error processing query. Please try again.");
     } finally {
       console.log("Resetting loading state...");
       setIsLoading(false);
@@ -142,99 +152,120 @@ const PDFReader = () => {
   };
 
   return (
-    <div>
-<button className="st-back-button" onClick={() => navigate("/")}>
-    <i className="fas fa-arrow-left"></i>
-</button>
-      <div className="pdf-reader-container">
-        {isLoading && (
-          <div className="modal">
-            <div className="modal-content">
-              <h3>Processing PDF</h3>
-              <p>{progress}</p>
-            </div>
-          </div>
-        )}
-        <h2 className="pdf-reader-title">PDF Underscore Reader</h2>
+    <Container className="my-4">
+      <Card className="p-4 shadow-sm">
+        <Card.Body>
+          <Card.Title className="text-center mb-4">
+            <h2>PDF Underscore Reader</h2>
+          </Card.Title>
 
-        {!uploadStatus && (
-          <form className="pdf-reader-form" onSubmit={handleFileUpload}>
-            <div>
-              <label className="pdf-reader-label" htmlFor="file">
-                Upload PDF:
-              </label>
-              <input
-                className="pdf-reader-input"
-                type="file"
-                id="file"
-                accept=".pdf"
-                onChange={handleFileChange}
-                required
-              />
-            </div>
-            <button className="pdf-reader-button" type="submit">
-              Upload PDF
-            </button>
-          </form>
-        )}
+          {isLoading && (
+            <Modal show={isLoading} backdrop="static" keyboard={false} centered>
+              <Modal.Header>
+                <Modal.Title>Processing PDF</Modal.Title>
+              </Modal.Header>
+              <Modal.Body className="text-center">
+                <Spinner animation="border" role="status" className="mb-3">
+                  <span className="visually-hidden">Loading...</span>
+                </Spinner>
+                <p>{progress || "Please wait while we process your PDF."}</p>
+              </Modal.Body>
+            </Modal>
+          )}
 
-        {uploadStatus && (
-          <div className="pdf-reader-status-container">
-            <p className="pdf-reader-status">{uploadStatus}</p>
-            {!uploadStatus.includes("successfully") && (
-              <button
-                className="pdf-reader-button"
+          {!uploadStatus && (
+            <Form onSubmit={handleFileUpload}>
+              <Form.Group controlId="file" className="mb-3">
+                <Form.Label>Upload PDF</Form.Label>
+                <Form.Control
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                  required
+                />
+              </Form.Group>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={isLoading}
+                className="w-100"
+              >
+                Upload PDF
+              </Button>
+            </Form>
+          )}
+
+          {uploadStatus && (
+            <Alert
+              variant={uploadStatus.includes("successfully") ? "success" : "danger"}
+              className="mt-4"
+            >
+              {uploadStatus}
+            </Alert>
+          )}
+
+          {uploadStatus && uploadStatus.includes("successfully") && (
+            <>
+              <Form onSubmit={handleQuerySubmit} className="mt-4">
+                <Form.Group controlId="query" className="mb-3">
+                  <Form.Label>Enter your query:</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Type your question here..."
+                    value={query}
+                    onChange={handleQueryChange}
+                    required
+                  />
+                </Form.Group>
+                <Button
+                  variant="success"
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-100"
+                >
+                  Submit Query
+                </Button>
+              </Form>
+
+              {response && (
+                <Card className="mt-4">
+                  <Card.Header>Response</Card.Header>
+                  <Card.Body>
+                    <Card.Text>{response}</Card.Text>
+                  </Card.Body>
+                </Card>
+              )}
+
+              <Button
+                variant="outline-primary"
                 onClick={() => {
                   setUploadStatus("");
                   setFile(null);
+                  setQuery("");
+                  setResponse("");
                 }}
+                className="mt-3 w-100"
               >
-                Try Again
-              </button>
-            )}
-          </div>
-        )}
-        {uploadStatus && uploadStatus.includes("successfully") && (
-          <>
-            <form className="pdf-reader-form" onSubmit={handleQuerySubmit}>
-              <div>
-                <label className="pdf-reader-label" htmlFor="query">
-                  Enter your query:
-                </label>
-                <input
-                  className="pdf-reader-input"
-                  type="las"
-                  id="query"
-                  value={query}
-                  onChange={handleQueryChange}
-                  required
-                />
-              </div>
-              <button className="pdf-reader-button" type="submit">
-                Submit Query
-              </button>
-            </form>
-            {response && (
-              <div className="pdf-reader-response">
-                <h3 className="pdf-reader-response-title">Response:</h3>
-                <p className="pdf-reader-response-text">{response}</p>
-              </div>
-            )}
-            <button
-              className="pdf-reader-button"
+                Upload New PDF
+              </Button>
+            </>
+          )}
+
+          {uploadStatus && !uploadStatus.includes("successfully") && (
+            <Button
+              variant="warning"
               onClick={() => {
                 setUploadStatus("");
                 setFile(null);
-                setQuery("");
-                setResponse("");
               }}
+              className="mt-3 w-100"
             >
-              Upload New PDF
-            </button>
-          </>
-        )}
-      </div>
-    </div>
+              Try Again
+            </Button>
+          )}
+        </Card.Body>
+      </Card>
+    </Container>
   );
 };
 

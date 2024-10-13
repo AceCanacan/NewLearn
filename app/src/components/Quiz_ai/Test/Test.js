@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import "./Test.css";
-import { setDoc, doc, getDoc } from "firebase/firestore";
-import { db, auth } from "../../../firebase/firebase"; // Adjust the path as needed
+import { auth } from "../../../firebase/firebase"; // Adjust the path as needed
 import { onAuthStateChanged } from "firebase/auth";
 import TestResults from "./TestResults"; // Import the new component
-
+import { Button, ListGroup, Card, Modal, Spinner, ProgressBar, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { saveToFirestore, loadFromFirestore } from '../../../firebase/firebase';
 
 const Test = () => {
@@ -13,28 +11,19 @@ const Test = () => {
   const navigate = useNavigate();
   const [flashcards, setFlashcards] = useState([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const [isRecording, setIsRecording] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState(null);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [hint, setHint] = useState("");
-  const [hintUsed, setHintUsed] = useState(false);
-  const [hintUsage, setHintUsage] = useState([]);
-  const [skippedQuestions, setSkippedQuestions] = useState([]);
-  const [typedAnswers, setTypedAnswers] = useState([]);
   const [results, setResults] = useState([]);
   const [finished, setFinished] = useState(false);
   const [user, setUser] = useState(null);
   const [showCardModal, setShowCardModal] = useState(false);
-  const [showHintModal, setShowHintModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Initialize scoring
+  const [score, setScore] = useState({ correct: 0, wrong: 0 });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        setUser(null);
-      }
+      setUser(currentUser);
     });
 
     return () => unsubscribe();
@@ -42,13 +31,14 @@ const Test = () => {
 
   useEffect(() => {
     const fetchFlashcards = async () => {
-      const user = auth.currentUser;
       if (!user) return;
+      setIsLoading(true);
       const storedFlashcards = await loadFromFirestore(
         `users/${user.uid}/decks/${deckName}`,
         []
       );
       setFlashcards(storedFlashcards.flashcards || []);
+      setIsLoading(false);
     };
     fetchFlashcards();
   }, [user, deckName]);
@@ -58,8 +48,6 @@ const Test = () => {
       prevIndex < flashcards.length - 1 ? prevIndex + 1 : prevIndex
     );
     setShowAnswer(false);
-    setHint("");
-    setHintUsed(false);
   };
 
   const handlePreviousCard = () => {
@@ -67,468 +55,292 @@ const Test = () => {
       prevIndex > 0 ? prevIndex - 1 : prevIndex
     );
     setShowAnswer(false);
-    setHint("");
-    setHintUsed(false);
   };
 
-  const handleShowAnswer = () => {
-    if (!showAnswer) {
-      setShowAnswer(true);
-      setSkippedQuestions((prev) => [...prev, currentCardIndex]);
-    }
+  const handleFlipCard = () => {
+    setShowAnswer((prev) => !prev);
   };
 
-  const getHint = async () => {
-    if (hintUsed) return;
-
-    setIsLoading(true);
-    setHint("");
-    const originalQuestion = flashcards[currentCardIndex].question;
-    const originalAnswer = flashcards[currentCardIndex].answer;
-
-    const messages = [
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: `Original Question: ${originalQuestion}` },
-      { role: "user", content: `Original Answer: ${originalAnswer}` },
-      {
-        role: "user",
-        content:
-          "Provide a hint that will help the user get closer to the answer but does not directly reveal it.",
-      },
-    ];
-
-    try {
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4",
-            messages: messages,
-            max_tokens: 50,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(
-          `Error: ${response.status} ${response.statusText} - ${JSON.stringify(
-            errorDetail
-          )}`
-        );
-      }
-
-      const data = await response.json();
-
-      if (data.choices && data.choices.length > 0) {
-        const newHint = data.choices[0].message.content.trim();
-        setHint(newHint);
-        setHintUsed(true);
-        const newHintUsage = [...hintUsage];
-        newHintUsage[currentCardIndex] = true;
-        setHintUsage(newHintUsage);
-      } else {
-        setHint("Error: No response from model");
-      }
-    } catch (error) {
-      setHint(`Error: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleMarkCorrect = () => {
+    const newResults = [...results];
+    newResults[currentCardIndex] = 'correct';
+    setResults(newResults);
+    setScore((prev) => ({ ...prev, correct: prev.correct + 1 }));
+    handleNextCard();
   };
 
-  const startRecording = async () => {
-    setIsRecording(true);
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
-    setMediaRecorder(recorder);
-
-    recorder.ondataavailable = (event) => {
-      const audioBlob = event.data;
-      processRecording(audioBlob);
-    };
-
-    recorder.start();
-  };
-
-  const finishRecording = () => {
-    if (mediaRecorder) {
-      mediaRecorder.onstop = () => {
-        const tracks = mediaRecorder.stream.getTracks();
-        tracks.forEach((track) => track.stop());
-        setIsRecording(false);
-        setMediaRecorder(null);
-        setIsLoading(true);
-      };
-      mediaRecorder.stop();
-    }
-  };
-
-  const processRecording = async (audioBlob) => {
-    const formData = new FormData();
-    formData.append("model", "whisper-1");
-    formData.append(
-      "file",
-      new Blob([audioBlob], { type: "audio/mp3" }),
-      "audio/mp3"
-    );
-
-    try {
-      const response = await fetch(
-        "https://api.openai.com/v1/audio/transcriptions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-          },
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(
-          `Error: ${response.status} ${response.statusText} - ${JSON.stringify(
-            errorDetail
-          )}`
-        );
-      }
-
-      const data = await response.json();
-
-      const newTypedAnswers = [...typedAnswers];
-      newTypedAnswers[currentCardIndex] = data.text;
-      setTypedAnswers(newTypedAnswers);
-    } catch (error) {
-      console.error("Error processing recording: ", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const compareAnswer = async (question, correctAnswer, userAnswer) => {
-    const messages = [
-      {
-        role: "system",
-        content:
-          'You are a helpful assistant. You will be provided with an original question, its correct answer, and a user-provided answer. Your task is to determine if the user-provided answer is correct. Answer strictly with "yes" or "no".',
-      },
-      { role: "user", content: `Original Question: ${question}` },
-      { role: "user", content: `Original Answer: ${correctAnswer}` },
-      { role: "user", content: `User Answer: ${userAnswer}` },
-      {
-        role: "user",
-        content:
-          'Does the user-provided answer correctly answer the original question? Answer strictly "yes" or "no".',
-      },
-    ];
-
-    try {
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4",
-            messages: messages,
-            max_tokens: 10,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(
-          `Error: ${response.status} ${response.statusText} - ${JSON.stringify(
-            errorDetail
-          )}`
-        );
-      }
-
-      const data = await response.json();
-      const choice = data.choices[0];
-      const result = choice.message.content
-        .trim()
-        .replace(".", "")
-        .toLowerCase();
-
-      return { correct: result === "yes" };
-    } catch (error) {
-      console.error("Error fetching data: ", error);
-      return { correct: false, error: error.message };
-    }
+  const handleMarkWrong = () => {
+    const newResults = [...results];
+    newResults[currentCardIndex] = 'wrong';
+    setResults(newResults);
+    setScore((prev) => ({ ...prev, wrong: prev.wrong + 1 }));
+    handleNextCard();
   };
 
   const handleFinish = async () => {
     setIsLoading(true);
-    const newResults = [];
-    for (let i = 0; i < flashcards.length; i++) {
-      const userAnswer = typedAnswers[i] || "";
-      const correctAnswer = flashcards[i].answer;
-      const question = flashcards[i].question;
-      const hintUsedForQuestion = hintUsage[i] || false;
-      let result = { correct: false, score: 0 };
+    setFinished(true);
 
-      if (skippedQuestions.includes(i) || showAnswer) {
-        result.skipped = true;
-        result.correct = false;
-        result.score = 0;
-      } else {
-        result = await compareAnswer(question, correctAnswer, userAnswer);
-        if (result.correct) {
-          result.score = hintUsedForQuestion ? 0.5 : 1;
-        } else {
-          result.score = 0;
-        }
-      }
-
-      newResults.push({
-        questionIndex: i,
-        correct: result.correct,
-        userAnswer,
-        correctAnswer,
-        hintUsed: hintUsedForQuestion,
-        skipped: result.skipped || false,
-      });
-    }
-
-    setIsLoading(false);
-    const score =
-      (newResults.filter((r) => r.correct).length / flashcards.length) * 100;
-
+    // Save results to Firestore if needed
     if (user) {
       const scoreEntry = {
         date: new Date().toISOString(),
         score: score,
         testResult: {
-          results: newResults,
+          results,
           flashcards,
           deckName,
         },
       };
 
-      // **Corrected Code Starts Here**
       try {
-        // Step 1: Load existing scores
+        // Load existing scores
         const currentScoresData = await loadFromFirestore(
           `users/${user.uid}/settings/scores`,
           {}
         );
 
-        // Step 2: Access the scores for the specific deck, or initialize as empty array
+        // Append new score
         const deckScores = currentScoresData[deckName] || [];
-
-        // Step 3: Append the new scoreEntry
         const updatedDeckScores = [...deckScores, scoreEntry];
 
-        // Step 4: Save the updated scores back to Firestore
+        // Save back to Firestore
         await saveToFirestore(`users/${user.uid}/settings/scores`, {
-          ...currentScoresData, // Preserve scores for other decks
-          [deckName]: updatedDeckScores, // Update scores for the current deck
+          ...currentScoresData,
+          [deckName]: updatedDeckScores,
         });
       } catch (error) {
         console.error("Error saving score to Firestore:", error);
-        // Optionally, handle the error (e.g., show a notification to the user)
       }
-      // **Corrected Code Ends Here**
     }
 
-    navigate("/testresults", {
-      state: { results: newResults, flashcards, deckName },
-    });
-    
+    setIsLoading(false);
   };
 
   const retakeTest = () => {
     setCurrentCardIndex(0);
-    setIsRecording(false);
-    setIsLoading(false);
     setShowAnswer(false);
-    setHint("");
-    setHintUsed(false);
-    setHintUsage([]);
-    setSkippedQuestions([]);
-    setTypedAnswers([]);
     setResults([]);
+    setScore({ correct: 0, wrong: 0 });
     setFinished(false);
   };
 
-  return (
-    <div className="test-component">
-      <div className="test-container">
-        {showCardModal && (
-          <div className="modal">
-            <div className="modal-content">
-              {flashcards.map((_, index) => (
-                <button
-                  key={index}
-                  className={`nav-button ${
-                    index === currentCardIndex ? "active" : ""
-                  }`}
-                  onClick={() => {
-                    setCurrentCardIndex(index);
-                    setShowCardModal(false);
-                  }}
-                >
-                  {index + 1}
-                </button>
-              ))}
-              <button
-                className="btn btn-danger"
-                onClick={() => setShowCardModal(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
+  const reviewAnswers = (filter) => {
+    const filteredIndices = results
+      .map((result, index) => (filter === 'correct' && result === 'correct' ? index :
+                               filter === 'wrong' && result === 'wrong' ? index : null))
+      .filter(index => index !== null);
+    
+    if (filteredIndices.length > 0) {
+      setCurrentCardIndex(filteredIndices[0]);
+      setShowAnswer(false);
+    }
+  };
 
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : finished ? (
-          <TestResults
-            results={results}
-            flashcards={flashcards}
-            onRetake={retakeTest}
-            deckName={deckName}
-          />
-        ) : (
-          <>
-            <div className="question-status-row">
-              <p className="question-status">
-                <strong>Question {currentCardIndex + 1}:</strong>
-              </p>
-              <button
-                onClick={() => setShowCardModal(true)}
-                className="circular-button"
-              >
-                <i className="fas fa-ellipsis-h"></i>
-              </button>
-            </div>
+  // Keyboard navigation
+  const handleKeyDown = useCallback((e) => {
+    if (finished) return;
 
-            <button
-              className="st-back-button"
-              onClick={() => navigate(`/deck/${deckName}/flashcard-input`)}
-            >
-              <i className="fas fa-arrow-left"></i>
-            </button>
+    switch (e.key) {
+      case 'ArrowRight':
+        handleNextCard();
+        break;
+      case 'ArrowLeft':
+        handlePreviousCard();
+        break;
+      case ' ':
+        e.preventDefault(); // Prevent page scrolling
+        handleFlipCard();
+        break;
+      case 'c':
+      case 'C':
+        if (showAnswer) handleMarkCorrect();
+        break;
+      case 'w':
+      case 'W':
+        if (showAnswer) handleMarkWrong();
+        break;
+      default:
+        break;
+    }
+  }, [finished, showAnswer, handleNextCard, handlePreviousCard, handleFlipCard, handleMarkCorrect, handleMarkWrong]);
 
-            <div className="flashcard">
-              <p>
-                <strong>Q:</strong> {flashcards[currentCardIndex]?.question}
-              </p>
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
-              {showHintModal && (
-                <div className="modal">
-                  <div className="modal-content">
-                    <p className="hint">
-                      <strong>Hint:</strong> {hint}
-                    </p>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => setShowHintModal(false)}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+  // Calculate progress percentage
+  const progressPercentage = ((currentCardIndex) / flashcards.length) * 100;
 
-            <div className="answer-container">
-              <div className="flashcard-answer-input">
-                <input
-                  type="text"
-                  value={typedAnswers[currentCardIndex] || ""}
-                  onChange={(e) => {
-                    const newTypedAnswers = [...typedAnswers];
-                    newTypedAnswers[currentCardIndex] = e.target.value;
-                    setTypedAnswers(newTypedAnswers);
-                  }}
-                  placeholder="Type your answer here"
-                />
-              </div>
-
-              <div className="button-stack small-buttons">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    if (!hint) getHint();
-                    setShowHintModal(true);
-                  }}
-                >
-                  <i className="fas fa-question"></i>
-                </button>
-
-                <button
-                  className={`btn ${
-                    isRecording ? "btn-danger" : "btn-primary"
-                  }`}
-                  onClick={() => {
-                    if (!isRecording) {
-                      startRecording();
-                    } else {
-                      finishRecording();
-                    }
-                  }}
-                >
-                  {isRecording ? (
-                    <i className="fas fa-stop"></i>
-                  ) : (
-                    <i className="fas fa-microphone"></i>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="navigation-buttons">
-              <button
-                className="circular-button"
-                onClick={handlePreviousCard}
-                disabled={currentCardIndex === 0}
-              >
-                <i className="fas fa-arrow-left"></i>
-              </button>
-
-              <button
-                className="btn btn-warning"
-                onClick={handleShowAnswer}
-                disabled={showAnswer}
-              >
-                Show Answer
-              </button>
-
-              {currentCardIndex === flashcards.length - 1 ? (
-                <button className="circular-button" onClick={handleFinish}>
-                  <i className="fas fa-check"></i>
-                </button>
-              ) : (
-                <button className="circular-button" onClick={handleNextCard}>
-                  <i className="fas fa-arrow-right"></i>
-                </button>
-              )}
-            </div>
-
-            {showAnswer && (
-              <div className="answer-display">
-                <p>
-                  <strong>Answer:</strong>{" "}
-                  {flashcards[currentCardIndex]?.answer}
-                </p>
-              </div>
-            )}
-          </>
-        )}
+  if (isLoading) {
+    return (
+      <div className="container text-center my-5">
+        <Spinner animation="border" variant="primary" />
       </div>
+    );
+  }
+
+  if (finished) {
+    return (
+      <TestResults
+        score={score}
+        flashcards={flashcards}
+        results={results}
+        onRetake={retakeTest}
+        onReviewCorrect={() => reviewAnswers('correct')}
+        onReviewWrong={() => reviewAnswers('wrong')}
+      />
+    );
+  }
+
+  return (
+    <div className="container my-4">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5>Deck: {deckName}</h5>
+        <Button variant="outline-secondary" onClick={() => setShowCardModal(true)}>
+          Select Card
+        </Button>
+      </div>
+
+      {/* Progress Bar and Current Position */}
+      <div className="mb-3">
+        <ProgressBar now={progressPercentage} label={`${currentCardIndex} / ${flashcards.length}`} />
+      </div>
+
+      {/* Back Button */}
+      <div className="mb-3">
+        <Button variant="secondary" onClick={() => navigate(`/deck/${deckName}/flashcard-input`)}>
+          <i className="fas fa-arrow-left"></i> Back
+        </Button>
+      </div>
+
+      {/* Flashcard */}
+      <Card className="mb-3" onClick={handleFlipCard} style={{ cursor: 'pointer' }}>
+        <Card.Body>
+          <Card.Title className="text-center">{showAnswer ? 'Answer' : 'Question'}</Card.Title>
+          <Card.Text className="fs-5 text-center">
+            {showAnswer ? flashcards[currentCardIndex]?.answer : flashcards[currentCardIndex]?.question}
+          </Card.Text>
+        </Card.Body>
+      </Card>
+
+      {/* Completion Indicators */}
+      <div className="mb-3 d-flex justify-content-center flex-wrap">
+        {flashcards.map((_, index) => (
+          <div
+            key={index}
+            className={`mx-1 mb-1 rounded-circle`}
+            style={{
+              width: '12px',
+              height: '12px',
+              backgroundColor:
+                index < currentCardIndex
+                  ? results[index] === 'correct'
+                    ? 'green'
+                    : results[index] === 'wrong'
+                      ? 'red'
+                      : 'gray'
+                  : 'lightgray',
+            }}
+            title={`Card ${index + 1} - ${results[index] ? results[index].charAt(0).toUpperCase() + results[index].slice(1) : 'Pending'}`}
+          ></div>
+        ))}
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <Button
+            variant="outline-primary"
+            onClick={handlePreviousCard}
+            disabled={currentCardIndex === 0}
+            className="me-2"
+          >
+            <i className="fas fa-arrow-left"></i> Previous
+          </Button>
+          <Button
+            variant="outline-primary"
+            onClick={handleNextCard}
+            disabled={currentCardIndex === flashcards.length - 1}
+          >
+            Next <i className="fas fa-arrow-right"></i>
+          </Button>
+        </div>
+        <div>
+          {currentCardIndex === flashcards.length - 1 && (
+            <Button variant="primary" onClick={handleFinish}>
+              Finish <i className="fas fa-check"></i>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Mark Correct/Wrong Buttons */}
+      {showAnswer && (
+        <div className="d-flex justify-content-center mb-3">
+          <OverlayTrigger
+            placement="top"
+            overlay={<Tooltip>Mark as Correct (C)</Tooltip>}
+          >
+            <Button variant="success" className="me-2" onClick={handleMarkCorrect}>
+              Correct (C)
+            </Button>
+          </OverlayTrigger>
+          <OverlayTrigger
+            placement="top"
+            overlay={<Tooltip>Mark as Wrong (W)</Tooltip>}
+          >
+            <Button variant="danger" onClick={handleMarkWrong}>
+              Wrong (W)
+            </Button>
+          </OverlayTrigger>
+        </div>
+      )}
+
+      {/* Select Card Modal */}
+      <Modal show={showCardModal} onHide={() => setShowCardModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Select a Card</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="d-flex flex-wrap">
+          {flashcards.map((_, index) => (
+            <OverlayTrigger
+              key={index}
+              placement="top"
+              overlay={
+                <Tooltip>
+                  {results[index]
+                    ? `Card ${index + 1}: ${results[index].charAt(0).toUpperCase() + results[index].slice(1)}`
+                    : `Card ${index + 1}: Pending`}
+                </Tooltip>
+              }
+            >
+              <Button
+                variant={index === currentCardIndex ? "primary" : results[index] === 'correct' ? "success" : results[index] === 'wrong' ? "danger" : "outline-primary"}
+                className="m-1"
+                onClick={() => {
+                  setCurrentCardIndex(index);
+                  setShowCardModal(false);
+                  setShowAnswer(false);
+                }}
+                style={{ width: '40px', height: '40px', padding: 0 }}
+              >
+                {index + 1}
+              </Button>
+            </OverlayTrigger>
+          ))}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowCardModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

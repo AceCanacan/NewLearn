@@ -1,362 +1,412 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { setDoc, doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  setDoc,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { db, auth } from "../../../firebase/firebase"; // Adjust the path as needed
 import { onAuthStateChanged } from "firebase/auth";
-import "./FlashcardInput.css";
+import {
+  Button,
+  ListGroup,
+  Card,
+  Form,
+  Alert,
+  Spinner,
+  Modal,
+} from "react-bootstrap";
 
-import { saveToFirestore, loadFromFirestore, removeFromFirestore } from '../../../firebase/firebase';
+import {
+  saveToFirestore,
+  loadFromFirestore,
+  removeFromFirestore,
+} from "../../../firebase/firebase";
 
-const saveDeckFlashcards = async (userId, deckName, flashcards) => {
-  const deckData = { flashcards };
-  await saveToFirestore(`users/${userId}/decks/${deckName}`, deckData);
-};
+const MAX_FLASHCARDS = 10;
 
-const removeDeckFlashcards = async (userId, deckName) => {
-  await removeFromFirestore(`users/${userId}/decks/${deckName}`);
-};
-
-function FlashcardInput() {
-  const { deckName, setDeckName } = useParams();
-  const navigate = useNavigate();
+// Custom Hook for Authentication and Deck Data
+const useDeckData = (deckName) => {
   const [user, setUser] = useState(null);
-  const [flashcards, setFlashcards] = useState([]);
-  const [editIndex, setEditIndex] = useState(null);
-  const [newDeckName, setNewDeckName] = useState(deckName);
-  const [isEditingDeck, setIsEditingDeck] = useState(false);
-  const [totalFlashcardsCreated, setTotalFlashcardsCreated] = useState(0);
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [description, setDescription] = useState("");
-  const [newDeckDescription, setNewDeckDescription] = useState("");
-
-  const MAX_FLASHCARDS = 10;
+  const [deck, setDeck] = useState({
+    flashcards: [],
+    description: "No description available",
+    totalFlashcardsCreated: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        fetchTotalFlashcardsCreated(currentUser.uid, deckName);
+        const deckDocRef = doc(db, "users", currentUser.uid, "decks", deckName);
+        const deckDoc = await getDoc(deckDocRef);
+        if (deckDoc.exists()) {
+          setDeck({
+            flashcards: deckDoc.data().flashcards || [],
+            description: deckDoc.data().description || "No description available",
+            totalFlashcardsCreated: deckDoc.data().totalFlashcardsCreated || 0,
+          });
+        } else {
+          await setDoc(deckDocRef, { totalFlashcardsCreated: 0 }, { merge: true });
+        }
       } else {
         setUser(null);
-        setTotalFlashcardsCreated(0);
+        setDeck({
+          flashcards: [],
+          description: "No description available",
+          totalFlashcardsCreated: 0,
+        });
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, [deckName]);
 
-  const fetchTotalFlashcardsCreated = async (userId, deckName) => {
-    const deckDocRef = doc(db, "users", userId, "decks", deckName);
-    const deckDoc = await getDoc(deckDocRef);
-    if (deckDoc.exists()) {
-      setTotalFlashcardsCreated(deckDoc.data().totalFlashcardsCreated || 0);
-    } else {
-      await setDoc(deckDocRef, { totalFlashcardsCreated: 0 }, { merge: true });
+  return { user, deck, setDeck, loading };
+};
+
+// Flashcard Form Component
+const FlashcardForm = ({ flashcard, index, onChange }) => (
+  <>
+    <Form.Group controlId={`question-${index}`}>
+      <Form.Label>Question</Form.Label>
+      <Form.Control
+        type="text"
+        value={flashcard.question}
+        onChange={(e) => onChange(index, "question", e.target.value)}
+        placeholder="Enter question"
+      />
+    </Form.Group>
+    <Form.Group controlId={`answer-${index}`}>
+      <Form.Label>Answer</Form.Label>
+      <Form.Control
+        type="text"
+        value={flashcard.answer}
+        onChange={(e) => onChange(index, "answer", e.target.value)}
+        placeholder="Enter answer"
+      />
+    </Form.Group>
+  </>
+);
+
+// Main Component
+const FlashcardInput = () => {
+  const { deckName } = useParams();
+  const navigate = useNavigate();
+  const { user, deck, setDeck, loading } = useDeckData(deckName);
+  const [isEditingDeck, setIsEditingDeck] = useState(false);
+  const [newDeckName, setNewDeckName] = useState(deckName);
+  const [newDeckDescription, setNewDeckDescription] = useState(deck.description);
+  const [editingFlashcardIndex, setEditingFlashcardIndex] = useState(null);
+  const [showDeleteDeckModal, setShowDeleteDeckModal] = useState(false);
+  const [showAddFlashcardModal, setShowAddFlashcardModal] = useState(false);
+  const [alert, setAlert] = useState({ show: false, variant: "", message: "" });
+
+  // Update Firestore when deck changes
+  const updateFirestore = async () => {
+    if (user) {
+      const deckDocRef = doc(db, "users", user.uid, "decks", deckName);
+      await setDoc(deckDocRef, {
+        flashcards: deck.flashcards,
+        description: deck.description,
+        totalFlashcardsCreated: deck.totalFlashcardsCreated,
+      }, { merge: true });
     }
   };
 
   useEffect(() => {
-    const fetchFlashcards = async () => {
-      if (user) {
-        const docPath = `users/${user.uid}/decks/${deckName}`;
-        const deckData = await loadFromFirestore(docPath, {
-          flashcards: [],
-          description: "",
-        });
-        const flashcards = deckData.flashcards || [];
-        const description = deckData.description || "No description available";
-
-        setFlashcards(flashcards);
-        setDescription(description); // Assuming you have a state for description
-      }
-    };
-
-    if (user) {
-      fetchFlashcards();
-    }
-  }, [deckName, user]);
+    updateFirestore();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deck]);
 
   const handleTestYourself = async () => {
-    await saveToFirestore("settings", `${deckName}-shuffled`, {
-      shuffled: flashcards,
+    await saveToFirestore(`settings/${deckName}-shuffled`, {
+      shuffled: deck.flashcards,
     });
-    await saveToFirestore("settings", `${deckName}-currentIndex`, {
+    await saveToFirestore(`settings/${deckName}-currentIndex`, {
       currentIndex: 0,
     });
     navigate(`/test/${deckName}`);
   };
 
-  const handleSave = () => {
-    if (user && editIndex === null) {
-      setShowDisclaimer(true);
-    } else if (user && editIndex !== null) {
-      handleConfirmSave();
-    }
-  };
-
-  const handleEdit = (index) => {
-    setEditIndex(index);
-  };
-
-  const handleDelete = (index) => {
-    if (
-      user &&
-      window.confirm(
-        "Are you sure you want to delete this flashcard? This action cannot be undone."
-      )
-    ) {
-      const newFlashcards = flashcards.filter((_, i) => i !== index);
-      setFlashcards(newFlashcards);
-      saveDeckFlashcards(user.uid, deckName, newFlashcards);
-    }
-  };
-
-  const handleDeleteDeck = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this deck? This action cannot be undone."
-      ) &&
-      user
-    ) {
-      await removeDeckFlashcards(user.uid, deckName);
-      navigate("/");
+  const handleSaveDeck = async () => {
+    if (user) {
+      const deckDocRef = doc(db, "users", user.uid, "decks", newDeckName);
+      await updateDoc(deckDocRef, {
+        name: newDeckName,
+        description: newDeckDescription,
+      });
+      setIsEditingDeck(false);
+      setAlert({ show: true, variant: "success", message: "Deck updated successfully!" });
     }
   };
 
   const handleAddFlashcard = () => {
-    if (totalFlashcardsCreated >= MAX_FLASHCARDS) {
-      alert(
-        `You have already created ${totalFlashcardsCreated} flashcards in this deck. You cannot create more.`
-      );
+    if (deck.totalFlashcardsCreated >= MAX_FLASHCARDS) {
+      setAlert({
+        show: true,
+        variant: "warning",
+        message: `Maximum of ${MAX_FLASHCARDS} flashcards reached.`,
+      });
       return;
     }
-    const newFlashcards = [...flashcards, { question: "", answer: "" }];
-    setFlashcards(newFlashcards);
-    setEditIndex(newFlashcards.length - 1);
-    setShowDisclaimer(true);
+    setDeck({
+      ...deck,
+      flashcards: [...deck.flashcards, { question: "", answer: "" }],
+      totalFlashcardsCreated: deck.totalFlashcardsCreated + 1,
+    });
+    setEditingFlashcardIndex(deck.flashcards.length);
+    setShowAddFlashcardModal(true);
   };
 
-  const handleConfirmSave = async () => {
+  const handleDeleteFlashcard = async (index) => {
+    if (user && window.confirm("Are you sure you want to delete this flashcard?")) {
+      const updatedFlashcards = deck.flashcards.filter((_, i) => i !== index);
+      setDeck({
+        ...deck,
+        flashcards: updatedFlashcards,
+        totalFlashcardsCreated: deck.totalFlashcardsCreated - 1,
+      });
+      setAlert({ show: true, variant: "danger", message: "Flashcard deleted." });
+    }
+  };
+
+  const handleDeleteDeck = async () => {
     if (user) {
-      await saveDeckFlashcards(user.uid, deckName, flashcards);
-      setEditIndex(null);
-
-      // Update total flashcards created for this deck
-      const deckDocRef = doc(db, "users", user.uid, "decks", deckName);
-      const newTotal = flashcards.length;
-      await updateDoc(deckDocRef, { totalFlashcardsCreated: newTotal });
-      setTotalFlashcardsCreated(newTotal);
-
-      setIsEditingDeck(false);
-      setShowDisclaimer(false);
+      await deleteDoc(doc(db, "users", user.uid, "decks", deckName));
+      navigate("/deck/home");
     }
   };
 
-  const handleInputChange = (index, field, value) => {
-    const newFlashcards = [...flashcards];
-
-    if (field === "question") {
-      newFlashcards[index].question = value;
-    } else if (field === "answer") {
-      newFlashcards[index].answer = value;
-    } else if (field === "description") {
-      newFlashcards[index].description = value;
-    }
-
-    setFlashcards(newFlashcards);
+  const handleFlashcardChange = (index, field, value) => {
+    const updatedFlashcards = deck.flashcards.map((fc, i) =>
+      i === index ? { ...fc, [field]: value } : fc
+    );
+    setDeck({ ...deck, flashcards: updatedFlashcards });
   };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center my-5">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+  }
 
   return (
-    <div class="screen-border-container">
-      <button className="st-back-button" onClick={() => navigate("/deck/home")}>
-        <i className="fas fa-arrow-left"></i>
-      </button>
-      <div className="flashcard-input-container">
-        <div className="flashcard-input-title-bar">
-          <div className="title-description-container">
-            {isEditingDeck ? (
-              <>
-                <input
+    <div className="container my-4">
+      {/* Back Button */}
+      <Button
+        variant="outline-secondary"
+        className="mb-3"
+        onClick={() => navigate("/deck/home")}
+      >
+        <i className="fas fa-arrow-left"></i> Back
+      </Button>
+
+      {/* Alert */}
+      {alert.show && (
+        <Alert
+          variant={alert.variant}
+          onClose={() => setAlert({ ...alert, show: false })}
+          dismissible
+        >
+          {alert.message}
+        </Alert>
+      )}
+
+      {/* Deck Information */}
+      <Card className="mb-4">
+        <Card.Header className="d-flex justify-content-between align-items-center">
+          {isEditingDeck ? (
+            <Form>
+              <Form.Group controlId="deckName">
+                <Form.Label>Deck Name</Form.Label>
+                <Form.Control
                   type="text"
                   value={newDeckName}
                   onChange={(e) => setNewDeckName(e.target.value)}
-                  className="flashcard-input-deck-name"
+                  placeholder="Enter deck name"
                 />
-                <textarea
+              </Form.Group>
+              <Form.Group controlId="deckDescription" className="mt-2">
+                <Form.Label>Description</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
                   value={newDeckDescription}
                   onChange={(e) => setNewDeckDescription(e.target.value)}
-                  className="flashcard-input-deck-description"
-                  placeholder="Edit the description"
+                  placeholder="Enter deck description"
                 />
-              </>
-            ) : (
-              <>
-                <h3 className="flashcard-input-title">{newDeckName}</h3>
-                <p className="deck-card-description">{description}</p>
-              </>
-            )}
-          </div>
-          <div className="title-bar-buttons">
+              </Form.Group>
+            </Form>
+          ) : (
+            <div>
+              <h3>{deckName}</h3>
+              <p>{deck.description}</p>
+            </div>
+          )}
+          <div>
             {isEditingDeck && (
-              <button
-                onClick={handleDeleteDeck}
-                className="edit-icon-button"
-                style={{ color: "red" }}
+              <Button
+                variant="danger"
+                className="me-2"
+                onClick={() => setShowDeleteDeckModal(true)}
               >
                 <i className="fas fa-trash"></i>
-              </button>
+              </Button>
             )}
-            <button
-              onClick={() => setIsEditingDeck(!isEditingDeck)}
-              className={`edit-icon-button ${isEditingDeck ? "enabled" : ""}`}
+            <Button
+              variant={isEditingDeck ? "success" : "outline-primary"}
+              onClick={() => {
+                if (isEditingDeck) {
+                  handleSaveDeck();
+                } else {
+                  setIsEditingDeck(true);
+                }
+              }}
             >
               <i className={`fas ${isEditingDeck ? "fa-check" : "fa-pen"}`}></i>
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card.Header>
+        <Card.Body>
+          {/* Navigation Buttons */}
+          <div className="d-flex justify-content-between mb-4 flex-wrap">
+            <Link to={`/test/${deckName}`} className="mb-2 flex-fill mx-1">
+              <Button variant="secondary" onClick={handleTestYourself}>
+                Test
+              </Button>
+            </Link>
 
-        <div className="flashcard-button-row">
-          <Link to={`/test/${deckName}`}>
-            <button
-              onClick={handleTestYourself}
-              className="flashcard-button flashcard-button-secondary"
+            <Link to={`/score-report/${deckName}`} className="mb-2 flex-fill mx-1">
+              <Button variant="secondary">View Scores</Button>
+            </Link>
+            <Link
+              to={`/quizmaker/${deckName}`}
+              onClick={(e) => {
+                if (localStorage.getItem(`${deckName}-generated`) === "true") {
+                  e.preventDefault();
+                  setAlert({
+                    show: true,
+                    variant: "warning",
+                    message: "You have already used the QuizMaker feature for this deck.",
+                  });
+                }
+              }}
+              className="mb-2 flex-fill mx-1"
             >
-              Test
-            </button>
-          </Link>
-          <Link to={`/review/${deckName}`}>
-            <button className="flashcard-button flashcard-button-secondary">
-              Review
-            </button>
-          </Link>
-          <Link to={`/score-report/${deckName}`}>
-            <button className="flashcard-button flashcard-button-secondary">
-              View Scores
-            </button>
-          </Link>
-          <Link
-            to={`/quizmaker/${deckName}`}
-            onClick={(e) => {
-              if (localStorage.getItem(`${deckName}-generated`) === "true") {
-                e.preventDefault(); // Prevent navigation
-                alert(
-                  "You have already used the QuizMaker feature for this deck."
-                );
-              }
-            }}
+              <Button variant="secondary">Quiz Maker</Button>
+            </Link>
+          </div>
+          <hr />
+
+          {/* Add Flashcard Button */}
+          <Button
+            variant="success"
+            className="mb-3"
+            onClick={handleAddFlashcard}
           >
-            <button className="flashcard-button flashcard-button-secondary">
-              QuizMaker
-            </button>
-          </Link>
-        </div>
-        <hr className="lowkey-divider" />
+            + Add Flashcard
+          </Button>
 
-        <button
-          className="flashcard-input-add-button"
-          onClick={() => {
-            if (
-              window.confirm(
-                "You are about to add a new flashcard. This action cannot be undone. Do you wish to proceed?"
-              )
-            ) {
-              handleAddFlashcard();
-            }
-          }}
-        >
-          + Add Flashcard
-        </button>
-        <div className="flashcard-input-list">
-          {flashcards.map((flashcard, index) => (
-            <div key={index} className="flashcard-input-item">
-              <div className="flashcard-input-content">
-                <div className="flashcard-input-question">
-                  <label>Question</label>
-                  {editIndex === index ? (
-                    <>
-                      <input
-                        type="text"
-                        value={flashcard.question}
-                        onChange={(e) =>
-                          handleInputChange(index, "question", e.target.value)
-                        }
-                        className="flashcard-input-question-input"
+          {/* Flashcards List */}
+          <ListGroup>
+            {deck.flashcards.map((flashcard, index) => (
+              <ListGroup.Item key={index}>
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5>Question {index + 1}</h5>
+                    {editingFlashcardIndex === index ? (
+                      <FlashcardForm
+                        flashcard={flashcard}
+                        index={index}
+                        onChange={handleFlashcardChange}
                       />
-                      {/* <input
-              type="text"
-              placeholder="Add a short description"
-              value={flashcard.description || ""}
-              onChange={(e) =>
-                handleInputChange(index, "description", e.target.value)
-              }
-              className="flashcard-input-description-input"
-            /> */}
-                    </>
-                  ) : (
-                    <>
-                      <p className="flashcard-input-question-text">
-                        {flashcard.question}
-                      </p>
-                      <p className="flashcard-input-description-text">
-                        {flashcard.description}
-                      </p>
-                    </>
-                  )}
-                </div>
-                <div className="flashcard-input-vertical-line"></div>
-                <div className="flashcard-input-answer">
-                  <label>Answer</label>
-                  {editIndex === index ? (
-                    <input
-                      type="text"
-                      value={flashcard.answer}
-                      onChange={(e) =>
-                        handleInputChange(index, "answer", e.target.value)
-                      }
-                      className="flashcard-input-answer-input"
-                    />
-                  ) : (
-                    <p className="flashcard-input-answer-text">
-                      {flashcard.answer}
-                    </p>
-                  )}
-                </div>
-                <div className="flashcard-input-buttons">
-                  <button
-                    onClick={() => {
-                      if (editIndex === index) {
-                        handleSave(); // Save the changes
-                      } else {
-                        handleEdit(index); // Enter edit mode
-                      }
-                    }}
-                    className={`edit-icon-button ${
-                      editIndex === index ? "enabled" : ""
-                    }`}
-                  >
-                    <i
-                      className={`fas ${
-                        editIndex === index ? "fa-check" : "fa-pen"
-                      }`}
-                    ></i>
-                  </button>
-
-                  {editIndex === index && (
-                    <button
-                      onClick={() => handleDelete(index)}
-                      className="edit-icon-button"
+                    ) : (
+                      <>
+                        <p>
+                          <strong>Q:</strong> {flashcard.question || "No question provided."}
+                        </p>
+                        <p>
+                          <strong>A:</strong> {flashcard.answer || "No answer provided."}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  <div>
+                    <Button
+                      variant={editingFlashcardIndex === index ? "success" : "outline-primary"}
+                      className="me-2"
+                      onClick={() => {
+                        if (editingFlashcardIndex === index) {
+                          setEditingFlashcardIndex(null);
+                        } else {
+                          setEditingFlashcardIndex(index);
+                        }
+                      }}
+                    >
+                      <i className={`fas ${editingFlashcardIndex === index ? "fa-check" : "fa-pen"}`}></i>
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDeleteFlashcard(index)}
                     >
                       <i className="fas fa-trash"></i>
-                    </button>
-                  )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Card.Body>
+      </Card>
+
+      {/* Delete Deck Modal */}
+      <Modal show={showDeleteDeckModal} onHide={() => setShowDeleteDeckModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Deck</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete the deck "{deckName}"? This action cannot be undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteDeckModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={() => { handleDeleteDeck(); setShowDeleteDeckModal(false); }}>
+            Delete Deck
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Add Flashcard Modal */}
+      <Modal show={showAddFlashcardModal} onHide={() => setShowAddFlashcardModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Add Flashcard</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <FlashcardForm
+            flashcard={deck.flashcards[editingFlashcardIndex] || { question: "", answer: "" }}
+            index={editingFlashcardIndex}
+            onChange={handleFlashcardChange}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAddFlashcardModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={() => setShowAddFlashcardModal(false)}>
+            Save Flashcard
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
-}
+};
 
 export default FlashcardInput;

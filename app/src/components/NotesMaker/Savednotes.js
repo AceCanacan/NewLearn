@@ -1,10 +1,20 @@
+// SavedNotes.js
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import './savednotes.css'; // Import the custom styles
-import { auth } from '../../firebase/firebase';
+import { auth, db } from '../../firebase/firebase'; // Ensure db is imported
 import { useNavigate } from 'react-router-dom';
-
-import { saveToFirestore, loadFromFirestore, removeFromFirestore } from '../../firebase/firebase';
+import { 
+  Container, 
+  Row, 
+  Col, 
+  Button, 
+  Card, 
+  Modal, 
+  Form, 
+  Alert,
+} from 'react-bootstrap';
+import { BsArrowLeft, BsPlus, BsPencil, BsTrash, BsSave, BsX } from 'react-icons/bs';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 const SavedNotes = () => {
   const [savedNotes, setSavedNotes] = useState([]);
@@ -13,20 +23,36 @@ const SavedNotes = () => {
   const [editText, setEditText] = useState('');
   const [editTitle, setEditTitle] = useState('');
   const navigate = useNavigate();
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const loadNotes = async () => {
       const user = auth.currentUser;
       if (!user) return;
-      const notes = (await loadFromFirestore(`users/${user.uid}/savedNotes`, [])).sort((a, b) => b.id - a.id);
-      setSavedNotes(notes);
+
+      try {
+        const notesCollection = collection(db, 'users', user.uid, 'savedNotes');
+        const notesSnapshot = await getDocs(notesCollection);
+        const notesList = notesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        // Assuming you have a timestamp field for sorting; adjust as needed
+        setSavedNotes(notesList.sort((a, b) => b.timestamp - a.timestamp));
+      } catch (error) {
+        console.error("Error loading notes:", error);
+        setError("Failed to load notes. Please try again later.");
+      }
     };
+
     loadNotes();
   }, []);
 
   const handleNoteClick = (note) => {
     setActiveNote(note);
     setEditText(note.text);
+    setEditTitle(note.title);
+    setIsEditing(false);
   };
 
   const handleEdit = () => {
@@ -35,118 +61,181 @@ const SavedNotes = () => {
 
   const handleSave = async () => {
     if (activeNote && auth.currentUser) {
-      const docPath = `users/${auth.currentUser.uid}/savedNotes/${activeNote.id}`;
-      await saveToFirestore(docPath, { ...activeNote, text: editText });
-      setSavedNotes((prev) =>
-        prev.map((n) => (n.id === activeNote.id ? { ...n, text: editText } : n))
-      );
-      setIsEditing(false);
+      const noteRef = doc(db, 'users', auth.currentUser.uid, 'savedNotes', activeNote.id);
+      try {
+        await updateDoc(noteRef, {
+          text: editText,
+          title: editTitle,
+          // Optionally, update a timestamp
+          timestamp: Date.now(),
+        });
+        setSavedNotes(prev =>
+          prev.map(n => n.id === activeNote.id ? { ...n, text: editText, title: editTitle, timestamp: Date.now() } : n)
+        );
+        setIsEditing(false);
+        setActiveNote(null);
+      } catch (error) {
+        console.error("Error updating note:", error);
+        setError("Failed to save changes. Please try again.");
+      }
     }
   };
 
   const handleDelete = async () => {
     if (activeNote && auth.currentUser) {
-      const docPath = `users/${auth.currentUser.uid}/savedNotes/${activeNote.id}`;
-      
+      const noteRef = doc(db, 'users', auth.currentUser.uid, 'savedNotes', activeNote.id);
       try {
-        await removeFromFirestore(docPath); // Use the removeFromFirestore function to delete the document
-        setSavedNotes((prev) => prev.filter((n) => n.id !== activeNote.id));
-        handleClose();
+        await deleteDoc(noteRef);
+        setSavedNotes(prev => prev.filter(n => n.id !== activeNote.id));
+        setActiveNote(null);
       } catch (error) {
-        console.error("Error deleting data from Firestore:", error);
+        console.error("Error deleting note:", error);
+        setError("Failed to delete note. Please try again.");
       }
     }
   };
+
   const handleClose = () => {
     setActiveNote(null);
     setIsEditing(false);
   };
 
   return (
-    <div>
-      <div className="sn-squircle-banner">Saved Notes</div>
-      <button className="sn-back-button" onClick={() => navigate('/')}>
-        <i className="fas fa-arrow-left"></i>
-      </button>
-      <div className="sn-container">
-        <ul className="sn-notes-list">
-          {savedNotes.map(note => (
-            <li key={note.id} className="sn-note-item">
-              <div className="sn-note-container" onClick={() => handleNoteClick(note)}>
-                <div className="sn-note-header">{note.title}</div>
-                <div className="sn-note-content">
-                  <ReactMarkdown className="sn-markdown-content">
-                    {note.text?.length > 300 
-                      ? note.text.substring(0, 300) + "..." 
-                      : note.text || "No content available"}
-                  </ReactMarkdown>
-                </div>
-              </div>
-            </li>
-          ))}
-          <li className="sn-note-item">
-            <div className="sn-note-container sn-add-card" onClick={() => navigate('/notesmaker')}>
-              <span className="sn-plus-icon">+</span>
-            </div>
-          </li>
-        </ul>
-  
-        {activeNote && (
-          <div className="sn-note-modal" onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setActiveNote(null);
-            }
-          }}>
-            <div className="sn-modal-content">
-              {isEditing ? (
-                <div style={{ position: 'relative' }}>
-                  <h2 className="sn-active-note-header" style={{ visibility: 'hidden' }}>
-                    {activeNote.title}
-                  </h2>
-                  <input 
-                    type="text" 
-                    className="sn-title-input" 
-                    value={editTitle} 
-                    onChange={(e) => setEditTitle(e.target.value)} 
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                    }}
-                  />
-                </div>
-              ) : (
-                <h2 className="sn-active-note-header">{activeNote.title}</h2>
-              )}
-{isEditing ? (
-  <textarea
-    className="sn-textarea"
-    value={editText}
-    rows="20"
-    onChange={(e) => setEditText(e.target.value)}
-  />
-) : (
-  <ReactMarkdown className="sn-markdown-content">
-    {activeNote.text || "No content available"}
-  </ReactMarkdown>
-)}
-              <div className="sn-button-group">
-                {isEditing ? (
-                  <>
-                    <button className="sn-save-button" onClick={handleSave}>Save</button>
-                    <button className="sn-cancel-button" onClick={() => setIsEditing(false)}>Cancel</button>
-                  </>
-                ) : (
-                  <button className="sn-edit-button" onClick={handleEdit}>Edit</button>
-                )}
-                <button className="sn-delete-button" onClick={handleDelete}>Delete</button>
-              </div>
-            </div>
-          </div>
+    <Container className="my-5">
+      {/* Header Section */}
+      <Row className="mb-4 align-items-center">
+        <Col>
+          <h1 className="text-center text-success">Saved Notes</h1>
+        </Col>
+        <Col className="text-end">
+          <Button variant="primary" onClick={() => navigate('/notesmaker')}>
+            <BsPlus className="me-2" /> Add New Note
+          </Button>
+          <Button variant="outline-secondary" className="ms-2" onClick={() => navigate('/')}>
+            <BsArrowLeft className="me-2" /> Back
+          </Button>
+        </Col>
+      </Row>
+
+      {/* Error Alert */}
+      {error && (
+        <Row className="mb-3">
+          <Col>
+            <Alert variant="danger" onClose={() => setError("")} dismissible>
+              {error}
+            </Alert>
+          </Col>
+        </Row>
+      )}
+
+      {/* Notes Grid */}
+      <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+        {savedNotes.length === 0 ? (
+          <Col>
+            <Card className="text-center shadow-sm">
+              <Card.Body>
+                <Card.Title>No Notes Found</Card.Title>
+                <Card.Text>
+                  You have not saved any notes yet. Click the button above to create one.
+                </Card.Text>
+                <Button variant="primary" onClick={() => navigate('/notesmaker')}>
+                  <BsPlus className="me-2" /> Create Note
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
+        ) : (
+          savedNotes.map(note => (
+            <Col key={note.id}>
+              <Card
+                className="h-100 shadow-sm hover-shadow"
+                onClick={() => handleNoteClick(note)}
+                style={{ cursor: "pointer" }}
+              >
+                <Card.Body>
+                  <Card.Title>{note.title || "Untitled Note"}</Card.Title>
+                  <Card.Text>
+                    <ReactMarkdown>
+                      {note.text?.length > 100
+                        ? `${note.text.substring(0, 100)}...`
+                        : note.text || "No content available"}
+                    </ReactMarkdown>
+                  </Card.Text>
+                </Card.Body>
+                <Card.Footer className="text-muted">
+                  {note.timestamp && (
+                    <small>
+                      Last updated: {new Date(note.timestamp).toLocaleDateString()}
+                    </small>
+                  )}
+                </Card.Footer>
+              </Card>
+            </Col>
+          ))
         )}
-      </div>
-    </div>
+      </Row>
+
+      {/* Note Detail Modal */}
+      <Modal show={activeNote !== null} onHide={handleClose} size="lg" centered>
+        <Modal.Header closeButton>
+          {isEditing ? (
+            <Form.Control 
+              type="text" 
+              value={editTitle} 
+              onChange={(e) => setEditTitle(e.target.value)} 
+              placeholder="Enter title" 
+              className="fs-5"
+            />
+          ) : (
+            <Modal.Title>{activeNote?.title || "Untitled Note"}</Modal.Title>
+          )}
+        </Modal.Header>
+        <Modal.Body>
+          {isEditing ? (
+            <Form>
+              <Form.Group className="mb-3" controlId="editNoteText">
+                <Form.Label>Note Text</Form.Label>
+                <Form.Control 
+                  as="textarea" 
+                  rows={10} 
+                  value={editText} 
+                  onChange={(e) => setEditText(e.target.value)} 
+                  placeholder="Edit your note here..."
+                />
+              </Form.Group>
+            </Form>
+          ) : (
+            <ReactMarkdown className="note-content">
+              {activeNote?.text || "No content available"}
+            </ReactMarkdown>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          {isEditing ? (
+            <>
+              <Button variant="success" onClick={handleSave}>
+                <BsSave className="me-2" /> Save
+              </Button>
+              <Button variant="secondary" onClick={() => setIsEditing(false)}>
+                <BsX className="me-2" /> Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="primary" onClick={handleEdit}>
+                <BsPencil className="me-2" /> Edit
+              </Button>
+              <Button variant="danger" onClick={handleDelete}>
+                <BsTrash className="me-2" /> Delete
+              </Button>
+              <Button variant="outline-secondary" onClick={handleClose}>
+                <BsArrowLeft className="me-2" /> Close
+              </Button>
+            </>
+          )}
+        </Modal.Footer>
+      </Modal>
+    </Container>
   );  
 };
 

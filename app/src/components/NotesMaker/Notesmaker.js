@@ -1,304 +1,152 @@
+// NotesMaker.js
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import "./Notesmaker.css";
-
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { db, auth } from "../../firebase/firebase";
-
-import "../../global.css"
-
-import { saveToFirestore } from '../../firebase/firebase';
+import {
+  Container,
+  Row,
+  Col,
+  Button,
+  Form,
+  Alert,
+  Spinner,
+  Card,
+  Modal,
+} from 'react-bootstrap';
 
 const NotesMaker = () => {
+  // State Variables
   const [inputText, setInputText] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [customSuggestions, setCustomSuggestions] = useState([]);
   const [customInput, setCustomInput] = useState("");
   const [selectedSuggestions, setSelectedSuggestions] = useState(new Set());
   const [confirmed, setConfirmed] = useState(false);
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [hasGeneratedPrompt, setHasGeneratedPrompt] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const [hasCopiedPrompt, setHasCopiedPrompt] = useState(false);
+  const [pastedOutput, setPastedOutput] = useState('');
+  const [isOutputConfirmed, setIsOutputConfirmed] = useState(false);
   const [user, setUser] = useState(null);
-  const [popupContent, setPopupContent] = useState("");
-  const [showSaveDisclaimer, setShowSaveDisclaimer] = useState(false);
+  const [alert, setAlert] = useState({ show: false, variant: '', message: '' });
   const [noteTitle, setNoteTitle] = useState("");
+  const [showSaveDisclaimer, setShowSaveDisclaimer] = useState(false);
 
   const navigate = useNavigate();
 
+  // Authentication State
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const userDocRef = doc(db, "users", currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists() && userDoc.data().notesGenerationCount >= 3) {
-          alert("You have reached the maximum number of generations.");
-          // Disable the generate button or take necessary action
-        }
-      } else {
-        setUser(null);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (!currentUser) {
+        setAlert({
+          show: true,
+          variant: 'warning',
+          message: 'You must be signed in to use the NotesMaker.',
+        });
       }
     });
-
     return () => unsubscribe();
   }, []);
 
-  const handleGenerate = async () => {
-    if (!user) {
-      alert("You need to be signed in to generate notes.");
-      return;
-    }
-
+  // Handler to confirm input and suggestions
+  const handleConfirm = () => {
     if (!inputText.trim()) {
-      alert("Please enter some text.");
+      setAlert({ show: true, variant: 'danger', message: 'Please enter some text.' });
       return;
     }
 
+    if (selectedSuggestions.size === 0) {
+      setAlert({ show: true, variant: 'danger', message: 'Please select or add at least one suggestion.' });
+      return;
+    }
+
+    setConfirmed(true);
+    setAlert({ show: true, variant: 'success', message: 'Input confirmed. You can now generate the prompt.' });
+  };
+
+  // Handler to generate prompt
+  const handleGenerate = () => {
     if (!confirmed) {
-      alert("Please confirm your suggestions first.");
+      setAlert({ show: true, variant: 'warning', message: 'Please confirm your input first.' });
       return;
     }
 
-    setIsLoading(true);
+    generatePrompt();
+    setAlert({ show: true, variant: 'info', message: 'Prompt generated. You can copy it now.' });
+    setHasGeneratedPrompt(true);
+  };
+
+  // Function to generate the structured prompt
+  const generatePrompt = () => {
+    const selectedSuggestionsArray = Array.from(selectedSuggestions).map(id => {
+      const suggestion = suggestions.find(s => s.id === id) || customSuggestions.find(s => s.id === id);
+      return suggestion ? suggestion.text : '';
+    }).filter(text => text !== '');
+
+    const suggestionsText = selectedSuggestionsArray.join(", ");
+
+    const promptTemplate = `You are an expert note-taking assistant. Based on the following content and suggestions, create organized and comprehensive notes.
+
+**Content:**
+${inputText}
+
+**Suggestions:**
+${suggestionsText}
+
+**Instructions:**
+1. Structure the notes clearly with appropriate headings and subheadings.
+2. Use bullet points where necessary for better readability.
+3. Ensure the notes cover all key concepts and details from the content.
+4. Maintain proper grammar and punctuation.
+5. Avoid adding any personal opinions or additional information outside of the provided content and suggestions.`;
+
+    setGeneratedPrompt(promptTemplate);
+  };
+
+  // Handler for confirming pasted output
+  const handleConfirmOutput = async () => {
+    if (!pastedOutput.trim()) {
+      setAlert({ show: true, variant: 'danger', message: 'Please paste the output generated by ChatGPT.' });
+      return;
+    }
+
+    if (!noteTitle.trim()) {
+      setAlert({ show: true, variant: 'danger', message: 'Please provide a title for your notes.' });
+      return;
+    }
+
+    setAlert({ show: false, variant: '', message: '' });
 
     try {
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-      let notesGenerationCount = 0;
-
-      if (userDoc.exists()) {
-        notesGenerationCount = userDoc.data().notesGenerationCount || 0;
-      }
-
-      if (notesGenerationCount >= 3) {
-        alert("You have reached the maximum number of notes generations.");
-        setIsLoading(false);
-        return;
-      }
-
-      const remainingGenerations = 3 - notesGenerationCount;
-      const userConfirmed = window.confirm(
-        `You have ${remainingGenerations} notes generations left. Do you want to proceed with generating notes?`
-      );
-
-      if (!userConfirmed) {
-        setIsLoading(false);
-        return;
-      }
-
-      // Combine AI-generated and custom suggestions
-      const allSuggestions = [
-        ...suggestions.filter((suggestion) =>
-          selectedSuggestions.has(suggestion.id)
-        ),
-        ...customSuggestions.filter((suggestion) =>
-          selectedSuggestions.has(suggestion.id)
-        ),
-      ];
-      const finalPrompt = allSuggestions
-        .map((suggestion) => suggestion.text)
-        .join(" ");
-
-      const messages = [
-        { role: "system", content: "You are a helpful assistant." },
-        {
-          role: "user",
-          content: `Given this text: "${inputText}". Please create organized notes from the provided text.`,
-        },
-        {
-          role: "user",
-          content: `Include these suggestions: ${finalPrompt} when creating the notes.`,
-        },
-      ];
-
-      console.log("Messages:", messages); // Log the messages array
-
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: messages,
-            max_tokens: 300,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(
-          `Error: ${response.status} ${response.statusText} - ${JSON.stringify(
-            errorDetail
-          )}`
-        );
-      }
-
-      const data = await response.json();
-
-      if (data.choices && data.choices.length > 0) {
-        const notes = data.choices[0].message.content.trim();
-        setPopupContent(notes);
-      } else {
-        alert("Failed to generate notes. Please try again.");
-      }
-
-      await updateDoc(userDocRef, {
-        notesGenerationCount: notesGenerationCount + 1,
-      });
+      setIsOutputConfirmed(true);
+      await saveNotes(noteTitle, pastedOutput);
+      setAlert({ show: true, variant: 'success', message: 'Notes saved successfully.' });
+      navigate(`/notes/${encodeURIComponent(noteTitle)}`);
     } catch (error) {
-      console.error("Error generating notes:", error);
-      alert("Error generating notes. Please try again.");
-    } finally {
-      setIsLoading(false);
+      console.error('Error saving notes:', error);
+      setAlert({ show: true, variant: 'danger', message: 'Failed to save notes. Please try again.' });
     }
   };
 
-  const handleConfirm = async () => {
-    if (!inputText.trim()) {
-      alert("Please enter some text.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    // Split the input text into sentences
-    const sentences = inputText
-      .split(".")
-      .map((sentence) => sentence.trim())
-      .filter((sentence) => sentence);
-
-    // Randomize sentences and always include the first two to three sentences
-    const shuffledSentences = sentences.sort(() => 0.5 - Math.random());
-    const randomSentences = shuffledSentences.slice(0, 4);
-
-    // Combine first two sentences with random sentences
-    const selectedSentences = [
-      sentences[0],
-      sentences[1],
-      ...(sentences[2] ? [sentences[2]] : []),
-      ...randomSentences,
-    ].slice(0, 4);
-
-    const prompt = selectedSentences.join(" ");
-
-    const messages = [
-      { role: "system", content: "You are a helpful assistant." },
+  // Function to save notes to Firestore
+  const saveNotes = async (title, content) => {
+    const noteDocRef = doc(db, `users/${user.uid}/notes`, title);
+    await setDoc(
+      noteDocRef,
       {
-        role: "user",
-        content: `Here is some text: "${prompt}". This information will be used to create organized notes. Provide four detailed and varied suggestions on how to create these notes based on this content. 
-                
-          Examples of suggestions:
-          1. Make it bulleted.
-          2. Organize it in chronological order to show cause and effect.
-
-          Maximum 4 words each suggestion
-          
-          The output should be formatted as follows:
-          1. [Suggestion 1]
-          2. [Suggestion 2]
-          
-          Maximum 4 words each suggestion
-          Maximum 4 words each suggestion
-          Maximum 4 words each suggestion
-          `,
+        title: title,
+        content: content,
+        createdAt: new Date(),
       },
-    ];
-
-    try {
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: messages,
-            max_tokens: 150,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(
-          `Error: ${response.status} ${response.statusText} - ${JSON.stringify(
-            errorDetail
-          )}`
-        );
-      }
-
-      const data = await response.json();
-
-      if (data.choices && data.choices.length > 0) {
-        const suggestionsText = data.choices[0].message.content.trim();
-        const suggestionPattern = /\d\.\s*(.*?)(?=\n|$)/g;
-        let match;
-        const generatedSuggestions = [];
-        let index = 0;
-
-        while ((match = suggestionPattern.exec(suggestionsText)) !== null) {
-          generatedSuggestions.push({
-            id: index,
-            text: match[1].trim(),
-          });
-          index++;
-        }
-
-        // Log each suggestion individually for debugging
-        generatedSuggestions.forEach((suggestion, idx) => {});
-
-        setSuggestions(generatedSuggestions);
-        setConfirmed(true);
-      } else {
-        alert("Failed to generate suggestions. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error generating suggestions:", error);
-      alert("Error generating suggestions. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+      { merge: true }
+    );
   };
 
-  const saveNotes = async (title, notes) => {
-    const uniqueId = Date.now().toString();
-    const newNote = {
-      id: uniqueId,
-      title: title || `Note ${uniqueId}`,
-      text: notes,
-    };
-
-    try {
-      const user = auth.currentUser;
-      if (!user) return; // Ensure the user is authenticated
-      const userDocPath = `users/${user.uid}/savedNotes/${uniqueId}`;
-      await saveToFirestore(userDocPath, newNote); // Save under the user's directory
-      console.log("Notes saved with ID:", uniqueId);
-      handleReset();
-    } catch (error) {
-      console.error("Error saving note:", error);
-    }
-    navigate("/savednotes");
-  };
-
-  const deleteNotes = () => {
-    setPopupContent("");
-    setConfirmed(false);
-    setInputText("");
-    setSuggestions([]);
-    setCustomSuggestions([]);
-    setSelectedSuggestions(new Set());
-    console.log("Notes deleted and state reverted.");
-  };
-
+  // Handlers for suggestions
   const toggleSuggestion = (id) => {
     setSelectedSuggestions((prev) => {
       const newSelected = new Set(prev);
@@ -328,7 +176,6 @@ const NotesMaker = () => {
     updatedSelectedSuggestions.add(newSuggestion.id);
     setSelectedSuggestions(updatedSelectedSuggestions); // Activate the new suggestion
 
-    console.log("Custom suggestions:", updatedCustomSuggestions); // Log the updated suggestions
     setCustomInput(""); // Clear the input field
   };
 
@@ -343,145 +190,243 @@ const NotesMaker = () => {
     });
   };
 
+  // Handler to reset all fields
   const handleReset = () => {
     setInputText("");
-    setIsLoading(false);
     setSuggestions([]);
     setCustomSuggestions([]);
     setCustomInput("");
     setSelectedSuggestions(new Set());
-    setConfirmed(false);
-    setPopupContent("");
+    setGeneratedPrompt('');
+    setHasGeneratedPrompt(false);
+    setHasCopiedPrompt(false);
+    setPastedOutput('');
+    setIsOutputConfirmed(false);
+    setNoteTitle("");
+    setAlert({ show: false, variant: '', message: '' });
   };
 
+  // Handler to save notes (after pasting output)
   const handleSaveClick = () => {
     setShowSaveDisclaimer(true);
   };
 
   const confirmSave = async () => {
-    if (noteTitle) {
-      await saveNotes(noteTitle, popupContent);
-      setShowSaveDisclaimer(false);
-    } else {
-      alert("Please enter a title for your notes.");
-    }
+    await handleConfirmOutput();
+    setShowSaveDisclaimer(false);
   };
 
   return (
-    <>
-      <div className="sn-squircle-banner">Generate notes with AI</div>
-      <button
-        className="rt-back-button"
-        onClick={() => navigate("/savedtranscriptions")}
-      >
-        &#9664;
-      </button>
+    <Container className="my-5">
+      <h2 className="mb-4 text-center">NotesMaker</h2>
 
-      <div className="input-container">
-        <textarea
-          className="input-box"
-          rows="5"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value.slice(0, 1000))}
-          placeholder="Enter the large body of text here..."
-          disabled={confirmed}
-          maxLength={1000}
-        ></textarea>
+      {alert.show && (
+        <Alert
+          variant={alert.variant}
+          onClose={() => setAlert({ ...alert, show: false })}
+          dismissible
+        >
+          {alert.message}
+        </Alert>
+      )}
 
-        {!confirmed && (
-          <button className="start-button" onClick={handleConfirm}>
-            Start
-          </button>
-        )}
-      </div>
+      {/* Step 1: Input Content and Suggestions */}
+      {!hasGeneratedPrompt && !isOutputConfirmed && (
+        <Card className="mb-4">
+          <Card.Body>
+            <Form.Group controlId="notesText" className="mb-3">
+              <Form.Label>Enter Text for Notes</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={6}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Enter the large body of text here..."
+                maxLength={1000}
+              />
+              <Form.Text className="text-muted">{inputText.length}/1000 characters</Form.Text>
+            </Form.Group>
 
-      {confirmed && (
-        <>
-          <div className="suggestions-container">
-            {suggestions.map((suggestion) => (
-              <div
-                key={suggestion.id}
-                className={`suggestion-box ${
-                  selectedSuggestions.has(suggestion.id) ? "selected" : ""
-                }`}
-                onClick={() => toggleSuggestion(suggestion.id)}
-              >
-                {suggestion.text}
-              </div>
-            ))}
-            {customSuggestions.map((suggestion) => (
-              <div
-                key={suggestion.id}
-                className={`suggestion-box ${
-                  selectedSuggestions.has(suggestion.id) ? "selected" : ""
-                }`}
-                onClick={() => toggleSuggestion(suggestion.id)}
-              >
-                {suggestion.text}
-                <button
-                  className="remove-button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeCustomSuggestion(suggestion.id);
-                  }}
+            <h5 className="mt-4">Add Suggestions</h5>
+            <div className="d-flex flex-wrap">
+              {suggestions.map((suggestion) => (
+                <Card 
+                  key={suggestion.id} 
+                  className={`m-2 p-2 ${selectedSuggestions.has(suggestion.id) ? 'border-primary' : ''}`} 
+                  style={{ cursor: 'pointer', width: '150px' }}
+                  onClick={() => toggleSuggestion(suggestion.id)}
                 >
-                  X
-                </button>
-              </div>
-            ))}
-          </div>
+                  <Card.Text>{suggestion.text}</Card.Text>
+                </Card>
+              ))}
+              {customSuggestions.map((suggestion) => (
+                <Card 
+                  key={suggestion.id} 
+                  className={`m-2 p-2 ${selectedSuggestions.has(suggestion.id) ? 'border-primary' : ''}`} 
+                  style={{ cursor: 'pointer', width: '150px', position: 'relative' }}
+                  onClick={() => toggleSuggestion(suggestion.id)}
+                >
+                  <Card.Text>{suggestion.text}</Card.Text>
+                  <Button 
+                    variant="danger" 
+                    size="sm" 
+                    style={{ position: 'absolute', top: '5px', right: '5px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeCustomSuggestion(suggestion.id);
+                    }}
+                  >
+                    &times;
+                  </Button>
+                </Card>
+              ))}
+            </div>
 
-          <div className="custom-suggestions">
-            <input
-              type="text"
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value)}
-              placeholder="Add your own suggestion"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  addCustomSuggestion();
-                }
-              }}
-              onFocus={(e) => (e.target.style.backgroundColor = "#E0F7FA")} // Light blue on focus
-              onBlur={(e) => (e.target.style.backgroundColor = "#FFFFFF")} // White on blur
-            />
-          </div>
+            <Form.Group controlId="customSuggestion" className="mt-3">
+              <Form.Control 
+                type="text" 
+                value={customInput} 
+                onChange={(e) => setCustomInput(e.target.value)} 
+                placeholder="Add your own suggestion" 
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addCustomSuggestion();
+                  }
+                }}
+              />
+              <Button 
+                variant="secondary" 
+                className="mt-2" 
+                onClick={addCustomSuggestion}
+                disabled={!customInput.trim()}
+              >
+                Add Suggestion
+              </Button>
+            </Form.Group>
 
-          <button onClick={handleGenerate} disabled={isLoading}>
-            {isLoading ? "Generating..." : "Generate Questions"}
-          </button>
+            <Button
+              variant="primary"
+              onClick={handleConfirm}
+              disabled={isOutputConfirmed}
+              className="w-100 mt-4"
+            >
+              {isOutputConfirmed ? 'Input Confirmed' : 'Confirm Input'}
+            </Button>
+          </Card.Body>
+        </Card>
+      )}
+
+      {/* Step 2: Generate Prompt */}
+      {confirmed && !hasGeneratedPrompt && !isOutputConfirmed && (
+        <Button
+          variant="success"
+          onClick={handleGenerate}
+          disabled={isOutputConfirmed}
+          className="w-100 mb-3"
+        >
+          {isOutputConfirmed ? 'Prompt Generated' : 'Generate Prompt'}
+        </Button>
+      )}
+
+      {/* Step 3: View/Edit and Copy Prompt */}
+      {hasGeneratedPrompt && !hasCopiedPrompt && !isOutputConfirmed && (
+        <>
+          <Alert variant="info">Prompt generated. You can copy it now.</Alert>
+          <Button
+            variant="secondary"
+            onClick={() => setShowPromptModal(true)}
+            className="w-100 mb-2"
+          >
+            View/Edit Prompt
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              navigator.clipboard.writeText(generatedPrompt);
+              setAlert({ show: true, variant: 'success', message: 'Prompt copied to clipboard.' });
+              setHasCopiedPrompt(true);
+            }}
+            className="w-100"
+          >
+            Copy Prompt
+          </Button>
+
+          {/* Prompt Modal */}
+          <Modal show={showPromptModal} onHide={() => setShowPromptModal(false)} centered size="lg">
+            <Modal.Header closeButton>
+              <Modal.Title>Generated Prompt</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Alert variant="warning">Editing this prompt might cause unexpected results.</Alert>
+              <Form.Control
+                as="textarea"
+                rows={15}
+                value={generatedPrompt}
+                onChange={(e) => setGeneratedPrompt(e.target.value)}
+              />
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={() => setShowPromptModal(false)}>
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
         </>
       )}
 
-      {showSaveDisclaimer && (
-        <div className="sn-disclaimer-overlay">
-          <div className="sn-disclaimer-content">
-            <p>Please provide a title for your notes:</p>
-            <input
-              type="text"
-              value={noteTitle}
-              onChange={(e) => setNoteTitle(e.target.value)}
+      {/* Step 4: Paste Output */}
+      {hasCopiedPrompt && !isOutputConfirmed && (
+        <>
+          <Form.Group controlId="pastedOutput" className="mb-3">
+            <Form.Label>Paste ChatGPT Output Below</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={15}
+              value={pastedOutput}
+              onChange={(e) => setPastedOutput(e.target.value)}
+              placeholder="Paste the output generated by ChatGPT here..."
+            />
+          </Form.Group>
+          <Button
+            variant="success"
+            onClick={handleSaveClick}
+            disabled={isOutputConfirmed || !pastedOutput.trim()}
+            className="w-100"
+          >
+            Save Notes
+          </Button>
+        </>
+      )}
+      <Modal show={showSaveDisclaimer} onHide={() => setShowSaveDisclaimer(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Save Your Notes</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group controlId="noteTitle">
+            <Form.Label>Please provide a title for your notes:</Form.Label>
+            <Form.Control 
+              type="text" 
+              value={noteTitle} 
+              onChange={(e) => setNoteTitle(e.target.value)} 
               placeholder="Enter title"
             />
-            <button onClick={confirmSave}>Save</button>
-            <button onClick={() => setShowSaveDisclaimer(false)}>Cancel</button>
-          </div>
-        </div>
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={confirmSave}>
+            Save
+          </Button>
+          <Button variant="secondary" onClick={() => setShowSaveDisclaimer(false)}>
+            Cancel
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {isOutputConfirmed && (
+        <Alert variant="success">Output confirmed and saved successfully.</Alert>
       )}
-      {popupContent && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <p>{popupContent}</p>
-            <button className="modal-save-button" onClick={handleSaveClick}>
-              Save
-            </button>
-            <button className="modal-delete-button" onClick={deleteNotes}>
-              Deletee
-            </button>
-          </div>
-        </div>
-      )}
-    </>
+    </Container>
   );
 };
 

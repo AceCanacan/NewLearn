@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'firebase/auth';
 import { auth, logFirebaseConfig } from './firebase';
+import { Button, Form, Alert, Spinner, Container, Row, Col, Card } from 'react-bootstrap';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import './auth.css';
 
 const signUp = async (email, password) => {
   try {
@@ -66,57 +66,60 @@ const SignUp = ({ setUser, setAuthMode }) => {
   };
 
   return (
-    <div className="authpage-container">
-      <h2 className="authpage-title">Sign Up</h2>
-      <form onSubmit={handleSubmit} className="authpage-form">
-        <div className="authpage-form-group">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="authpage-input"
-            placeholder="Email"
-          />
-        </div>
-        <div className="authpage-form-group">
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="authpage-input"
-            placeholder="Password"
-          />
-        </div>
-        <div className="authpage-form-group">
-          <input
-            type="password"
-            value={passwordVerification}
-            onChange={(e) => setPasswordVerification(e.target.value)}
-            required
-            className="authpage-input"
-            placeholder="Verify Password"
-          />
-        </div>
-        <div className="authpage-button-container">
-          <button type="submit" disabled={loading} className="authpage-auth-button">
-            Sign Up
-          </button>
-        </div>
-      </form>
-      {error && <p className="authpage-error-message">{error}</p>}
-      <div className="authpage-button-container">
-        <button
-          onClick={() => setAuthMode('login')}
-          disabled={loading}
-          className="authpage-auth-button-secondary"
-        >
-          Already have an account? Sign In
-        </button>
-      </div>
-      {loading && <p className="authpage-loading">Loading...</p>}
-    </div>
+    <Container className="d-flex justify-content-center align-items-center min-vh-100">
+      <Row className="w-100">
+        <Col md={{ span: 6, offset: 3 }}>
+          <Card className="p-4 shadow">
+            <Card.Body>
+              <Card.Title className="text-center mb-4">Sign Up</Card.Title>
+              <Form onSubmit={handleSubmit}>
+                <Form.Group controlId="formEmail" className="mb-3">
+                  <Form.Control
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="Email"
+                  />
+                </Form.Group>
+                <Form.Group controlId="formPassword" className="mb-3">
+                  <Form.Control
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Password"
+                  />
+                </Form.Group>
+                <Form.Group controlId="formPasswordVerification" className="mb-3">
+                  <Form.Control
+                    type="password"
+                    value={passwordVerification}
+                    onChange={(e) => setPasswordVerification(e.target.value)}
+                    required
+                    placeholder="Verify Password"
+                  />
+                </Form.Group>
+                {error && <Alert variant="danger">{error}</Alert>}
+                <Button variant="primary" type="submit" className="w-100" disabled={loading}>
+                  {loading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'Sign Up'}
+                </Button>
+              </Form>
+              <div className="text-center mt-3">
+                <Button
+                  variant="link"
+                  onClick={() => setAuthMode('login')}
+                  disabled={loading}
+                >
+                  Already have an account? Sign In
+                </Button>
+              </div>
+              {loading && <p className="text-center mt-2">Loading...</p>}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 
@@ -142,54 +145,58 @@ const LogIn = ({ setUser, setAuthMode }) => {
   };
 
   return (
-    <div className="authpage-container">
-      <h2 className="authpage-title">Log In</h2>
-      <form onSubmit={handleSubmit} className="authpage-form">
-        <div className="authpage-form-group">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="authpage-input"
-            placeholder="Email"
-          />
-        </div>
-        <div className="authpage-form-group">
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="authpage-input"
-            placeholder="Password"
-          />
-        </div>
-        <div className="authpage-button-container">
-          <button type="submit" disabled={loading} className="authpage-auth-button">
-            Log In
-          </button>
-        </div>
-      </form>
-      {error && <p className="authpage-error-message">{error}</p>}
-      <div className="authpage-button-container">
-        <button
-          onClick={() => setAuthMode('signup')}
-          disabled={loading}
-          className="authpage-auth-button-secondary"
-        >
-          New Account
-        </button>
-        <button
-          onClick={() => setAuthMode('forgotPassword')}
-          disabled={loading}
-          className="authpage-auth-button-secondary"
-        >
-          Forgot Password?
-        </button>
-      </div>
-      {loading && <p className="authpage-loading">Loading...</p>}
-    </div>
+    <Container className="d-flex justify-content-center align-items-center min-vh-100">
+      <Row className="w-100">
+        <Col md={{ span: 6, offset: 3 }}>
+          <Card className="p-4 shadow">
+            <Card.Body>
+              <Card.Title className="text-center mb-4">Log In</Card.Title>
+              <Form onSubmit={handleSubmit}>
+                <Form.Group controlId="formEmail" className="mb-3">
+                  <Form.Control
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="Email"
+                  />
+                </Form.Group>
+                <Form.Group controlId="formPassword" className="mb-3">
+                  <Form.Control
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Password"
+                  />
+                </Form.Group>
+                {error && <Alert variant="danger">{error}</Alert>}
+                <Button variant="primary" type="submit" className="w-100" disabled={loading}>
+                  {loading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'Log In'}
+                </Button>
+              </Form>
+              <div className="d-flex justify-content-between mt-3">
+                <Button
+                  variant="link"
+                  onClick={() => setAuthMode('signup')}
+                  disabled={loading}
+                >
+                  New Account
+                </Button>
+                <Button
+                  variant="link"
+                  onClick={() => setAuthMode('forgotPassword')}
+                  disabled={loading}
+                >
+                  Forgot Password?
+                </Button>
+              </div>
+              {loading && <p className="text-center mt-2">Loading...</p>}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 
@@ -217,41 +224,47 @@ const ForgotPassword = ({ setAuthMode }) => {
   };
 
   return (
-    <div className="authpage-container">
-      <h2 className="authpage-title">Reset Password</h2>
-      <form className="authpage-form">  {/* Add this line */}
-        <div className="authpage-form-group">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="authpage-input"
-            placeholder="Email"
-          />
-        </div>
-        <div className="authpage-button-container">
-          <button
-            onClick={handlePasswordReset}
-            disabled={loading}
-            className="authpage-auth-button"
-          >
-            Send Code
-          </button>
-        </div>
-      </form>  {/* Add this line */}
-      {error && <p className="authpage-error-message">{error}</p>}
-      <div className="authpage-button-container">
-        <button
-          onClick={() => setAuthMode('login')}
-          disabled={loading}
-          className="authpage-auth-button-secondary"
-        >
-          Back to Log In
-        </button>
-      </div>
-      {loading && <p className="authpage-loading">Loading...</p>}
-    </div>
+    <Container className="d-flex justify-content-center align-items-center min-vh-100">
+      <Row className="w-100">
+        <Col md={{ span: 6, offset: 3 }}>
+          <Card className="p-4 shadow">
+            <Card.Body>
+              <Card.Title className="text-center mb-4">Reset Password</Card.Title>
+              <Form>
+                <Form.Group controlId="formEmail" className="mb-3">
+                  <Form.Control
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="Email"
+                  />
+                </Form.Group>
+                {error && <Alert variant={error === 'Password reset email sent.' ? 'success' : 'danger'}>{error}</Alert>}
+                <Button
+                  variant="primary"
+                  className="w-100"
+                  onClick={handlePasswordReset}
+                  disabled={loading}
+                >
+                  {loading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'Send Code'}
+                </Button>
+              </Form>
+              <div className="text-center mt-3">
+                <Button
+                  variant="link"
+                  onClick={() => setAuthMode('login')}
+                  disabled={loading}
+                >
+                  Back to Log In
+                </Button>
+              </div>
+              {loading && <p className="text-center mt-2">Loading...</p>}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 

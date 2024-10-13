@@ -1,368 +1,326 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { setDoc, doc, getDoc } from 'firebase/firestore';
+import { setDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../../../firebase/firebase'; // Ensure this path is correct
 import { onAuthStateChanged } from 'firebase/auth';
-import './QuizMaker.css';
+import {
+  Container,
+  Row,
+  Col,
+  Button,
+  Form,
+  Alert,
+  Spinner,
+  Card,
+  InputGroup,
+  Modal,
+} from 'react-bootstrap';
 
 const QuizMaker = () => {
-  const [inputText, setInputText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
-  const [customSuggestions, setCustomSuggestions] = useState([]);
-  const [customInput, setCustomInput] = useState('');
-  const [selectedSuggestions, setSelectedSuggestions] = useState(new Set());
-  const [confirmed, setConfirmed] = useState(false);
   const [user, setUser] = useState(null);
+  const [inputText, setInputText] = useState('');
+  const [numQuestions, setNumQuestions] = useState(10); // Default to 10 questions
+  const [isLoading, setIsLoading] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [alert, setAlert] = useState({ show: false, variant: '', message: '' });
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [hasGeneratedPrompt, setHasGeneratedPrompt] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const [hasCopiedPrompt, setHasCopiedPrompt] = useState(false);
+  const [pastedOutput, setPastedOutput] = useState('');
+  const [isOutputConfirmed, setIsOutputConfirmed] = useState(false);
+
   const { deckName } = useParams();
   const navigate = useNavigate();
 
+  // Authentication State
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        console.log('User signed in:', currentUser);
-      } else {
-        setUser(null);
-        console.log('User signed out');
+      setUser(currentUser);
+      if (!currentUser) {
+        setAlert({
+          show: true,
+          variant: 'warning',
+          message: 'You must be signed in to use the QuizMaker.',
+        });
       }
     });
-
     return () => unsubscribe();
   }, []);
 
-  
-  const handleGenerate = async () => {
-    if (!user) {
-      alert('You need to be signed in to generate questions.');
-      return;
-    }
-
-    const deckDocRef = doc(db, `users/${user.uid}/decks`, deckName);
-    const deckDoc = await getDoc(deckDocRef);
-
-    if (deckDoc.exists() && deckDoc.data().generated) {
-      alert('You have already generated questions for this deck.');
-      return;
-    }
-
-
-    const saveGeneratedQuestions = async (generatedQuestions) => {
-      const limitedQuestions = generatedQuestions.slice(0, 10);
-      const flashcards = limitedQuestions.map(q => ({ question: q.question, answer: q.answer }));
-
-      try {
-        await setDoc(deckDocRef, {
-          flashcards: flashcards,
-          generated: true,
-        }, { merge: true });
-        alert('Questions generated and saved successfully.');
-      } catch (error) {
-        console.error('Error saving generated questions:', error);
-        alert('Failed to save generated questions.');
-      }
-    };
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-
-  
+  // Handler to confirm input and number of questions
+  const handleConfirm = () => {
     if (!inputText.trim()) {
-      alert('Please enter some text.');
+      setAlert({ show: true, variant: 'danger', message: 'Please enter some text.' });
       return;
     }
-  
+
+    if (numQuestions < 1 || numQuestions > 50) {
+      setAlert({
+        show: true,
+        variant: 'danger',
+        message: 'Please enter a valid number of questions (1-50).',
+      });
+      return;
+    }
+
+    setConfirmed(true);
+    setAlert({ show: true, variant: 'success', message: 'Input confirmed. You can now generate the prompt.' });
+  };
+
+  // Handler to generate prompt
+  const handleGenerate = () => {
     if (!confirmed) {
-      alert('Please confirm your suggestions first.');
+      setAlert({ show: true, variant: 'warning', message: 'Please confirm your input first.' });
       return;
     }
-  
-    const userConfirmed = window.confirm('This action can only be performed once per deck and you will not be able to generate new questions again for this deck. Do you want to proceed?');
-  
-    if (!userConfirmed) {
-      return;
-    }
-  
-    setIsLoading(true);
-  
-    // Combine AI-generated and custom suggestions
-    const allSuggestions = [
-      ...suggestions.filter(suggestion => selectedSuggestions.has(suggestion.id)),
-      ...customSuggestions.filter(suggestion => selectedSuggestions.has(suggestion.id))
-    ];
-    const finalPrompt = allSuggestions.map(suggestion => suggestion.text).join(' ');
 
-    const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
-      { 
-        role: 'user', 
-        content: `Given this text: "${inputText}". This information will be used to create a quiz. Generate a series of questions and answers from the provided text. Format: Q: Question A: Answer. MAXIMUM OF 10 QUESTIONS ONLY.` 
-      },
-      { 
-        role: 'user', 
-        content: `Include these suggestions: ${finalPrompt} Format: Q: Question A: Answer. MAXIMUM OF 10 QUESTIONS ONLY` 
-      }
-    ];
-  
-    console.log('Messages:', messages); // Log the messages array
-  
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: messages,
-          max_tokens: 1500
-        })
-      });
-  
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-      }
-  
-      const data = await response.json();
-  
-      if (data.choices && data.choices.length > 0) {
-        const text = data.choices[0].message.content.trim();
-        const qaPairs = text.split('\n').reduce((acc, line) => {
-          if (line.startsWith('Q: ')) {
-            acc.push({ question: line.slice(3).trim(), answer: '' });
-          } else if (line.startsWith('A: ') && acc.length) {
-            acc[acc.length - 1].answer = line.slice(3).trim();
-          }
-          return acc;
-        }, []);
-  
-        saveGeneratedQuestions(qaPairs);
-        navigate(`/deck/${deckName}`);
-      } else {
-        alert('Failed to generate questions. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error generating questions:', error);
-      alert('Error generating questions. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    generatePrompt();
+    setAlert({ show: true, variant: 'info', message: 'Prompt generated. You can copy it now.' });
+    setHasGeneratedPrompt(true);
   };
-  
-  const handleConfirm = async () => {
-    if (!inputText.trim()) {
-      alert('Please enter some text.');
+
+  // Function to generate the highly detailed prompt
+  const generatePrompt = () => {
+    const promptTemplate = `You are an expert quiz creator. Based on the following content, generate a series of questions and answers for a quiz.
+
+**Content:**
+${inputText}
+
+**Instructions:**
+1. **Number of Questions:** Generate exactly ${numQuestions} questions.
+2. **Difficulty:** Make the questions appropriately challenging.
+3. **Format:** 
+   - Each question should be prefixed with "Q:" and each answer with "A:".
+   - Example:
+     \`Q: What is the capital of France?\`
+     \`A: Paris.\`
+4. **Separation:** Ensure that each Q&A pair is clearly separated by a newline.
+5. **Content Requirements:**
+   - Focus on key concepts, definitions, and critical details from the content.
+   - Avoid overly simplistic or overly complex questions.
+   - Ensure that answers are concise and directly address the questions.
+6. **Formatting:**
+   - Use proper punctuation and grammar.
+   - Number the questions sequentially.
+7. **Exclusions:**
+   - Do not include any additional information outside of the Q&A pairs.
+   - Do not provide explanations or justifications for the answers.`;
+
+    setGeneratedPrompt(promptTemplate);
+  };
+
+  // Handler for confirming pasted output
+  const handleConfirmOutput = async () => {
+    if (!pastedOutput.trim()) {
+      setAlert({ show: true, variant: 'danger', message: 'Please paste the output from ChatGPT.' });
       return;
     }
-  
+
     setIsLoading(true);
-  
-    // Split the input text into sentences
-    const sentences = inputText.split('.').map(sentence => sentence.trim()).filter(sentence => sentence);
-  
-    // Randomize sentences and always include the first two to three sentences
-    const shuffledSentences = sentences.sort(() => 0.5 - Math.random());
-    const randomSentences = shuffledSentences.slice(0, 4);
-  
-    // Combine first two sentences with random sentences
-    const selectedSentences = [
-      sentences[0], 
-      sentences[1], 
-      ...(sentences[2] ? [sentences[2]] : []),
-      ...randomSentences
-    ].slice(0, 4);
-  
-    const prompt = selectedSentences.join(' ');
-  
-    const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
-      { 
-        role: 'user', 
-        content: `Here is some text: "${prompt}". This information will be used to create a quiz. Provide four detailed and varied suggestions on how to create quiz questions based on this content. 
-        Each suggestion should focus on a different aspect of the content, such as functions, processes, implications, comparisons, or definitions. 
-        Ensure that each suggestion is clear, specific, and comprehensive, helping to formulate insightful quiz questions. 
-        You are not supposed to provide questions or any other information, only the four suggestions.
-              
-        Examples of suggestions:
-        1. Focus on key functions.
-        2. Highlight major processes.
-        3. Discuss implications.
-        4. Compare different elements.
-        5. Define and explain key terms.
-        
-        The output should be formatted as follows:
-        1. [Suggestion 1]
-        2. [Suggestion 2]
-        3. [Suggestion 3]
-        4. [Suggestion 4]`
-      }
-    ];
-  
+    setAlert({ show: false, variant: '', message: '' });
+
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: messages,
-          max_tokens: 150
-        })
-      });
-  
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-      }
-  
-      const data = await response.json();
-  
-      if (data.choices && data.choices.length > 0) {
-        const suggestionsText = data.choices[0].message.content.trim();
-        const suggestionPattern = /\d\.\s*(.*?)(?=\n|$)/g;
-        let match;
-        const generatedSuggestions = [];
-        let index = 0;
-  
-        while ((match = suggestionPattern.exec(suggestionsText)) !== null) {
-          generatedSuggestions.push({
-            id: index,
-            text: match[1].trim()
-          });
-          index++;
-        }
-  
-        // Log each suggestion individually for debugging
-        generatedSuggestions.forEach((suggestion, idx) => {
+      const qaPairs = parseQAPairs(pastedOutput);
+
+      if (qaPairs.length === 0) {
+        setAlert({
+          show: true,
+          variant: 'danger',
+          message: 'Failed to parse any questions and answers. Please check the pasted output.',
         });
-  
-        setSuggestions(generatedSuggestions);
-        setConfirmed(true);
-      } else {
-        alert('Failed to generate suggestions. Please try again.');
+        setIsLoading(false);
+        return;
       }
+
+      const deckDocRef = doc(db, `users/${user.uid}/decks`, deckName);
+
+      await setDoc(
+        deckDocRef,
+        {
+          flashcards: qaPairs,
+          generated: true,
+        },
+        { merge: true }
+      );
+
+      setIsOutputConfirmed(true);
+      setAlert({ show: true, variant: 'success', message: 'Questions saved successfully.' });
+      navigate(`/deck/${deckName}`);
     } catch (error) {
-      console.error('Error generating suggestions:', error);
-      alert('Error generating suggestions. Please try again.');
+      console.error('Error saving questions:', error);
+      setAlert({ show: true, variant: 'danger', message: 'Failed to save questions. Please try again.' });
     } finally {
       setIsLoading(false);
     }
   };
-  
 
-  const toggleSuggestion = (id) => {
-    setSelectedSuggestions(prev => {
-      const newSelected = new Set(prev);
-      if (newSelected.has(id)) {
-        newSelected.delete(id);
-      } else {
-        newSelected.add(id);
+  // Helper function to parse Q&A pairs
+  const parseQAPairs = (text) => {
+    const qaPairs = [];
+    const lines = text.split('\n').filter((line) => line.trim() !== '');
+
+    let currentQA = { question: '', answer: '' };
+
+    lines.forEach((line) => {
+      if (line.startsWith('Q:')) {
+        if (currentQA.question && currentQA.answer) {
+          qaPairs.push({ ...currentQA });
+          currentQA = { question: '', answer: '' };
+        }
+        currentQA.question = line.slice(2).trim();
+      } else if (line.startsWith('A:')) {
+        currentQA.answer = line.slice(2).trim();
       }
-      return newSelected;
     });
-  };
 
-  const addCustomSuggestion = () => {
-    if (!customInput.trim()) {
-      return;
+    // Push the last QA pair if it exists
+    if (currentQA.question && currentQA.answer) {
+      qaPairs.push(currentQA);
     }
-  
-    const newSuggestion = {
-      id: suggestions.length + customSuggestions.length,
-      text: customInput.trim()
-    };
-  
-    setCustomSuggestions([...customSuggestions, newSuggestion]);
-    console.log('Custom suggestions:', [...customSuggestions, newSuggestion]); // Add this log
-    setCustomInput('');
-  };
-  
-  const removeCustomSuggestion = (id) => {
-    setCustomSuggestions(customSuggestions.filter(suggestion => suggestion.id !== id));
-    setSelectedSuggestions(prev => {
-      const newSelected = new Set(prev);
-      newSelected.delete(id);
-      return newSelected;
-    });
+
+    return qaPairs;
   };
 
   return (
-    <div className="quizmaker-container">
-      <h2>QuizMaker</h2>
-      <textarea
-        rows="10"
-        cols="50"
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        placeholder="Enter the large body of text here..."
-        disabled={confirmed}
-      ></textarea>
-      <div>{inputText.length}/1000 characters</div>
-      {!confirmed && (
-        <button onClick={handleConfirm}>
-          Confirm
-        </button>
+    <Container className="my-5">
+      <h2 className="mb-4 text-center">QuizMaker</h2>
+
+      {alert.show && (
+        <Alert
+          variant={alert.variant}
+          onClose={() => setAlert({ ...alert, show: false })}
+          dismissible
+        >
+          {alert.message}
+        </Alert>
       )}
-      {confirmed && (
+
+      {!confirmed && (
+        <Card className="mb-4">
+          <Card.Body>
+            <Form.Group controlId="quizText" className="mb-3">
+              <Form.Label>Enter Text for Quiz</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={6}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Enter the large body of text here..."
+              />
+              <Form.Text className="text-muted">{inputText.length}/5000 characters</Form.Text>
+            </Form.Group>
+
+            <Form.Group controlId="numQuestions" className="mb-3">
+              <Form.Label>Number of Questions</Form.Label>
+              <Form.Control
+                type="number"
+                min="1"
+                max="50"
+                value={numQuestions}
+                onChange={(e) => setNumQuestions(Number(e.target.value))}
+                placeholder="Enter the number of questions you want (1-50)"
+              />
+            </Form.Group>
+
+            <Button
+              variant="primary"
+              onClick={handleConfirm}
+              disabled={isLoading || !inputText.trim()}
+              className="w-100"
+            >
+              {isLoading ? <Spinner as="span" animation="border" size="sm" /> : 'Confirm Input'}
+            </Button>
+          </Card.Body>
+        </Card>
+      )}
+
+      {confirmed && !hasGeneratedPrompt && (
         <>
-          <div className="suggestions-container">
-            {suggestions.map(suggestion => (
-              <div
-                key={suggestion.id}
-                className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
-                onClick={() => toggleSuggestion(suggestion.id)}
-              >
-                {suggestion.text}
-              </div>
-            ))}
-            {customSuggestions.map(suggestion => (
-              <div
-                key={suggestion.id}
-                className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
-                onClick={() => toggleSuggestion(suggestion.id)}
-              >
-                {suggestion.text}
-                <button onClick={(e) => {
-                  e.stopPropagation();
-                  removeCustomSuggestion(suggestion.id);
-                }}>X</button>
-              </div>
-            ))}
-          </div>
-          <div className="custom-suggestions">
-            <input
-              type="text"
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value)}
-              placeholder="Add your own suggestion"
-            />
-            <button onClick={addCustomSuggestion}>+</button>
-          </div>
+          <Button
+            variant="success"
+            onClick={handleGenerate}
+            disabled={isLoading}
+            className="w-100 mb-3"
+          >
+            {isLoading ? <Spinner as="span" animation="border" size="sm" /> : 'Generate Prompt'}
+          </Button>
         </>
       )}
-      {confirmed && (
-        <button onClick={handleGenerate} disabled={isLoading}>
-          {isLoading ? 'Generating...' : 'Generate Questions'}
-        </button>
+
+      {hasGeneratedPrompt && !hasCopiedPrompt && (
+        <>
+          <Alert variant="info">Prompt generated. You can copy it now.</Alert>
+          <Button
+            variant="secondary"
+            onClick={() => setShowPromptModal(true)}
+            className="w-100 mb-2"
+          >
+            View/Edit Prompt
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              navigator.clipboard.writeText(generatedPrompt);
+              setAlert({ show: true, variant: 'success', message: 'Prompt copied to clipboard.' });
+              setHasCopiedPrompt(true);
+            }}
+            className="w-100"
+          >
+            Copy Prompt
+          </Button>
+
+          {/* Prompt Modal */}
+          <Modal show={showPromptModal} onHide={() => setShowPromptModal(false)} centered size="lg">
+            <Modal.Header closeButton>
+              <Modal.Title>Generated Prompt</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Alert variant="warning">Editing this prompt might cause unexpected results.</Alert>
+              <Form.Control
+                as="textarea"
+                rows={15}
+                value={generatedPrompt}
+                onChange={(e) => setGeneratedPrompt(e.target.value)}
+              />
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={() => setShowPromptModal(false)}>
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
+        </>
       )}
-    </div>
+
+      {hasCopiedPrompt && !isOutputConfirmed && (
+        <>
+          <Form.Group controlId="pastedOutput" className="mb-3">
+            <Form.Label>Paste ChatGPT Output Below</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={15}
+              value={pastedOutput}
+              onChange={(e) => setPastedOutput(e.target.value)}
+              placeholder="Paste the output generated by ChatGPT here..."
+            />
+          </Form.Group>
+          <Button
+            variant="success"
+            onClick={handleConfirmOutput}
+            disabled={isLoading || !pastedOutput.trim()}
+            className="w-100"
+          >
+            {isLoading ? <Spinner as="span" animation="border" size="sm" /> : 'Go'}
+          </Button>
+        </>
+      )}
+
+      {isOutputConfirmed && (
+        <Alert variant="success">Output confirmed and saved successfully.</Alert>
+      )}
+    </Container>
   );
-  };
+};
 
 export default QuizMaker;
