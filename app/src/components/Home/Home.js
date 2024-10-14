@@ -33,7 +33,6 @@ const Sidebar = () => {
   // Define navigation links
   const navLinks = [
     { to: "/deck/home", icon: <BsFillHouseDoorFill />, label: "Quiz Maker" },
-    { to: "/transcribe", icon: <BsFileEarmarkTextFill />, label: "Transcribe" },
     { to: "/notesmaker", icon: <BsCardList />, label: "Notes" },
     // { to: "/pdfreader", icon: <BsBookFill />, label: "PDF Reader" },
   ];

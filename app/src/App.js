@@ -12,12 +12,9 @@ import FlashcardInput from './components/Quiz_ai/FlashcardInput/FlashcardInput';
 import TestYourself from './components/Quiz_ai/Test/Test';
 import ScoreReport from './components/Quiz_ai/ScoreReport/ScoreReport';
 import QuizMaker from './components/Quiz_ai/QuizMaker/QuizMaker';
-import Transcribe from './components/Transcribe/transcribe';
-import SavedTranscriptions from './components/Transcribe/SavedTranscriptions';
 import NotesMaker from './components/NotesMaker/Notesmaker';
 import SavedNotes from './components/NotesMaker/Savednotes';
 import TestResults from './components/Quiz_ai/Test/TestResults';
-import PDFReader from './components/pdf_reader/pdf_reader';
 import { logFirebaseConfig } from './firebase/firebase';
 import { onAuthChange, AuthPage } from './firebase/auth';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -60,11 +57,8 @@ function App() {
                 <Route path="deck/:deckName/flashcard-input" element={<FlashcardInput />} />
                 <Route path="test/:deckName" element={<TestYourself />} />
                 <Route path="score-report/:deckName" element={<ScoreReport />} />
-                <Route path="transcribe" element={<Transcribe />} />
-                <Route path="savedtranscriptions" element={<SavedTranscriptions />} />
                 <Route path="notesmaker" element={<NotesMaker />} />
                 <Route path="savednotes" element={<SavedNotes />} />
-                <Route path="pdfreader" element={<PDFReader />} />
                 <Route path="testresults" element={<TestResults />} />
                 <Route path="*" element={<Navigate to="/deck/home" replace />} />
               </Route>
