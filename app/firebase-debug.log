@@ -1,0 +1,80 @@
+[debug] [2024-10-14T05:47:58.054Z] ----------------------------------------------------------------------
+[debug] [2024-10-14T05:47:58.056Z] Command:       /opt/homebrew/Cellar/node/22.6.0/bin/node /opt/homebrew/bin/firebase deploy --only hosting
+[debug] [2024-10-14T05:47:58.056Z] CLI Version:   13.16.0
+[debug] [2024-10-14T05:47:58.056Z] Platform:      darwin
+[debug] [2024-10-14T05:47:58.056Z] Node Version:  v22.6.0
+[debug] [2024-10-14T05:47:58.056Z] Time:          Mon Oct 14 2024 13:47:58 GMT+0800 (Philippine Standard Time)
+[debug] [2024-10-14T05:47:58.056Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-10-14T05:47:58.094Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-10-14T05:47:58.095Z] > authorizing via signed-in user (acecanacanjr@gmail.com)
+[debug] [2024-10-14T05:47:58.095Z] [iam] checking project nulearn-c9eea for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2024-10-14T05:47:58.096Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/nulearn-c9eea:testIamPermissions [none]
+[debug] [2024-10-14T05:47:58.096Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/nulearn-c9eea:testIamPermissions x-goog-quota-user=projects/nulearn-c9eea
+[debug] [2024-10-14T05:47:58.096Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/nulearn-c9eea:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2024-10-14T05:47:59.204Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/nulearn-c9eea:testIamPermissions 200
+[debug] [2024-10-14T05:47:59.204Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/nulearn-c9eea:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2024-10-14T05:47:59.206Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/nulearn-c9eea [none]
+[debug] [2024-10-14T05:47:59.699Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/nulearn-c9eea 200
+[debug] [2024-10-14T05:47:59.699Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/nulearn-c9eea {"projectId":"nulearn-c9eea","projectNumber":"69488928837","displayName":"NuLearn","name":"projects/nulearn-c9eea","resources":{"hostingSite":"nulearn-c9eea","storageBucket":"nulearn-c9eea.appspot.com","locationId":"us-central"},"state":"ACTIVE","etag":"1_b35dd591-31c1-4052-af4e-a393652675f1"}
+[info] 
+[info] === Deploying to 'nulearn-c9eea'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2024-10-14T05:47:59.710Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nulearn-c9eea/versions [none]
+[debug] [2024-10-14T05:47:59.710Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nulearn-c9eea/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2024-10-14T05:48:00.624Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nulearn-c9eea/versions 200
+[debug] [2024-10-14T05:48:00.624Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nulearn-c9eea/versions {"name":"projects/69488928837/sites/nulearn-c9eea/versions/f676a9ed378e329c","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[nulearn-c9eea]: beginning deploy... 
+[info] i  hosting[nulearn-c9eea]: found 11 files in build 
+[debug] [2024-10-14T05:48:00.650Z] [hosting] uploading with 200 concurrency
+[debug] [2024-10-14T05:48:01.070Z] [hosting] hash cache [YnVpbGQ] stored for 11 files
+[debug] [2024-10-14T05:48:01.071Z] [hosting][hash queue][FINAL] {"max":416,"min":11,"avg":64,"active":0,"complete":11,"success":11,"errored":0,"retried":0,"total":11,"elapsed":419}
+[debug] [2024-10-14T05:48:01.071Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/69488928837/sites/nulearn-c9eea/versions/f676a9ed378e329c:populateFiles [none]
+[debug] [2024-10-14T05:48:01.071Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/69488928837/sites/nulearn-c9eea/versions/f676a9ed378e329c:populateFiles {"files":{"/robots.txt":"391d14b3c2f8c9143a27a28c7399585142228d4d1bdbe2c87ac946de411fa9a2","/index.html":"506d53b72da53ba761739ef08dc6e2ab41000772f35c6df154e69f6e675c4b3b","/manifest.json":"b968ab151b8f121e3751439271edd437a5e870880629586a85ac2f5e2aa6a3cb","/asset-manifest.json":"8743b109f68d34a0717b14cac6df40cdbd7571e4af929ecd9a2707374ddb5c61","/static/js/main.e535a9a2.js.LICENSE.txt":"07dab0c202489f1788a4180cc683739b9f3682822030cd1b62f15ea41a73c97c","/static/css/main.d5289b2f.css":"a850cdaa80d6ea739b39d2235a3b954ffa1e4273d812e926cb294dec97885713","/NL_logo.png":"3bee0594b3be529064bcab6ea0f82e0b91a6939b0e1a455ba01bf00187900852","/static/media/NL_logo.c84bd5ab5838425b1326.png":"3bee0594b3be529064bcab6ea0f82e0b91a6939b0e1a455ba01bf00187900852","/static/css/main.d5289b2f.css.map":"3613590ae789173103b320c04ba30dc58e2ac4a0eb60c19a90a404e7c27345d1","/static/js/main.e535a9a2.js":"251706c4470d64b52cc77eab9811bcd63315247b3af1299416c016d470b99ba7","/static/js/main.e535a9a2.js.map":"61a31d99a2f65abf67b09184e269f50de43804caebcb465409df6a363f7bea92"}}
+[debug] [2024-10-14T05:48:01.574Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/69488928837/sites/nulearn-c9eea/versions/f676a9ed378e329c:populateFiles 200
+[debug] [2024-10-14T05:48:01.574Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/69488928837/sites/nulearn-c9eea/versions/f676a9ed378e329c:populateFiles {"uploadRequiredHashes":["506d53b72da53ba761739ef08dc6e2ab41000772f35c6df154e69f6e675c4b3b","8743b109f68d34a0717b14cac6df40cdbd7571e4af929ecd9a2707374ddb5c61","61a31d99a2f65abf67b09184e269f50de43804caebcb465409df6a363f7bea92","251706c4470d64b52cc77eab9811bcd63315247b3af1299416c016d470b99ba7"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files"}
+[debug] [2024-10-14T05:48:01.581Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/506d53b72da53ba761739ef08dc6e2ab41000772f35c6df154e69f6e675c4b3b [none]
+[debug] [2024-10-14T05:48:01.581Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/506d53b72da53ba761739ef08dc6e2ab41000772f35c6df154e69f6e675c4b3b [stream]
+[debug] [2024-10-14T05:48:01.584Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/8743b109f68d34a0717b14cac6df40cdbd7571e4af929ecd9a2707374ddb5c61 [none]
+[debug] [2024-10-14T05:48:01.584Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/8743b109f68d34a0717b14cac6df40cdbd7571e4af929ecd9a2707374ddb5c61 [stream]
+[debug] [2024-10-14T05:48:01.588Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/61a31d99a2f65abf67b09184e269f50de43804caebcb465409df6a363f7bea92 [none]
+[debug] [2024-10-14T05:48:01.588Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/61a31d99a2f65abf67b09184e269f50de43804caebcb465409df6a363f7bea92 [stream]
+[debug] [2024-10-14T05:48:01.589Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/251706c4470d64b52cc77eab9811bcd63315247b3af1299416c016d470b99ba7 [none]
+[debug] [2024-10-14T05:48:01.589Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/251706c4470d64b52cc77eab9811bcd63315247b3af1299416c016d470b99ba7 [stream]
+[debug] [2024-10-14T05:48:01.591Z] [hosting][populate queue][FINAL] {"max":512,"min":512,"avg":512,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":522}
+[debug] [2024-10-14T05:48:01.591Z] [hosting] uploads queued: 4
+[debug] [2024-10-14T05:48:02.972Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/8743b109f68d34a0717b14cac6df40cdbd7571e4af929ecd9a2707374ddb5c61 200
+[debug] [2024-10-14T05:48:02.972Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/8743b109f68d34a0717b14cac6df40cdbd7571e4af929ecd9a2707374ddb5c61 [stream]
+[debug] [2024-10-14T05:48:02.975Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/506d53b72da53ba761739ef08dc6e2ab41000772f35c6df154e69f6e675c4b3b 200
+[debug] [2024-10-14T05:48:02.975Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/506d53b72da53ba761739ef08dc6e2ab41000772f35c6df154e69f6e675c4b3b [stream]
+[debug] [2024-10-14T05:48:03.738Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/251706c4470d64b52cc77eab9811bcd63315247b3af1299416c016d470b99ba7 200
+[debug] [2024-10-14T05:48:03.738Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/251706c4470d64b52cc77eab9811bcd63315247b3af1299416c016d470b99ba7 [stream]
+[debug] [2024-10-14T05:48:04.130Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/61a31d99a2f65abf67b09184e269f50de43804caebcb465409df6a363f7bea92 200
+[debug] [2024-10-14T05:48:04.130Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/nulearn-c9eea/versions/f676a9ed378e329c/files/61a31d99a2f65abf67b09184e269f50de43804caebcb465409df6a363f7bea92 [stream]
+[debug] [2024-10-14T05:48:04.130Z] [hosting][upload queue][FINAL] {"max":2550,"min":1392,"avg":1875,"active":0,"complete":4,"success":4,"errored":0,"retried":0,"total":4,"elapsed":2555}
+[info] ✔  hosting[nulearn-c9eea]: file upload complete 
+[debug] [2024-10-14T05:48:04.131Z] [hosting] deploy completed after 3502ms
+[debug] [2024-10-14T05:48:04.131Z] [
+  {
+    "config": {
+      "public": "build",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "site": "nulearn-c9eea"
+    },
+    "version": "projects/69488928837/sites/nulearn-c9eea/versions/f676a9ed378e329c"
+  }
+]
+[info] i  hosting[nulearn-c9eea]: finalizing version... 
+[debug] [2024-10-14T05:48:04.134Z] >>> [apiv2][query] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nulearn-c9eea/versions/f676a9ed378e329c updateMask=status%2Cconfig
+[debug] [2024-10-14T05:48:04.134Z] >>> [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nulearn-c9eea/versions/f676a9ed378e329c {"status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]}}

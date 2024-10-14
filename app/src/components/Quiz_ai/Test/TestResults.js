@@ -3,7 +3,7 @@
 import React from "react";
 import { Button, Card, ListGroup, Badge, Table } from 'react-bootstrap';
 
-const TestResults = ({ score, results, flashcards, onRetake, onReviewCorrect, onReviewWrong }) => {
+const TestResults = ({ score, userAnswers, flashcards, onRetake, onReviewCorrect, onReviewWrong }) => {
   // Calculate total scores per type
   const types = Object.keys(score);
 
@@ -75,7 +75,7 @@ const TestResults = ({ score, results, flashcards, onRetake, onReviewCorrect, on
               key={index} 
               index={index} 
               card={card} 
-              result={results[index]} 
+              userAnswer={userAnswers[index]} 
             />
           ))}
         </ListGroup>
@@ -85,8 +85,9 @@ const TestResults = ({ score, results, flashcards, onRetake, onReviewCorrect, on
 };
 
 // Helper component for detailed result items
-const DetailedResultItem = ({ index, card, result }) => {
+const DetailedResultItem = ({ index, card, userAnswer }) => {
   const { question, type, answer, options } = card;
+  const isCorrect = determineCorrectness(type, userAnswer, answer);
 
   return (
     <ListGroup.Item>
@@ -106,47 +107,75 @@ const DetailedResultItem = ({ index, card, result }) => {
           )}
         </div>
         <div>
-          {result === 'correct' ? (
+          {isCorrect === true ? (
             <Badge bg="success">✔️ Correct</Badge>
-          ) : result === 'wrong' ? (
+          ) : isCorrect === false ? (
             <Badge bg="danger">❌ Wrong</Badge>
           ) : (
             <Badge bg="secondary">⏸️ Skipped</Badge>
           )}
         </div>
       </div>
-      {result && (
+      {userAnswer !== undefined && (
         <div className="mt-2">
-          <strong>Your Answer:</strong> {getUserAnswer(card, result)} <br />
-          <strong>Correct Answer:</strong> {displayCorrectAnswer(card)}
+          <strong>Your Answer:</strong> {displayUserAnswer(type, userAnswer, options)} <br />
+          <strong>Correct Answer:</strong> {displayCorrectAnswer(type, answer, options)}
         </div>
       )}
     </ListGroup.Item>
   );
 };
 
+// Helper function to determine correctness
+const determineCorrectness = (type, userAnswer, correctAnswer) => {
+  if (userAnswer === undefined) return null; // Skipped
+
+  switch (type) {
+    case "flashcard":
+      // Define your own logic for flashcards if needed
+      return null;
+    case "multiple_choice":
+      return userAnswer === correctAnswer;
+    case "true_false":
+      return userAnswer === correctAnswer;
+    case "identification":
+      return correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+    default:
+      return null;
+  }
+};
+
 // Helper function to display user's answer based on question type
-const getUserAnswer = (card, result) => {
-  // This function assumes that you have access to the user's answer.
-  // You might need to pass additional props or adjust based on your data structure.
-  // For demonstration, we'll return a placeholder.
-  return result === 'correct' ? "Correct Answer" : "Your Wrong Answer";
+const displayUserAnswer = (type, userAnswer, options) => {
+  if (userAnswer === null || userAnswer === undefined) return "No Answer";
+
+  switch (type) {
+    case "flashcard":
+      return userAnswer;
+    case "multiple_choice":
+      return options && options[userAnswer] ? options[userAnswer] : userAnswer;
+    case "true_false":
+      return userAnswer ? "True" : "False";
+    case "identification":
+      return userAnswer;
+    default:
+      return userAnswer;
+  }
 };
 
 // Helper function to display correct answer based on question type
-const displayCorrectAnswer = (card) => {
-  const { type, answer, options } = card;
+const displayCorrectAnswer = (type, correctAnswer, options) => {
   switch (type) {
     case "flashcard":
-      return answer;
+      return correctAnswer;
     case "multiple_choice":
-      return options && options[answer] ? options[answer] : answer;
+      return options && options[correctAnswer] ? options[correctAnswer] : correctAnswer;
     case "true_false":
-      return answer ? "True" : "False";
+      return correctAnswer ? "True" : "False";
     case "identification":
-      return answer;
+      return correctAnswer;
     default:
-      return answer;
+      return correctAnswer;
   }
 };
 

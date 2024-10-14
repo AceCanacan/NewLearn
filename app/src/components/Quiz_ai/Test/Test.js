@@ -25,22 +25,14 @@ const Test = () => {
   const [flashcards, setFlashcards] = useState([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [results, setResults] = useState([]); // Tracks 'correct' or 'wrong' for each flashcard
+  const [userAnswers, setUserAnswers] = useState([]); // Stores user's answers
   const [finished, setFinished] = useState(false);
   const [user, setUser] = useState(null);
   const [showCardModal, setShowCardModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, variant: "", message: "" });
 
-  // Initialize scoring with per-type structure
-  const [score, setScore] = useState({
-    flashcard: { correct: 0, wrong: 0 },
-    multiple_choice: { correct: 0, wrong: 0 },
-    true_false: { correct: 0, wrong: 0 },
-    identification: { correct: 0, wrong: 0 },
-  });
-
-  // Selection states for different question types
+  // User's selected options for different question types
   const [selectedOption, setSelectedOption] = useState(null); // For Multiple Choice and True/False
   const [identificationAnswer, setIdentificationAnswer] = useState(""); // For Identification
 
@@ -64,31 +56,6 @@ const Test = () => {
     return `testProgress-${user?.uid}-${deckName}`;
   };
 
-  // Load progress from sessionStorage
-  useEffect(() => {
-    if (!user) return;
-
-    const sessionData = sessionStorage.getItem(getSessionKey());
-    if (sessionData) {
-      const parsedData = JSON.parse(sessionData);
-      setCurrentCardIndex(parsedData.currentCardIndex);
-      setResults(parsedData.results);
-      setScore(parsedData.score);
-    }
-  }, [user, deckName]);
-
-  // Save progress to sessionStorage whenever relevant states change
-  useEffect(() => {
-    if (!user) return;
-
-    const sessionData = {
-      currentCardIndex,
-      results,
-      score,
-    };
-    sessionStorage.setItem(getSessionKey(), JSON.stringify(sessionData));
-  }, [currentCardIndex, results, score, user, deckName]);
-
   // Fetch flashcards from Firestore
   useEffect(() => {
     const fetchFlashcards = async () => {
@@ -98,13 +65,20 @@ const Test = () => {
         const deckDocRef = doc(db, "users", user.uid, "decks", deckName);
         const deckDoc = await getDoc(deckDocRef);
         if (deckDoc.exists()) {
-          setFlashcards(deckDoc.data().flashcards || []);
+          const fetchedFlashcards = deckDoc.data().flashcards;
+          if (Array.isArray(fetchedFlashcards)) {
+            setFlashcards(fetchedFlashcards);
+          } else {
+            console.warn("Fetched flashcards is not an array. Defaulting to empty array.");
+            setFlashcards([]);
+          }
         } else {
           setAlert({
             show: true,
             variant: "danger",
             message: "Deck does not exist.",
           });
+          setFlashcards([]);
         }
       } catch (error) {
         console.error("Error fetching flashcards:", error);
@@ -113,6 +87,7 @@ const Test = () => {
           variant: "danger",
           message: "Failed to load flashcards. Please try again.",
         });
+        setFlashcards([]);
       } finally {
         setIsLoading(false);
       }
@@ -120,15 +95,52 @@ const Test = () => {
     fetchFlashcards();
   }, [user, deckName]);
 
+  // Load progress from sessionStorage
+  useEffect(() => {
+    if (!user) return;
+
+    const sessionData = sessionStorage.getItem(getSessionKey());
+    if (sessionData) {
+      try {
+        const parsedData = JSON.parse(sessionData);
+        const validCardIndex =
+          typeof parsedData.currentCardIndex === "number" &&
+          parsedData.currentCardIndex >= 0 &&
+          parsedData.currentCardIndex < flashcards.length
+            ? parsedData.currentCardIndex
+            : 0;
+        setCurrentCardIndex(validCardIndex);
+        setUserAnswers(Array.isArray(parsedData.userAnswers) ? parsedData.userAnswers : []);
+      } catch (error) {
+        console.error("Error parsing session data:", error);
+        setCurrentCardIndex(0);
+        setUserAnswers([]);
+      }
+    }
+  }, [user, deckName, flashcards.length]);
+
+  // Save progress to sessionStorage whenever relevant states change
+  useEffect(() => {
+    if (!user) return;
+
+    const sessionData = {
+      currentCardIndex,
+      userAnswers,
+    };
+    sessionStorage.setItem(getSessionKey(), JSON.stringify(sessionData));
+  }, [currentCardIndex, userAnswers, user, deckName]);
+
   // Determine current flashcard
   const currentFlashcard = useMemo(() => {
-    return flashcards.length > 0 ? flashcards[currentCardIndex] : null;
+    return flashcards.length > 0 && currentCardIndex < flashcards.length
+      ? flashcards[currentCardIndex]
+      : null;
   }, [flashcards, currentCardIndex]);
 
   // Helper to get current question type
   const currentQuestionType = useCallback(() => {
     if (flashcards.length === 0) return "flashcard";
-    return flashcards[currentCardIndex].type;
+    return flashcards[currentCardIndex]?.type || "flashcard";
   }, [flashcards, currentCardIndex]);
 
   // Keyboard navigation handler
@@ -147,29 +159,11 @@ const Test = () => {
           e.preventDefault(); // Prevent page scrolling
           handleFlipCard();
           break;
-        case "c":
-        case "C":
-          if (
-            showAnswer &&
-            ["flashcard"].includes(currentQuestionType())
-          ) {
-            handleMarkCorrect();
-          }
-          break;
-        case "w":
-        case "W":
-          if (
-            showAnswer &&
-            ["flashcard"].includes(currentQuestionType())
-          ) {
-            handleMarkWrong();
-          }
-          break;
         default:
           break;
       }
     },
-    [finished, showAnswer, currentQuestionType]
+    [finished]
   );
 
   useEffect(() => {
@@ -201,88 +195,13 @@ const Test = () => {
     setShowAnswer((prev) => !prev);
   };
 
-  // Handlers for marking correct/wrong (Flashcard only)
-  const handleMarkCorrect = () => {
-    const type = currentQuestionType();
-    setScore((prev) => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        correct: prev[type].correct + 1,
-      },
-    }));
-    const newResults = [...results];
-    newResults[currentCardIndex] = "correct";
-    setResults(newResults);
-    handleNextCard();
-  };
-
-  const handleMarkWrong = () => {
-    const type = currentQuestionType();
-    setScore((prev) => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        wrong: prev[type].wrong + 1,
-      },
-    }));
-    const newResults = [...results];
-    newResults[currentCardIndex] = "wrong";
-    setResults(newResults);
-    handleNextCard();
-  };
-
   // Handler for submitting answers (Multiple Choice, True/False, Identification)
-  const submitAnswer = () => {
-    const currentQuestion = flashcards[currentCardIndex];
-    let isCorrect = false;
-
-    switch (currentQuestion.type) {
-      case "multiple_choice":
-        isCorrect = selectedOption === currentQuestion.correctOptionIndex;
-        break;
-      case "true_false":
-        isCorrect = selectedOption === currentQuestion.answer;
-        break;
-      case "identification":
-        isCorrect =
-          currentQuestion.answer.trim().toLowerCase() ===
-          identificationAnswer.trim().toLowerCase();
-        break;
-      default:
-        break;
-    }
-
-    const type = currentQuestionType();
-
-    if (isCorrect) {
-      setScore((prev) => ({
-        ...prev,
-        [type]: {
-          ...prev[type],
-          correct: prev[type].correct + 1,
-        },
-      }));
-      setResults((prev) => {
-        const newResults = [...prev];
-        newResults[currentCardIndex] = "correct";
-        return newResults;
-      });
-    } else {
-      setScore((prev) => ({
-        ...prev,
-        [type]: {
-          ...prev[type],
-          wrong: prev[type].wrong + 1,
-        },
-      }));
-      setResults((prev) => {
-        const newResults = [...prev];
-        newResults[currentCardIndex] = "wrong";
-        return newResults;
-      });
-    }
-
+  const submitAnswer = (answer) => {
+    setUserAnswers((prev) => {
+      const newAnswers = [...prev];
+      newAnswers[currentCardIndex] = answer;
+      return newAnswers;
+    });
     handleNextCard();
   };
 
@@ -297,13 +216,52 @@ const Test = () => {
     setIsLoading(true);
     setFinished(true);
 
+    // Calculate scores
+    const calculatedScore = {
+      flashcard: { correct: 0, wrong: 0 },
+      multiple_choice: { correct: 0, wrong: 0 },
+      true_false: { correct: 0, wrong: 0 },
+      identification: { correct: 0, wrong: 0 },
+    };
+
+    flashcards.forEach((card, index) => {
+      const userAnswer = userAnswers[index];
+      const type = card.type;
+
+      if (type === "flashcard") {
+        // For flashcards, you can define your own scoring logic
+        // For example, consider all flashcards as 'reviewed' without correctness
+        // Here, we'll skip scoring for flashcards
+      } else if (type === "multiple_choice") {
+        if (userAnswer === card.correctOptionIndex) {
+          calculatedScore[type].correct += 1;
+        } else {
+          calculatedScore[type].wrong += 1;
+        }
+      } else if (type === "true_false") {
+        if (userAnswer === card.answer) {
+          calculatedScore[type].correct += 1;
+        } else {
+          calculatedScore[type].wrong += 1;
+        }
+      } else if (type === "identification") {
+        if (
+          card.answer.trim().toLowerCase() === userAnswer?.trim().toLowerCase()
+        ) {
+          calculatedScore[type].correct += 1;
+        } else {
+          calculatedScore[type].wrong += 1;
+        }
+      }
+    });
+
     // Save results to Firestore
     if (user) {
       const scoreEntry = {
         date: new Date().toISOString(),
-        score: score,
+        score: calculatedScore,
         testResult: {
-          results,
+          userAnswers,
           flashcards,
           deckName,
         },
@@ -343,13 +301,7 @@ const Test = () => {
   const retakeTest = () => {
     setCurrentCardIndex(0);
     setShowAnswer(false);
-    setResults([]);
-    setScore({
-      flashcard: { correct: 0, wrong: 0 },
-      multiple_choice: { correct: 0, wrong: 0 },
-      true_false: { correct: 0, wrong: 0 },
-      identification: { correct: 0, wrong: 0 },
-    });
+    setUserAnswers([]);
     setFinished(false);
     resetSelections();
 
@@ -359,25 +311,17 @@ const Test = () => {
 
   // Handler for reviewing answers
   const reviewAnswers = (filter) => {
-    const filteredIndices = results
-      .map((result, index) =>
-        filter === "correct" && result === "correct"
-          ? index
-          : filter === "wrong" && result === "wrong"
-          ? index
-          : null
-      )
-      .filter((index) => index !== null);
-
-    if (filteredIndices.length > 0) {
-      setCurrentCardIndex(filteredIndices[0]);
-      setShowAnswer(false);
-      resetSelections();
-    }
+    // Implement review functionality based on filter ('correct' or 'wrong')
+    // This can be navigated to specific cards or filtered views
+    // For simplicity, this is left empty and can be customized
   };
 
   // Render different question types
   const renderQuestion = (question) => {
+    if (!question) {
+      return <p className="text-center">No question available.</p>;
+    }
+
     switch (question.type) {
       case "flashcard":
         return (
@@ -398,18 +342,22 @@ const Test = () => {
             <h5 className="text-center">Question</h5>
             <p className="fs-5 text-center">{question.question}</p>
             <Form>
-              {question.options.map((option, idx) => (
-                <Form.Check
-                  type="radio"
-                  name={`mc-${currentCardIndex}`}
-                  id={`mc-${currentCardIndex}-${idx}`}
-                  label={`${String.fromCharCode(65 + idx)}. ${option}`}
-                  key={idx}
-                  disabled={showAnswer}
-                  onChange={() => setSelectedOption(idx)}
-                  checked={selectedOption === idx}
-                />
-              ))}
+              {Array.isArray(question.options) ? (
+                question.options.map((option, idx) => (
+                  <Form.Check
+                    type="radio"
+                    name={`mc-${currentCardIndex}`}
+                    id={`mc-${currentCardIndex}-${idx}`}
+                    label={`${String.fromCharCode(65 + idx)}. ${option}`}
+                    key={idx}
+                    disabled={showAnswer}
+                    onChange={() => submitAnswer(idx)}
+                    checked={selectedOption === idx}
+                  />
+                ))
+              ) : (
+                <p className="text-danger">Invalid options data.</p>
+              )}
             </Form>
           </div>
         );
@@ -425,7 +373,7 @@ const Test = () => {
                 id={`tf-true-${currentCardIndex}`}
                 label="True"
                 disabled={showAnswer}
-                onChange={() => setSelectedOption(true)}
+                onChange={() => submitAnswer(true)}
                 checked={selectedOption === true}
               />
               <Form.Check
@@ -434,7 +382,7 @@ const Test = () => {
                 id={`tf-false-${currentCardIndex}`}
                 label="False"
                 disabled={showAnswer}
-                onChange={() => setSelectedOption(false)}
+                onChange={() => submitAnswer(false)}
                 checked={selectedOption === false}
               />
             </Form>
@@ -452,6 +400,12 @@ const Test = () => {
                 disabled={showAnswer}
                 value={identificationAnswer}
                 onChange={(e) => setIdentificationAnswer(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && identificationAnswer.trim() !== "") {
+                    e.preventDefault();
+                    submitAnswer(identificationAnswer.trim());
+                  }
+                }}
               />
             </Form>
           </div>
@@ -480,8 +434,8 @@ const Test = () => {
             overlay={
               <Tooltip>
                 Card {index + 1} -{" "}
-                {results[index]
-                  ? results[index].charAt(0).toUpperCase() + results[index].slice(1)
+                {userAnswers[index] !== undefined
+                  ? "Answered"
                   : "Pending"}
               </Tooltip>
             }
@@ -490,10 +444,8 @@ const Test = () => {
               variant={
                 index === currentCardIndex
                   ? "primary"
-                  : results[index] === "correct"
+                  : userAnswers[index] !== undefined
                   ? "success"
-                  : results[index] === "wrong"
-                  ? "danger"
                   : "outline-secondary"
               }
               className="m-1"
@@ -534,11 +486,56 @@ const Test = () => {
   }
 
   if (finished) {
+    // Calculate the score to pass to TestResults
+    const calculateFinalScore = () => {
+      const finalScore = {
+        flashcard: { correct: 0, wrong: 0 },
+        multiple_choice: { correct: 0, wrong: 0 },
+        true_false: { correct: 0, wrong: 0 },
+        identification: { correct: 0, wrong: 0 },
+      };
+
+      flashcards.forEach((card, index) => {
+        const userAnswer = userAnswers[index];
+        const type = card.type;
+
+        if (type === "flashcard") {
+          // For flashcards, define your own scoring logic
+          // For example, consider all flashcards as 'reviewed' without correctness
+          // Here, we'll skip scoring for flashcards
+        } else if (type === "multiple_choice") {
+          if (userAnswer === card.correctOptionIndex) {
+            finalScore[type].correct += 1;
+          } else {
+            finalScore[type].wrong += 1;
+          }
+        } else if (type === "true_false") {
+          if (userAnswer === card.answer) {
+            finalScore[type].correct += 1;
+          } else {
+            finalScore[type].wrong += 1;
+          }
+        } else if (type === "identification") {
+          if (
+            card.answer.trim().toLowerCase() === userAnswer?.trim().toLowerCase()
+          ) {
+            finalScore[type].correct += 1;
+          } else {
+            finalScore[type].wrong += 1;
+          }
+        }
+      });
+
+      return finalScore;
+    };
+
+    const finalScore = calculateFinalScore();
+
     return (
       <TestResults
-        score={score}
+        score={finalScore}
         flashcards={flashcards}
-        results={results}
+        userAnswers={userAnswers}
         onRetake={retakeTest}
         onReviewCorrect={() => reviewAnswers("correct")}
         onReviewWrong={() => reviewAnswers("wrong")}
@@ -569,16 +566,21 @@ const Test = () => {
 
       {/* Back Button */}
       <div className="mb-3">
-        <Button variant="secondary" onClick={() => navigate(`/deck/${deckName}/flashcard-input`)}>
+        <Button
+          variant="secondary"
+          onClick={() => navigate(`/deck/${deckName}/flashcard-input`)}
+        >
           <i className="fas fa-arrow-left"></i> Back
         </Button>
       </div>
 
       {/* Flashcard */}
-      {currentFlashcard && (
+      {currentFlashcard ? (
         <Card className="mb-3" onClick={handleFlipCard} style={{ cursor: "pointer" }}>
           <Card.Body>{renderQuestion(currentFlashcard)}</Card.Body>
         </Card>
+      ) : (
+        <p className="text-center">No flashcards available.</p>
       )}
 
       {/* Completion Indicators as Numbered Boxes */}
@@ -592,10 +594,8 @@ const Test = () => {
               height: "30px",
               borderRadius: "4px",
               backgroundColor:
-                results[index] === "correct"
+                userAnswers[index] !== undefined
                   ? "green"
-                  : results[index] === "wrong"
-                  ? "red"
                   : "lightgray",
               color: "white",
               display: "flex",
@@ -605,7 +605,7 @@ const Test = () => {
               cursor: "pointer",
             }}
             title={`Card ${index + 1} - ${
-              results[index] ? results[index].charAt(0).toUpperCase() + results[index].slice(1) : "Pending"
+              userAnswers[index] !== undefined ? "Answered" : "Pending"
             }`}
             onClick={() => {
               setCurrentCardIndex(index);
@@ -653,34 +653,8 @@ const Test = () => {
         </Button>
       )}
 
-      {/* Mark Correct/Wrong Buttons for Flashcards */}
-      {showAnswer && currentQuestionType() === "flashcard" && (
-        <div className="d-flex justify-content-center mb-3">
-          <Button variant="success" className="me-2" onClick={handleMarkCorrect}>
-            Correct
-          </Button>
-          <Button variant="danger" onClick={handleMarkWrong}>
-            Wrong
-          </Button>
-        </div>
-      )}
-
       {/* Submit Answer Button for Multiple Choice, True/False, Identification */}
-      {showAnswer &&
-        ["multiple_choice", "true_false", "identification"].includes(currentQuestionType()) && (
-          <Button
-            variant="primary"
-            onClick={submitAnswer}
-            disabled={
-              (currentQuestionType() === "multiple_choice" && selectedOption === null) ||
-              (currentQuestionType() === "true_false" && selectedOption === null) ||
-              (currentQuestionType() === "identification" && identificationAnswer.trim() === "")
-            }
-            className="w-100 mb-3"
-          >
-            Submit Answer
-          </Button>
-        )}
+      {/* Removed as per requirements */}
 
       {/* Select Card Modal */}
       {renderCardSelection()}
