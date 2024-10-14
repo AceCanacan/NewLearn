@@ -1,26 +1,20 @@
-// src/components/Quiz_ai/ScoreReport.js
+// File: src/components/Quiz_ai/ScoreReport/ScoreReport.js
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { auth } from "../../../firebase/firebase";
 import TestResults from "../Test/TestResults";
-import { loadFromFirestore, deleteScoreFromFirestore } from '../../../firebase/firebase';
-
-import { 
-  Container, 
-  Button, 
-  Accordion, 
-  Card, 
-  Spinner, 
-  Row, 
-  Col, 
-  Alert, 
-  Badge, 
-  Tooltip, 
-  OverlayTrigger 
+import {
+  Container,
+  Button,
+  Accordion,
+  Card,
+  Spinner,
+  Alert,
+  Badge,
 } from 'react-bootstrap';
-
 import { BsArrowLeft, BsTrash } from 'react-icons/bs';
+import { loadFromFirestore, deleteScoreFromFirestore } from '../../../firebase/firebase';
 
 const ScoreReport = () => {
   const { deckName } = useParams();
@@ -78,28 +72,29 @@ const ScoreReport = () => {
       <Card className="mb-3">
         <Accordion.Item eventKey={index.toString()}>
           <Accordion.Header>
-            <Row className="w-100">
-              <Col xs={4}>
-                <strong>Score:</strong> <Badge bg="success">{scoreEntry.score.correct}</Badge> | <Badge bg="danger">{scoreEntry.score.wrong}</Badge>
-              </Col>
-              <Col xs={4} className="text-center">
-                <strong>Percentage:</strong> {((scoreEntry.score.correct / (scoreEntry.score.correct + scoreEntry.score.wrong)) * 100).toFixed(2)}%
-              </Col>
-              <Col xs={4} className="text-end">
-                <strong>Date:</strong> {new Date(scoreEntry.date).toLocaleString()}
-              </Col>
-            </Row>
+            <div className="w-100 d-flex justify-content-between align-items-center">
+              <div>
+                <strong>Attempt #{index + 1}</strong>
+              </div>
+              <div>
+                <Badge bg="info" className="me-2">
+                  {new Date(scoreEntry.date).toLocaleString()}
+                </Badge>
+                <Badge bg="secondary">
+                  {calculateOverallPercentage(scoreEntry.score)}%
+                </Badge>
+              </div>
+            </div>
           </Accordion.Header>
           <Accordion.Body>
             {testResults ? (
               <TestResults
-                score={scoreEntry.score}
+                score={testResults.score}
                 results={testResults.results}
                 flashcards={testResults.flashcards}
                 onRetake={() => {
                   navigate(`/test/${testResults.deckName}`);
                 }}
-                // Optionally, disable review features for past tests
                 onReviewCorrect={() => { /* Implement if needed */ }}
                 onReviewWrong={() => { /* Implement if needed */ }}
               />
@@ -119,6 +114,14 @@ const ScoreReport = () => {
         </Accordion.Item>
       </Card>
     );
+  };
+
+  // Helper function to calculate overall percentage
+  const calculateOverallPercentage = (score) => {
+    const totalCorrect = Object.values(score).reduce((acc, curr) => acc + curr.correct, 0);
+    const totalWrong = Object.values(score).reduce((acc, curr) => acc + curr.wrong, 0);
+    const total = totalCorrect + totalWrong;
+    return total > 0 ? ((totalCorrect / total) * 100).toFixed(2) : 0;
   };
 
   return (
@@ -159,7 +162,7 @@ const ScoreReport = () => {
             <p>No scores available for this deck.</p>
           ) : (
             /* Accordion for Scores */
-            <Accordion>
+            <Accordion defaultActiveKey="0">
               {scores.map((scoreEntry, index) => (
                 <AttemptCard 
                   key={index} 

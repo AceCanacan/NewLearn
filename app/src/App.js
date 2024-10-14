@@ -12,8 +12,6 @@ import FlashcardInput from './components/Quiz_ai/FlashcardInput/FlashcardInput';
 import TestYourself from './components/Quiz_ai/Test/Test';
 import ScoreReport from './components/Quiz_ai/ScoreReport/ScoreReport';
 import QuizMaker from './components/Quiz_ai/QuizMaker/QuizMaker';
-import NotesMaker from './components/NotesMaker/Notesmaker';
-import SavedNotes from './components/NotesMaker/Savednotes';
 import TestResults from './components/Quiz_ai/Test/TestResults';
 import { logFirebaseConfig } from './firebase/firebase';
 import { onAuthChange, AuthPage } from './firebase/auth';
@@ -57,8 +55,6 @@ function App() {
                 <Route path="deck/:deckName/flashcard-input" element={<FlashcardInput />} />
                 <Route path="test/:deckName" element={<TestYourself />} />
                 <Route path="score-report/:deckName" element={<ScoreReport />} />
-                <Route path="notesmaker" element={<NotesMaker />} />
-                <Route path="savednotes" element={<SavedNotes />} />
                 <Route path="testresults" element={<TestResults />} />
                 <Route path="*" element={<Navigate to="/deck/home" replace />} />
               </Route>
