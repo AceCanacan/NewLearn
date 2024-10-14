@@ -86,8 +86,8 @@ const TestResults = ({ score, userAnswers, flashcards, onRetake, onReviewCorrect
 
 // Helper component for detailed result items
 const DetailedResultItem = ({ index, card, userAnswer }) => {
-  const { question, type, answer, options } = card;
-  const isCorrect = determineCorrectness(type, userAnswer, answer);
+  const { question, type, options } = card;
+  const isCorrect = determineCorrectness(type, userAnswer, card);
 
   return (
     <ListGroup.Item>
@@ -119,7 +119,7 @@ const DetailedResultItem = ({ index, card, userAnswer }) => {
       {userAnswer !== undefined && (
         <div className="mt-2">
           <strong>Your Answer:</strong> {displayUserAnswer(type, userAnswer, options)} <br />
-          <strong>Correct Answer:</strong> {displayCorrectAnswer(type, answer, options)}
+          <strong>Correct Answer:</strong> {displayCorrectAnswer(type, card, options)}
         </div>
       )}
     </ListGroup.Item>
@@ -127,7 +127,7 @@ const DetailedResultItem = ({ index, card, userAnswer }) => {
 };
 
 // Helper function to determine correctness
-const determineCorrectness = (type, userAnswer, correctAnswer) => {
+const determineCorrectness = (type, userAnswer, card) => {
   if (userAnswer === undefined) return null; // Skipped
 
   switch (type) {
@@ -135,11 +135,11 @@ const determineCorrectness = (type, userAnswer, correctAnswer) => {
       // Define your own logic for flashcards if needed
       return null;
     case "multiple_choice":
-      return userAnswer === correctAnswer;
+      return userAnswer === card.correctOptionIndex;
     case "true_false":
-      return userAnswer === correctAnswer;
+      return userAnswer === card.answer;
     case "identification":
-      return correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+      return card.answer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
     default:
       return null;
   }
@@ -153,29 +153,31 @@ const displayUserAnswer = (type, userAnswer, options) => {
     case "flashcard":
       return userAnswer;
     case "multiple_choice":
-      return options && options[userAnswer] ? options[userAnswer] : userAnswer;
+      return options && options[userAnswer] ? options[userAnswer] : "Invalid option selected.";
     case "true_false":
       return userAnswer ? "True" : "False";
     case "identification":
       return userAnswer;
     default:
-      return userAnswer;
+      return "Invalid answer.";
   }
 };
 
 // Helper function to display correct answer based on question type
-const displayCorrectAnswer = (type, correctAnswer, options) => {
+const displayCorrectAnswer = (type, card, options) => {
   switch (type) {
     case "flashcard":
-      return correctAnswer;
+      return card.answer;
     case "multiple_choice":
-      return options && options[correctAnswer] ? options[correctAnswer] : correctAnswer;
+      return options && options[card.correctOptionIndex]
+        ? options[card.correctOptionIndex]
+        : "No correct option provided.";
     case "true_false":
-      return correctAnswer ? "True" : "False";
+      return card.answer ? "True" : "False";
     case "identification":
-      return correctAnswer;
+      return card.answer;
     default:
-      return correctAnswer;
+      return "No correct answer provided.";
   }
 };
 

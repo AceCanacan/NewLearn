@@ -61,60 +61,62 @@ const ScoreReport = () => {
     }
   };
 
-  const AttemptCard = ({ scoreEntry, index }) => {
-    const [testResults, setTestResults] = useState(null);
+  // Inside ScoreReport.js
 
-    useEffect(() => {
-      setTestResults(scoreEntry.testResult); // The saved test result is passed here
-    }, [scoreEntry]);
+const AttemptCard = ({ scoreEntry, index }) => {
+  const [testResults, setTestResults] = useState(null);
 
-    return (
-      <Card className="mb-3">
-        <Accordion.Item eventKey={index.toString()}>
-          <Accordion.Header>
-            <div className="w-100 d-flex justify-content-between align-items-center">
-              <div>
-                <strong>Attempt #{index + 1}</strong>
-              </div>
-              <div>
-                <Badge bg="info" className="me-2">
-                  {new Date(scoreEntry.date).toLocaleString()}
-                </Badge>
-                <Badge bg="secondary">
-                  {calculateOverallPercentage(scoreEntry.score)}%
-                </Badge>
-              </div>
+  useEffect(() => {
+    setTestResults(scoreEntry.testResult); // The saved test result is passed here
+  }, [scoreEntry]);
+
+  return (
+    <Card className="mb-3">
+      <Accordion.Item eventKey={index.toString()}>
+        <Accordion.Header>
+          <div className="w-100 d-flex justify-content-between align-items-center">
+            <div>
+              <strong>Attempt #{index + 1}</strong>
             </div>
-          </Accordion.Header>
-          <Accordion.Body>
-            {testResults ? (
-              <TestResults
-                score={testResults.score}
-                results={testResults.results}
-                flashcards={testResults.flashcards}
-                onRetake={() => {
-                  navigate(`/test/${testResults.deckName}`);
-                }}
-                onReviewCorrect={() => { /* Implement if needed */ }}
-                onReviewWrong={() => { /* Implement if needed */ }}
-              />
-            ) : (
-              <p>No detailed results available.</p>
-            )}
-            <Button 
-              variant="danger" 
-              size="sm" 
-              className="mt-3"
-              onClick={() => handleDelete(index)}
-            >
-              <BsTrash className="me-2" />
-              Delete
-            </Button>
-          </Accordion.Body>
-        </Accordion.Item>
-      </Card>
-    );
-  };
+            <div>
+              <Badge bg="info" className="me-2">
+                {new Date(scoreEntry.date).toLocaleString()}
+              </Badge>
+              <Badge bg="secondary">
+                {calculateOverallPercentage(scoreEntry.score)}%
+              </Badge>
+            </div>
+          </div>
+        </Accordion.Header>
+        <Accordion.Body>
+          {testResults ? (
+            <TestResults
+              score={scoreEntry.score} // Correctly pass score
+              userAnswers={testResults.userAnswers} // Correctly pass userAnswers
+              flashcards={testResults.flashcards}
+              onRetake={() => {
+                navigate(`/test/${testResults.deckName}`);
+              }}
+              onReviewCorrect={() => { /* Implement if needed */ }}
+              onReviewWrong={() => { /* Implement if needed */ }}
+            />
+          ) : (
+            <p>No detailed results available.</p>
+          )}
+          <Button 
+            variant="danger" 
+            size="sm" 
+            className="mt-3"
+            onClick={() => handleDelete(index)}
+          >
+            <BsTrash className="me-2" />
+            Delete
+          </Button>
+        </Accordion.Body>
+      </Accordion.Item>
+    </Card>
+  );
+};
 
   // Helper function to calculate overall percentage
   const calculateOverallPercentage = (score) => {

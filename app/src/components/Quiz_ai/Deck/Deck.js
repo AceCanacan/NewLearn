@@ -586,7 +586,6 @@ function Deck() {
           {selectedGroup && (
             <>
               <h5 className="mb-3">
-                <FaEye className="me-2 text-primary" />
                 {selectedGroup.groupName}
               </h5>
               <h6>Decks in this group:</h6>
@@ -596,11 +595,9 @@ function Deck() {
                     <Card className="h-100 shadow-sm">
                       <Card.Body className="d-flex flex-column">
                         <Card.Title>
-                          <FaCheckCircle className="me-2 text-success" />
                           {deck.name}
                         </Card.Title>
                         <Card.Text>
-                          <strong>Cards:</strong> {deck.numCards}
                         </Card.Text>
                         <Button
                           variant="outline-primary"
