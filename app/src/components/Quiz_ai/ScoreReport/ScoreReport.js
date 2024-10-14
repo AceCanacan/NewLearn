@@ -1,75 +1,48 @@
-// src/components/Quiz_ai/ScoreReport.js
+// File: src/components/Quiz_ai/ScoreReport/ScoreReport.js
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { auth, db } from "../../../firebase/firebase";
-import "./ScoreReport.css";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { auth } from "../../../firebase/firebase";
 import TestResults from "../Test/TestResults";
-
+import {
+  Container,
+  Button,
+  Accordion,
+  Card,
+  Spinner,
+  Alert,
+  Badge,
+} from 'react-bootstrap';
+import { BsArrowLeft, BsTrash } from 'react-icons/bs';
 import { loadFromFirestore, deleteScoreFromFirestore } from '../../../firebase/firebase';
-
-const AttemptCard = ({ scoreEntry, index, onDelete }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [testResults, setTestResults] = useState(null);
-
-  useEffect(() => {
-    setTestResults(scoreEntry.testResult); // The saved test result is passed here
-  }, [scoreEntry]);
-
-  return (
-    <div className={`attempt-card ${isExpanded ? "expanded" : ""}`}>
-      <div
-        className="attempt-summary"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="summary-left">
-          <p>
-            <strong>Score:</strong> {scoreEntry.score.toFixed(2)}%
-          </p>
-          <p>
-            <strong>Date:</strong> {new Date(scoreEntry.date).toLocaleString()}
-          </p>
-        </div>
-        <div className="summary-right">{isExpanded ? "▲" : "▼"}</div>
-      </div>
-      {isExpanded && testResults && (
-        <div className="attempt-details">
-          <TestResults
-            results={testResults.results}
-            flashcards={testResults.flashcards}
-            deckName={testResults.deckName}
-            onRetake={() => {
-              // Optional: Implement retake functionality if needed
-              // For example, navigate to the test page with the deckName
-            }}
-          />
-        </div>
-      )}
-      <button className="delete-button" onClick={() => onDelete(index)}>
-        Delete
-      </button>
-    </div>
-  );
-};
 
 const ScoreReport = () => {
   const { deckName } = useParams();
   const [scores, setScores] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [alert, setAlert] = useState({ show: false, variant: '', message: '' });
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchScores = async () => {
       const user = auth.currentUser;
       if (user) {
-        const storedScores = await loadFromFirestore(
-          `users/${user.uid}/settings/scores`,
-          {}
-        );
-        if (storedScores[deckName]) {
-          setScores(storedScores[deckName]);
+        try {
+          const storedScores = await loadFromFirestore(
+            `users/${user.uid}/settings/scores`,
+            {}
+          );
+          if (storedScores[deckName]) {
+            setScores(storedScores[deckName]);
+          }
+        } catch (error) {
+          console.error("Error fetching scores:", error);
+          setAlert({ show: true, variant: 'danger', message: 'Failed to load scores. Please try again later.' });
         }
+      } else {
+        setAlert({ show: true, variant: 'warning', message: 'You must be signed in to view scores.' });
       }
+      setIsLoading(false);
     };
     fetchScores();
   }, [deckName]);
@@ -77,35 +50,131 @@ const ScoreReport = () => {
   const handleDelete = async (index) => {
     const user = auth.currentUser;
     if (user) {
-      await deleteScoreFromFirestore(user.uid, deckName, index);
-      setScores((prevScores) => prevScores.filter((_, i) => i !== index));
+      try {
+        await deleteScoreFromFirestore(user.uid, deckName, index);
+        setScores((prevScores) => prevScores.filter((_, i) => i !== index));
+        setAlert({ show: true, variant: 'success', message: 'Score deleted successfully.' });
+      } catch (error) {
+        console.error("Error deleting score:", error);
+        setAlert({ show: true, variant: 'danger', message: 'Failed to delete score. Please try again.' });
+      }
     }
   };
 
+  const AttemptCard = ({ scoreEntry, index }) => {
+    const [testResults, setTestResults] = useState(null);
+
+    useEffect(() => {
+      setTestResults(scoreEntry.testResult); // The saved test result is passed here
+    }, [scoreEntry]);
+
+    return (
+      <Card className="mb-3">
+        <Accordion.Item eventKey={index.toString()}>
+          <Accordion.Header>
+            <div className="w-100 d-flex justify-content-between align-items-center">
+              <div>
+                <strong>Attempt #{index + 1}</strong>
+              </div>
+              <div>
+                <Badge bg="info" className="me-2">
+                  {new Date(scoreEntry.date).toLocaleString()}
+                </Badge>
+                <Badge bg="secondary">
+                  {calculateOverallPercentage(scoreEntry.score)}%
+                </Badge>
+              </div>
+            </div>
+          </Accordion.Header>
+          <Accordion.Body>
+            {testResults ? (
+              <TestResults
+                score={testResults.score}
+                results={testResults.results}
+                flashcards={testResults.flashcards}
+                onRetake={() => {
+                  navigate(`/test/${testResults.deckName}`);
+                }}
+                onReviewCorrect={() => { /* Implement if needed */ }}
+                onReviewWrong={() => { /* Implement if needed */ }}
+              />
+            ) : (
+              <p>No detailed results available.</p>
+            )}
+            <Button 
+              variant="danger" 
+              size="sm" 
+              className="mt-3"
+              onClick={() => handleDelete(index)}
+            >
+              <BsTrash className="me-2" />
+              Delete
+            </Button>
+          </Accordion.Body>
+        </Accordion.Item>
+      </Card>
+    );
+  };
+
+  // Helper function to calculate overall percentage
+  const calculateOverallPercentage = (score) => {
+    const totalCorrect = Object.values(score).reduce((acc, curr) => acc + curr.correct, 0);
+    const totalWrong = Object.values(score).reduce((acc, curr) => acc + curr.wrong, 0);
+    const total = totalCorrect + totalWrong;
+    return total > 0 ? ((totalCorrect / total) * 100).toFixed(2) : 0;
+  };
+
   return (
-    <div className="score-report">
-      <button
-        className="st-back-button"
+    <Container className="my-4">
+      {/* Alert Messages */}
+      {alert.show && (
+        <Alert
+          variant={alert.variant}
+          onClose={() => setAlert({ ...alert, show: false })}
+          dismissible
+        >
+          {alert.message}
+        </Alert>
+      )}
+
+      {/* Back Button */}
+      <Button 
+        variant="secondary" 
+        className="mb-4 d-flex align-items-center"
         onClick={() => navigate(`/deck/${deckName}/flashcard-input`)}
       >
-        <i className="fas fa-arrow-left"></i>
-      </button>
-      <h2>Score Report for "{deckName}"</h2>
-      {scores.length === 0 ? (
-        <p>No scores available for this deck.</p>
-      ) : (
-        <div className="attempts-list">
-          {scores.map((scoreEntry, index) => (
-            <AttemptCard
-              key={index}
-              scoreEntry={scoreEntry}
-              index={index}
-              onDelete={handleDelete}
-            />
-          ))}
+        <BsArrowLeft className="me-2" />
+        Back
+      </Button>
+
+      {/* Header */}
+      <h2 className="mb-4">Score Report for "{deckName}"</h2>
+
+      {/* Loading Spinner */}
+      {isLoading ? (
+        <div className="d-flex justify-content-center my-5">
+          <Spinner animation="border" variant="primary" />
         </div>
+      ) : (
+        <>
+          {/* No Scores Message */}
+          {scores.length === 0 ? (
+            <p>No scores available for this deck.</p>
+          ) : (
+            /* Accordion for Scores */
+            <Accordion defaultActiveKey="0">
+              {scores.map((scoreEntry, index) => (
+                <AttemptCard 
+                  key={index} 
+                  scoreEntry={scoreEntry} 
+                  index={index} 
+                />
+              ))}
+            </Accordion>
+          )}
+        </>
       )}
-    </div>
+    </Container>
   );
 };
 

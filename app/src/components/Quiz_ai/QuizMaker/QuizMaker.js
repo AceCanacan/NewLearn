@@ -1,368 +1,818 @@
+// File: src/components/Quiz_ai/QuizMaker/QuizMaker.js
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { setDoc, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../../firebase/firebase'; // Ensure this path is correct
 import { onAuthStateChanged } from 'firebase/auth';
-import './QuizMaker.css';
+import {
+  Container,
+  Button,
+  Form,
+  Alert,
+  Spinner,
+  Card,
+  Modal,
+} from 'react-bootstrap';
 
 const QuizMaker = () => {
-  const [inputText, setInputText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
-  const [customSuggestions, setCustomSuggestions] = useState([]);
-  const [customInput, setCustomInput] = useState('');
-  const [selectedSuggestions, setSelectedSuggestions] = useState(new Set());
-  const [confirmed, setConfirmed] = useState(false);
   const [user, setUser] = useState(null);
+  const [selectedType, setSelectedType] = useState('flashcard'); // Single question type
+  const [inputText, setInputText] = useState('');
+  const [numQuestions, setNumQuestions] = useState(10); // Default to 10 questions
+  const [isLoading, setIsLoading] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [alert, setAlert] = useState({ show: false, variant: '', message: '' });
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const [hasCopiedPrompt, setHasCopiedPrompt] = useState(false);
+  const [pastedOutput, setPastedOutput] = useState('');
+  const [isOutputConfirmed, setIsOutputConfirmed] = useState(false);
+  const [parsingErrors, setParsingErrors] = useState([]); // To store parsing errors
+
   const { deckName } = useParams();
   const navigate = useNavigate();
 
+  // Authentication State
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        console.log('User signed in:', currentUser);
-      } else {
-        setUser(null);
-        console.log('User signed out');
+      setUser(currentUser);
+      if (!currentUser) {
+        setAlert({
+          show: true,
+          variant: 'warning',
+          message: 'You must be signed in to use the QuizMaker.',
+        });
       }
     });
-
     return () => unsubscribe();
   }, []);
 
-  
-  const handleGenerate = async () => {
-    if (!user) {
-      alert('You need to be signed in to generate questions.');
-      return;
-    }
-
-    const deckDocRef = doc(db, `users/${user.uid}/decks`, deckName);
-    const deckDoc = await getDoc(deckDocRef);
-
-    if (deckDoc.exists() && deckDoc.data().generated) {
-      alert('You have already generated questions for this deck.');
-      return;
-    }
-
-
-    const saveGeneratedQuestions = async (generatedQuestions) => {
-      const limitedQuestions = generatedQuestions.slice(0, 10);
-      const flashcards = limitedQuestions.map(q => ({ question: q.question, answer: q.answer }));
-
-      try {
-        await setDoc(deckDocRef, {
-          flashcards: flashcards,
-          generated: true,
-        }, { merge: true });
-        alert('Questions generated and saved successfully.');
-      } catch (error) {
-        console.error('Error saving generated questions:', error);
-        alert('Failed to save generated questions.');
-      }
-    };
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-// with backend ^^^^
-
-  
+  // Handler to confirm input and number of questions
+  const handleConfirm = () => {
     if (!inputText.trim()) {
-      alert('Please enter some text.');
+      setAlert({ show: true, variant: 'danger', message: 'Please enter some text.' });
       return;
     }
-  
-    if (!confirmed) {
-      alert('Please confirm your suggestions first.');
-      return;
-    }
-  
-    const userConfirmed = window.confirm('This action can only be performed once per deck and you will not be able to generate new questions again for this deck. Do you want to proceed?');
-  
-    if (!userConfirmed) {
-      return;
-    }
-  
-    setIsLoading(true);
-  
-    // Combine AI-generated and custom suggestions
-    const allSuggestions = [
-      ...suggestions.filter(suggestion => selectedSuggestions.has(suggestion.id)),
-      ...customSuggestions.filter(suggestion => selectedSuggestions.has(suggestion.id))
-    ];
-    const finalPrompt = allSuggestions.map(suggestion => suggestion.text).join(' ');
 
-    const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
-      { 
-        role: 'user', 
-        content: `Given this text: "${inputText}". This information will be used to create a quiz. Generate a series of questions and answers from the provided text. Format: Q: Question A: Answer. MAXIMUM OF 10 QUESTIONS ONLY.` 
-      },
-      { 
-        role: 'user', 
-        content: `Include these suggestions: ${finalPrompt} Format: Q: Question A: Answer. MAXIMUM OF 10 QUESTIONS ONLY` 
-      }
-    ];
-  
-    console.log('Messages:', messages); // Log the messages array
-  
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: messages,
-          max_tokens: 1500
-        })
+    if (numQuestions < 1 || numQuestions > 50) {
+      setAlert({
+        show: true,
+        variant: 'danger',
+        message: 'Please enter a valid number of questions (1-50).',
       });
-  
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
-      }
-  
-      const data = await response.json();
-  
-      if (data.choices && data.choices.length > 0) {
-        const text = data.choices[0].message.content.trim();
-        const qaPairs = text.split('\n').reduce((acc, line) => {
-          if (line.startsWith('Q: ')) {
-            acc.push({ question: line.slice(3).trim(), answer: '' });
-          } else if (line.startsWith('A: ') && acc.length) {
-            acc[acc.length - 1].answer = line.slice(3).trim();
-          }
-          return acc;
-        }, []);
-  
-        saveGeneratedQuestions(qaPairs);
-        navigate(`/deck/${deckName}`);
-      } else {
-        alert('Failed to generate questions. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error generating questions:', error);
-      alert('Error generating questions. Please try again.');
-    } finally {
-      setIsLoading(false);
+      return;
     }
+
+    setConfirmed(true);
+    setAlert({ show: true, variant: 'success', message: 'Input confirmed. You can now generate the prompt.' });
   };
-  
-  const handleConfirm = async () => {
-    if (!inputText.trim()) {
-      alert('Please enter some text.');
+
+  // Handler to generate prompt based on selected type
+  const handleGeneratePrompt = (type) => {
+    let promptTemplate = '';
+
+    switch (type) {
+      case 'flashcard':
+        promptTemplate = `You are an expert quiz creator. Based on the following content, generate a series of flashcards for a study deck.
+
+**Content:**
+${inputText}
+
+**Instructions:**
+1. **Number of Flashcards:** Generate exactly ${numQuestions} flashcards.
+2. **Format:** 
+   - Each flashcard must follow this exact format:
+     - **Q1.** Question text here?
+     - **A1.** Answer text here.
+     - **Q2.** Next question text here?
+     - **A2.** Next answer text here.
+   - **Important:** Ensure that each question starts with "Q" followed by its number and a dot, and each answer starts with "A" followed by its number and a dot. There should be no additional text or explanations.
+3. **Sample Output:**
+\`\`\`
+Q1. What is the capital of France?
+A1. Paris.
+Q2. What is the largest planet in our solar system?
+A2. Jupiter.
+...
+\`\`\`
+4. **Formatting Requirements:**
+   - Use proper punctuation.
+   - Each Q&A pair should be on separate lines.
+   - Maintain sequential numbering without skipping numbers.
+`;
+        break;
+
+      case 'multiple_choice':
+        promptTemplate = `You are an expert quiz creator. Based on the following content, generate a series of multiple-choice questions for a quiz.
+
+**Content:**
+${inputText}
+
+**Instructions:**
+1. **Number of Questions:** Generate exactly ${numQuestions} multiple-choice questions.
+2. **Format:** 
+   - Each question must follow this exact format:
+
+     Q1. Question text here?
+     A. Option A
+     B. Option B
+     C. Option C
+     D. Option D
+     // Correct Answer: [A/B/C/D]
+   - **Important:** Ensure that each question starts with "Q" followed by its number and a dot, each option starts with "A.", "B.", etc., and the correct answer is indicated precisely as shown.
+3. **Sample Output:**
+\`\`\`
+Q1. What is the capital of France?
+A. Berlin
+B. Madrid
+C. Paris
+D. Rome
+// Correct Answer: C
+
+Q2. Which planet is known as the Red Planet?
+A. Earth
+B. Mars
+C. Jupiter
+D. Venus
+// Correct Answer: B
+...
+\`\`\`
+4. **Formatting Requirements:**
+   - Use proper punctuation.
+   - Each Q&A pair should be separated by a newline.
+   - Maintain sequential numbering without skipping numbers.
+`;
+        break;
+
+      case 'true_false':
+        promptTemplate = `You are an expert quiz creator. Based on the following content, generate a series of true or false questions for a quiz.
+
+**Content:**
+${inputText}
+
+**Instructions:**
+1. **Number of Questions:** Generate exactly ${numQuestions} true or false questions.
+2. **Format:** 
+   - Each statement must follow this exact format:
+
+     Q1. Statement text here.
+     A1. True
+
+   - **Important:** Ensure that each question starts with "Q" followed by its number and a dot, and each answer starts with "A" followed by its number and a dot.
+3. **Sample Output:**
+\`\`\`
+Q1. The sky is blue.
+A1. True
+
+Q2. The capital of Germany is Berlin.
+A2. True
+...
+\`\`\`
+4. **Formatting Requirements:**
+   - Use proper punctuation.
+   - Each Q&A pair should be separated by a newline.
+   - Maintain sequential numbering without skipping numbers.
+`;
+        break;
+
+      case 'identification':
+        promptTemplate = `You are an expert quiz creator. Based on the following content, generate a series of identification questions for a quiz.
+
+**Content:**
+${inputText}
+
+**Instructions:**
+1. **Number of Questions:** Generate exactly ${numQuestions} identification questions.
+2. **Format:** 
+   - Each question must follow this exact format:
+
+     Q1. What is the capital of France?
+     A1. Paris
+
+   - **Important:** Ensure that each question starts with "Q" followed by its number and a dot, and each answer starts with "A" followed by its number and a dot. Answers should be concise, typically one or two words.
+3. **Sample Output:**
+\`\`\`
+Q1. What is the capital of France?
+A1. Paris
+
+Q2. Who wrote "Romeo and Juliet"?
+A2. William Shakespeare
+...
+\`\`\`
+4. **Formatting Requirements:**
+   - Use proper punctuation.
+   - Each Q&A pair should be separated by a newline.
+   - Maintain sequential numbering without skipping numbers.
+`;
+        break;
+
+      default:
+        promptTemplate = '';
+    }
+
+    setGeneratedPrompt(promptTemplate);
+  };
+
+  // Handler for confirming pasted output
+  const handleConfirmOutput = async () => {
+    if (!pastedOutput.trim()) {
+      setAlert({ show: true, variant: 'danger', message: `Please paste the output from ChatGPT for ${formatQuestionType(selectedType)}.` });
       return;
     }
-  
+
     setIsLoading(true);
-  
-    // Split the input text into sentences
-    const sentences = inputText.split('.').map(sentence => sentence.trim()).filter(sentence => sentence);
-  
-    // Randomize sentences and always include the first two to three sentences
-    const shuffledSentences = sentences.sort(() => 0.5 - Math.random());
-    const randomSentences = shuffledSentences.slice(0, 4);
-  
-    // Combine first two sentences with random sentences
-    const selectedSentences = [
-      sentences[0], 
-      sentences[1], 
-      ...(sentences[2] ? [sentences[2]] : []),
-      ...randomSentences
-    ].slice(0, 4);
-  
-    const prompt = selectedSentences.join(' ');
-  
-    const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
-      { 
-        role: 'user', 
-        content: `Here is some text: "${prompt}". This information will be used to create a quiz. Provide four detailed and varied suggestions on how to create quiz questions based on this content. 
-        Each suggestion should focus on a different aspect of the content, such as functions, processes, implications, comparisons, or definitions. 
-        Ensure that each suggestion is clear, specific, and comprehensive, helping to formulate insightful quiz questions. 
-        You are not supposed to provide questions or any other information, only the four suggestions.
-              
-        Examples of suggestions:
-        1. Focus on key functions.
-        2. Highlight major processes.
-        3. Discuss implications.
-        4. Compare different elements.
-        5. Define and explain key terms.
-        
-        The output should be formatted as follows:
-        1. [Suggestion 1]
-        2. [Suggestion 2]
-        3. [Suggestion 3]
-        4. [Suggestion 4]`
-      }
-    ];
-  
+    setAlert({ show: false, variant: '', message: '' });
+    setParsingErrors([]); // Reset parsing errors
+
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: messages,
-          max_tokens: 150
-        })
-      });
-  
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorDetail)}`);
+      let qaPairs = [];
+      let errors = [];
+
+      // Separate parsing logic based on question type
+      switch (selectedType) {
+        case 'flashcard':
+          ({ qaPairs, errors } = parseFlashcards(pastedOutput));
+          break;
+        case 'multiple_choice':
+          ({ qaPairs, errors } = parseMultipleChoice(pastedOutput));
+          break;
+        case 'true_false':
+          ({ qaPairs, errors } = parseTrueFalse(pastedOutput));
+          break;
+        case 'identification':
+          ({ qaPairs, errors } = parseIdentification(pastedOutput));
+          break;
+        default:
+          break;
       }
-  
-      const data = await response.json();
-  
-      if (data.choices && data.choices.length > 0) {
-        const suggestionsText = data.choices[0].message.content.trim();
-        const suggestionPattern = /\d\.\s*(.*?)(?=\n|$)/g;
-        let match;
-        const generatedSuggestions = [];
-        let index = 0;
-  
-        while ((match = suggestionPattern.exec(suggestionsText)) !== null) {
-          generatedSuggestions.push({
-            id: index,
-            text: match[1].trim()
-          });
-          index++;
-        }
-  
-        // Log each suggestion individually for debugging
-        generatedSuggestions.forEach((suggestion, idx) => {
+
+      if (errors.length > 0) {
+        setParsingErrors(errors);
+        setIsLoading(false);
+        setAlert({
+          show: true,
+          variant: 'danger',
+          message: `There were issues parsing your ${formatQuestionType(selectedType)} output. Please review the suggestions below.`,
         });
-  
-        setSuggestions(generatedSuggestions);
-        setConfirmed(true);
-      } else {
-        alert('Failed to generate suggestions. Please try again.');
+        return;
       }
+
+      if (qaPairs.length === 0) {
+        setAlert({
+          show: true,
+          variant: 'danger',
+          message: `Failed to parse any questions and answers for ${formatQuestionType(selectedType)}. Please check the pasted output.`,
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Map QA pairs to flashcards with appropriate type
+      const newFlashcards = qaPairs.map((pair) => ({
+        type: selectedType,
+        question: pair.question,
+        answer: pair.answer,
+      }));
+
+      const deckDocRef = doc(db, `users/${user.uid}/decks/${deckName}`);
+
+      // Fetch existing flashcards
+      const deckDocSnapshot = await getDoc(deckDocRef);
+      const deckData = deckDocSnapshot.data();
+
+      // Merge new flashcards with existing ones
+      const updatedFlashcards = deckData.flashcards ? [...deckData.flashcards, ...newFlashcards] : [...newFlashcards];
+
+      await setDoc(
+        deckDocRef,
+        {
+          flashcards: updatedFlashcards,
+          totalFlashcardsCreated: updatedFlashcards.length,
+          questionType: selectedType, // Store the question type
+        },
+        { merge: true }
+      );
+
+      setIsOutputConfirmed(true);
+      setAlert({ show: true, variant: 'success', message: `${formatQuestionType(selectedType)} questions saved successfully.` });
+      setHasCopiedPrompt(false);
+      setPastedOutput('');
     } catch (error) {
-      console.error('Error generating suggestions:', error);
-      alert('Error generating suggestions. Please try again.');
+      console.error(`Error saving ${formatQuestionType(selectedType)} questions:`, error);
+      setAlert({ show: true, variant: 'danger', message: `Failed to save ${formatQuestionType(selectedType)} questions. Please try again.` });
     } finally {
       setIsLoading(false);
     }
   };
-  
 
-  const toggleSuggestion = (id) => {
-    setSelectedSuggestions(prev => {
-      const newSelected = new Set(prev);
-      if (newSelected.has(id)) {
-        newSelected.delete(id);
+  // Parsing functions for different question types
+
+  // 1. Flashcard Parsing
+  const parseFlashcards = (text) => {
+    const qaPairs = [];
+    const errors = [];
+    const lines = text.split('\n').filter((line) => line.trim() !== '');
+
+    let currentQA = { question: '', answer: '' };
+    const questionRegex = /^Q(\d+)\.\s*(.+)$/i;
+    const answerRegex = /^A(\d+)\.\s*(.+)$/i;
+
+    lines.forEach((line) => {
+      const questionMatch = line.match(questionRegex);
+      const answerMatch = line.match(answerRegex);
+
+      if (questionMatch) {
+        if (currentQA.question && currentQA.answer) {
+          qaPairs.push({ ...currentQA });
+          currentQA = { question: '', answer: '' };
+        }
+        currentQA.question = questionMatch[2].trim();
+      } else if (answerMatch) {
+        if (currentQA.question) {
+          currentQA.answer = answerMatch[2].trim();
+        } else {
+          errors.push(`Answer found without a corresponding question: "${line}"`);
+        }
       } else {
-        newSelected.add(id);
+        errors.push(`Unrecognized line format: "${line}"`);
       }
-      return newSelected;
     });
+
+    // Push the last QA pair if it exists
+    if (currentQA.question && currentQA.answer) {
+      qaPairs.push(currentQA);
+    }
+
+    // Check for numbering consistency
+    for (let i = 0; i < qaPairs.length; i++) {
+      const expectedNumber = i + 1;
+      const qNumber = qaPairs[i].question.match(/^Q(\d+)\./i);
+      const aNumber = qaPairs[i].answer.match(/^A(\d+)\./i);
+      if (qNumber && Number(qNumber[1]) !== expectedNumber) {
+        errors.push(`Question number mismatch: expected Q${expectedNumber}, found ${qaPairs[i].question.match(/^(Q\d+)\./i)[1]}`);
+      }
+      if (aNumber && Number(aNumber[1]) !== expectedNumber) {
+        errors.push(`Answer number mismatch: expected A${expectedNumber}, found ${qaPairs[i].answer.match(/^(A\d+)\./i)[1]}`);
+      }
+    }
+
+    return { qaPairs, errors };
   };
 
-  const addCustomSuggestion = () => {
-    if (!customInput.trim()) {
-      return;
-    }
-  
-    const newSuggestion = {
-      id: suggestions.length + customSuggestions.length,
-      text: customInput.trim()
-    };
-  
-    setCustomSuggestions([...customSuggestions, newSuggestion]);
-    console.log('Custom suggestions:', [...customSuggestions, newSuggestion]); // Add this log
-    setCustomInput('');
-  };
-  
-  const removeCustomSuggestion = (id) => {
-    setCustomSuggestions(customSuggestions.filter(suggestion => suggestion.id !== id));
-    setSelectedSuggestions(prev => {
-      const newSelected = new Set(prev);
-      newSelected.delete(id);
-      return newSelected;
+  // 2. Multiple Choice Parsing
+  const parseMultipleChoice = (text) => {
+    const qaPairs = [];
+    const errors = [];
+    const lines = text.split('\n').filter((line) => line.trim() !== '');
+
+    let currentQA = { question: '', options: {}, correctOption: '' };
+    const questionRegex = /^Q(\d+)\.\s*(.+)$/i;
+    const optionRegex = /^([A-D])\.\s*(.+)$/i;
+    const correctAnswerRegex = /^\/\/\s*Correct Answer:\s*([A-D])$/i;
+
+    lines.forEach((line) => {
+      const questionMatch = line.match(questionRegex);
+      const optionMatch = line.match(optionRegex);
+      const correctAnswerMatch = line.match(correctAnswerRegex);
+
+      if (questionMatch) {
+        if (currentQA.question && Object.keys(currentQA.options).length > 0 && currentQA.correctOption) {
+          // Validate current QA before pushing
+          const validationError = validateMultipleChoiceQA(currentQA);
+          if (validationError) {
+            errors.push(`Q${questionMatch[1]}: ${validationError}`);
+          } else {
+            qaPairs.push({
+              question: currentQA.question,
+              options: currentQA.options,
+              correctAnswer: currentQA.correctOption,
+            });
+          }
+          currentQA = { question: '', options: {}, correctOption: '' };
+        }
+        currentQA.question = questionMatch[2].trim();
+      } else if (optionMatch) {
+        if (currentQA.question) {
+          currentQA.options[optionMatch[1]] = optionMatch[2].trim();
+        } else {
+          errors.push(`Option found without a corresponding question: "${line}"`);
+        }
+      } else if (correctAnswerMatch) {
+        if (currentQA.question) {
+          currentQA.correctOption = correctAnswerMatch[1].trim();
+        } else {
+          errors.push(`Correct answer found without a corresponding question: "${line}"`);
+        }
+      } else {
+        errors.push(`Unrecognized line format: "${line}"`);
+      }
     });
+
+    // Push the last QA pair if it exists
+    if (currentQA.question && Object.keys(currentQA.options).length > 0 && currentQA.correctOption) {
+      const validationError = validateMultipleChoiceQA(currentQA);
+      if (validationError) {
+        errors.push(`Final Question: ${validationError}`);
+      } else {
+        qaPairs.push({
+          question: currentQA.question,
+          options: currentQA.options,
+          correctAnswer: currentQA.correctOption,
+        });
+      }
+    }
+
+    // Convert multiple choice to a standardized format
+    const formattedQAPairs = qaPairs.map((pair, index) => {
+      const { question, options, correctAnswer } = pair;
+      return {
+        question: `${question}\nA. ${options['A']}\nB. ${options['B']}\nC. ${options['C']}\nD. ${options['D']}\nCorrect Answer: ${correctAnswer}`,
+        answer: options[correctAnswer],
+      };
+    });
+
+    return { qaPairs: formattedQAPairs, errors };
+  };
+
+  // Helper function to validate multiple choice QA
+  const validateMultipleChoiceQA = (qa) => {
+    const optionKeys = ['A', 'B', 'C', 'D'];
+    const missingOptions = optionKeys.filter((key) => !qa.options[key]);
+    if (missingOptions.length > 0) {
+      return `Missing options: ${missingOptions.join(', ')}`;
+    }
+    if (!qa.correctOption) {
+      return 'Missing correct answer declaration.';
+    }
+    if (!optionKeys.includes(qa.correctOption)) {
+      return `Invalid correct answer option: ${qa.correctOption}`;
+    }
+    return null;
+  };
+
+  // 3. True/False Parsing
+  const parseTrueFalse = (text) => {
+    const qaPairs = [];
+    const errors = [];
+    const lines = text.split('\n').filter((line) => line.trim() !== '');
+
+    let currentQA = { question: '', answer: '' };
+    const questionRegex = /^Q(\d+)\.\s*(.+)$/i;
+    const answerRegex = /^A(\d+)\.\s*(True|False)$/i;
+
+    lines.forEach((line) => {
+      const questionMatch = line.match(questionRegex);
+      const answerMatch = line.match(answerRegex);
+
+      if (questionMatch) {
+        if (currentQA.question && currentQA.answer) {
+          qaPairs.push({ ...currentQA });
+          currentQA = { question: '', answer: '' };
+        }
+        currentQA.question = questionMatch[2].trim();
+      } else if (answerMatch) {
+        if (currentQA.question) {
+          currentQA.answer = answerMatch[2].trim();
+        } else {
+          errors.push(`Answer found without a corresponding question: "${line}"`);
+        }
+      } else {
+        errors.push(`Unrecognized line format: "${line}"`);
+      }
+    });
+
+    // Push the last QA pair if it exists
+    if (currentQA.question && currentQA.answer) {
+      qaPairs.push(currentQA);
+    }
+
+    // Check for numbering consistency
+    for (let i = 0; i < qaPairs.length; i++) {
+      const expectedNumber = i + 1;
+      const qNumber = qaPairs[i].question.match(/^Q(\d+)\./i);
+      const aNumber = qaPairs[i].answer.match(/^A(\d+)\./i);
+      if (qNumber && Number(qNumber[1]) !== expectedNumber) {
+        errors.push(`Question number mismatch: expected Q${expectedNumber}, found ${qaPairs[i].question.match(/^(Q\d+)\./i)[1]}`);
+      }
+      if (aNumber && Number(aNumber[1]) !== expectedNumber) {
+        errors.push(`Answer number mismatch: expected A${expectedNumber}, found ${qaPairs[i].answer.match(/^(A\d+)\./i)[1]}`);
+      }
+    }
+
+    return { qaPairs, errors };
+  };
+
+  // 4. Identification Parsing
+  const parseIdentification = (text) => {
+    const qaPairs = [];
+    const errors = [];
+    const lines = text.split('\n').filter((line) => line.trim() !== '');
+
+    let currentQA = { question: '', answer: '' };
+    const questionRegex = /^Q(\d+)\.\s*(.+)$/i;
+    const answerRegex = /^A(\d+)\.\s*(.+)$/i;
+
+    lines.forEach((line) => {
+      const questionMatch = line.match(questionRegex);
+      const answerMatch = line.match(answerRegex);
+
+      if (questionMatch) {
+        if (currentQA.question && currentQA.answer) {
+          qaPairs.push({ ...currentQA });
+          currentQA = { question: '', answer: '' };
+        }
+        currentQA.question = questionMatch[2].trim();
+      } else if (answerMatch) {
+        if (currentQA.question) {
+          currentQA.answer = answerMatch[2].trim();
+        } else {
+          errors.push(`Answer found without a corresponding question: "${line}"`);
+        }
+      } else {
+        errors.push(`Unrecognized line format: "${line}"`);
+      }
+    });
+
+    // Push the last QA pair if it exists
+    if (currentQA.question && currentQA.answer) {
+      qaPairs.push(currentQA);
+    }
+
+    // Check for numbering consistency
+    for (let i = 0; i < qaPairs.length; i++) {
+      const expectedNumber = i + 1;
+      const qNumber = qaPairs[i].question.match(/^Q(\d+)\./i);
+      const aNumber = qaPairs[i].answer.match(/^A(\d+)\./i);
+      if (qNumber && Number(qNumber[1]) !== expectedNumber) {
+        errors.push(`Question number mismatch: expected Q${expectedNumber}, found ${qaPairs[i].question.match(/^(Q\d+)\./i)[1]}`);
+      }
+      if (aNumber && Number(aNumber[1]) !== expectedNumber) {
+        errors.push(`Answer number mismatch: expected A${expectedNumber}, found ${qaPairs[i].answer.match(/^(A\d+)\./i)[1]}`);
+      }
+    }
+
+    return { qaPairs, errors };
+  };
+
+  // Helper function to format question type for display
+  const formatQuestionType = (type) => {
+    switch (type) {
+      case 'flashcard':
+        return 'Flashcard';
+      case 'multiple_choice':
+        return 'Multiple Choice';
+      case 'true_false':
+        return 'True or False';
+      case 'identification':
+        return 'Identification';
+      default:
+        return 'Flashcard';
+    }
   };
 
   return (
-    <div className="quizmaker-container">
-      <h2>QuizMaker</h2>
-      <textarea
-        rows="10"
-        cols="50"
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        placeholder="Enter the large body of text here..."
-        disabled={confirmed}
-      ></textarea>
-      <div>{inputText.length}/1000 characters</div>
-      {!confirmed && (
-        <button onClick={handleConfirm}>
-          Confirm
-        </button>
+    <Container className="my-5">
+      <h2 className="mb-4 text-center">QuizMaker</h2>
+
+      {alert.show && (
+        <Alert
+          variant={alert.variant}
+          onClose={() => setAlert({ ...alert, show: false })}
+          dismissible
+        >
+          {alert.message}
+          {parsingErrors.length > 0 && (
+            <ul className="mt-2">
+              {parsingErrors.map((error, idx) => (
+                <li key={idx}>{error}</li>
+              ))}
+            </ul>
+          )}
+        </Alert>
       )}
+
+      {!confirmed && (
+        <Card className="mb-4">
+          <Card.Body>
+            <Form.Group controlId="quizText" className="mb-3">
+              <Form.Label>Enter Text for Quiz</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={6}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Enter the large body of text here..."
+              />
+              <Form.Text className="text-muted">{inputText.length}/5000 characters</Form.Text>
+            </Form.Group>
+
+            <Form.Group controlId="numQuestions" className="mb-3">
+              <Form.Label>Number of Questions</Form.Label>
+              <Form.Control
+                type="number"
+                min="1"
+                max="50"
+                value={numQuestions}
+                onChange={(e) => setNumQuestions(Number(e.target.value))}
+                placeholder="Enter the number of questions you want (1-50)"
+              />
+            </Form.Group>
+
+            <Form.Group controlId="questionType" className="mb-3">
+              <Form.Label>Select Question Type to Generate</Form.Label>
+              <Form.Check
+                type="radio"
+                label="Flashcard"
+                name="questionType"
+                value="flashcard"
+                checked={selectedType === 'flashcard'}
+                onChange={(e) => setSelectedType(e.target.value)}
+              />
+              <Form.Check
+                type="radio"
+                label="Multiple Choice"
+                name="questionType"
+                value="multiple_choice"
+                checked={selectedType === 'multiple_choice'}
+                onChange={(e) => setSelectedType(e.target.value)}
+              />
+              <Form.Check
+                type="radio"
+                label="True or False"
+                name="questionType"
+                value="true_false"
+                checked={selectedType === 'true_false'}
+                onChange={(e) => setSelectedType(e.target.value)}
+              />
+              <Form.Check
+                type="radio"
+                label="Identification"
+                name="questionType"
+                value="identification"
+                checked={selectedType === 'identification'}
+                onChange={(e) => setSelectedType(e.target.value)}
+              />
+            </Form.Group>
+
+            <Button
+              variant="primary"
+              onClick={handleConfirm}
+              disabled={isLoading || !inputText.trim() || !selectedType}
+              className="w-100"
+            >
+              {isLoading ? <Spinner as="span" animation="border" size="sm" /> : 'Confirm Input'}
+            </Button>
+          </Card.Body>
+        </Card>
+      )}
+
       {confirmed && (
         <>
-          <div className="suggestions-container">
-            {suggestions.map(suggestion => (
-              <div
-                key={suggestion.id}
-                className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
-                onClick={() => toggleSuggestion(suggestion.id)}
+          <Card className="mb-4">
+            <Card.Body>
+              <h5>Select Prompt to Generate</h5>
+              <Button
+                variant="success"
+                onClick={() => handleGeneratePrompt(selectedType)}
+                className="me-2 mb-2"
               >
-                {suggestion.text}
-              </div>
-            ))}
-            {customSuggestions.map(suggestion => (
-              <div
-                key={suggestion.id}
-                className={`suggestion-box ${selectedSuggestions.has(suggestion.id) ? 'selected' : ''}`}
-                onClick={() => toggleSuggestion(suggestion.id)}
-              >
-                {suggestion.text}
-                <button onClick={(e) => {
-                  e.stopPropagation();
-                  removeCustomSuggestion(suggestion.id);
-                }}>X</button>
-              </div>
-            ))}
-          </div>
-          <div className="custom-suggestions">
-            <input
-              type="text"
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value)}
-              placeholder="Add your own suggestion"
-            />
-            <button onClick={addCustomSuggestion}>+</button>
-          </div>
+                Generate {formatQuestionType(selectedType)} Prompt
+              </Button>
+            </Card.Body>
+          </Card>
+
+          {generatedPrompt && (
+            <Card className="mb-4">
+              <Card.Header className="d-flex justify-content-between align-items-center">
+                <h5>{formatQuestionType(selectedType)} Prompt</h5>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={() => {
+                    setShowPromptModal(true);
+                  }}
+                >
+                  Edit Prompt
+                </Button>
+              </Card.Header>
+              <Card.Body>
+                <pre style={{ whiteSpace: 'pre-wrap' }}>{generatedPrompt}</pre>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedPrompt);
+                    setAlert({ show: true, variant: 'success', message: `${formatQuestionType(selectedType)} prompt copied to clipboard.` });
+                    setHasCopiedPrompt(true);
+                  }}
+                  className="mt-2"
+                >
+                  Copy {formatQuestionType(selectedType)} Prompt
+                </Button>
+              </Card.Body>
+
+              {/* Confirmation for Copied Prompt */}
+              {hasCopiedPrompt && (
+                <Alert
+                  variant="success"
+                  onClose={() => setHasCopiedPrompt(false)}
+                  dismissible
+                  className="m-3"
+                >
+                  {formatQuestionType(selectedType)} prompt copied successfully.
+                </Alert>
+              )}
+
+              {/* Paste Output Section */}
+              {!isOutputConfirmed && hasCopiedPrompt && (
+                <Card.Footer>
+                  <Form.Group controlId={`pastedOutput-${selectedType}`} className="mb-3">
+                    <Form.Label>Paste ChatGPT Output for {formatQuestionType(selectedType)} Below</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={10}
+                      value={pastedOutput}
+                      onChange={(e) => setPastedOutput(e.target.value)}
+                      placeholder={`Paste the output generated by ChatGPT for ${formatQuestionType(selectedType)} here...`}
+                    />
+                  </Form.Group>
+                  <Button
+                    variant="success"
+                    onClick={handleConfirmOutput}
+                    disabled={isLoading || !pastedOutput.trim()}
+                    className="w-100"
+                  >
+                    {isLoading ? <Spinner as="span" animation="border" size="sm" /> : 'Save Questions'}
+                  </Button>
+                </Card.Footer>
+              )}
+
+              {/* Confirmation Message */}
+              {isOutputConfirmed && (
+                <Alert
+                  variant="success"
+                  onClose={() => setIsOutputConfirmed(false)}
+                  dismissible
+                  className="m-3"
+                >
+                  {formatQuestionType(selectedType)} questions saved successfully.
+                </Alert>
+              )}
+            </Card>
+          )}
+
+          {/* Prompt Modal for Editing */}
+          <Modal show={showPromptModal} onHide={() => setShowPromptModal(false)} centered size="lg">
+            <Modal.Header closeButton>
+              <Modal.Title>Edit {formatQuestionType(selectedType)} Prompt</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Alert variant="warning">Editing this prompt might cause unexpected results.</Alert>
+              <Form.Control
+                as="textarea"
+                rows={15}
+                value={generatedPrompt}
+                onChange={(e) => setGeneratedPrompt(e.target.value)}
+              />
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={() => setShowPromptModal(false)}>
+                Close
+              </Button>
+              <Button variant="primary" onClick={() => setShowPromptModal(false)}>
+                Save Changes
+              </Button>
+            </Modal.Footer>
+          </Modal>
+
+          {/* Button to Finish and Navigate */}
+          <Button
+            variant="success"
+            onClick={() => navigate(`/deck/${deckName}/flashcard-input`)}
+            className="w-100 mt-3"
+          >
+            Finish and Return to Deck
+          </Button>
         </>
       )}
-      {confirmed && (
-        <button onClick={handleGenerate} disabled={isLoading}>
-          {isLoading ? 'Generating...' : 'Generate Questions'}
-        </button>
-      )}
-    </div>
+    </Container>
   );
-  };
+};
+
+// Enhanced Helper function to format question type for display
+const formatQuestionType = (type) => {
+  switch (type) {
+    case 'flashcard':
+      return 'Flashcard';
+    case 'multiple_choice':
+      return 'Multiple Choice';
+    case 'true_false':
+      return 'True or False';
+    case 'identification':
+      return 'Identification';
+    default:
+      return 'Flashcard';
+  }
+};
 
 export default QuizMaker;
