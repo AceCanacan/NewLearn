@@ -1,7 +1,7 @@
 // src/components/Home/Home.js
 import React from "react";
 import { Navbar, Container, Button } from 'react-bootstrap';
-import { signOutUser } from "../../firebase/auth";
+import { signOutUser } from "../../firebase/firebase";
 import { useNavigate, Outlet } from "react-router-dom"; // Make sure Outlet is imported
 import nlLogo from "../../assets/NL_logo.png";
 import { BsBoxArrowRight } from 'react-icons/bs'; 

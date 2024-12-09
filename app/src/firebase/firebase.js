@@ -1,7 +1,7 @@
-// src/firebase/firebase.js
+// src/firebase/Firebase.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs, updateDoc } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
 // Firebase configuration using environment variables
@@ -27,19 +27,50 @@ const logFirebaseConfig = () => {
   console.log('Firebase Config:', firebaseConfig);
 };
 
-// Generalized Save Function
+// Authentication Functions
+const signUp = async (email, password) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const signIn = async (email, password) => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const signOutUser = async () => {
+  try {
+    await signOut(auth);
+  } catch (error) {
+    throw error;
+  }
+};
+
+const onAuthChange = (callback) => {
+  return onAuthStateChanged(auth, (user) => {
+    callback(user);
+  });
+};
+
+// Generalized Firestore Functions
 const saveToFirestore = async (docPath, value, options = { merge: false }) => {
   try {
     const pathSegments = docPath.split('/');
     const docRef = doc(db, ...pathSegments);
     await setDoc(docRef, value, options);
   } catch (error) {
-    // Handle error as needed
     throw error;
   }
 };
 
-// Generalized Load Function
 const loadFromFirestore = async (path, defaultValue = null, isCollection = false) => {
   try {
     if (isCollection) {
@@ -55,19 +86,16 @@ const loadFromFirestore = async (path, defaultValue = null, isCollection = false
       return docSnap.exists() ? docSnap.data() : defaultValue;
     }
   } catch (error) {
-    // Handle error as needed
     throw error;
   }
 };
 
-// Generalized Remove Function
 const removeFromFirestore = async (docPath) => {
   try {
     const pathSegments = docPath.split('/');
     const docRef = doc(db, ...pathSegments);
     await deleteDoc(docRef);
   } catch (error) {
-    // Handle error as needed
     throw error;
   }
 };
@@ -82,15 +110,14 @@ const deleteScoreFromFirestore = async (userId, deckName, index) => {
     if (docSnap.exists()) {
       const data = docSnap.data();
       if (data[deckName] && Array.isArray(data[deckName])) {
-        data[deckName].splice(index, 1); // Remove the score entry at the specified index
+        data[deckName].splice(index, 1);
         await updateDoc(docRef, { [deckName]: data[deckName] });
       }
     }
   } catch (error) {
-    // Handle error as needed
     throw error;
   }
 };
 
 // Export everything
-export { db, auth, storage, logFirebaseConfig, saveToFirestore, loadFromFirestore, removeFromFirestore, deleteScoreFromFirestore };
+export { db, auth, storage, logFirebaseConfig, signUp, signIn, signOutUser, onAuthChange, saveToFirestore, loadFromFirestore, removeFromFirestore, deleteScoreFromFirestore, sendPasswordResetEmail };

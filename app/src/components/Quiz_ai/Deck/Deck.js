@@ -391,70 +391,78 @@ function Deck() {
       )}
 
       {/* Decks Section */}
-      <Row>
-        <Col>
-          <h4>
 
-            Your Decks <Badge bg="secondary">{availableDecks.length}</Badge>
-          </h4>
-          {availableDecks.length > 0 ? (
-            <Row xs={1} sm={2} md={3} lg={4} className="g-4">
-              {availableDecks.map(([deckName, { numCards, description }]) => (
-                <Col key={deckName}>
-                  <Card
-                    className="h-100 shadow-sm"
-                    onClick={() => {
-                      if (!isEditMode) navigate(`/deck/${encodeURIComponent(deckName)}/flashcard-input`);
-                    }}
-                    style={{
-                      cursor: isEditMode ? "default" : "pointer",
-                      position: "relative",
-                    }}
-                  >
-                    <Card.Body className="d-flex flex-column">
-                      {isEditMode && (
-                        <Form.Check
-                          type="checkbox"
-                          className="mb-3"
-                          checked={selectedDecks.includes(deckName)}
-                          onChange={() => handleSelectDeck(deckName)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      )}
-                      <Card.Title>
-                        {deckName}
-                      </Card.Title>
-                      <Card.Text className="flex-grow-1">
-                        {description}
-                      </Card.Text>
-                      <div className="mt-auto">
-                        {/* Additional actions can be added here */}
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-              {/* Create New Deck Card */}
-              <Col>
-                <Card
-                  className="h-100 d-flex align-items-center justify-content-center text-center border-dashed"
-                  onClick={handleCreateNewDeck}
-                  style={{ cursor: "pointer", borderStyle: "dashed" }}
-                >
-                  <Card.Body>
-                    <FaPlus size={40} className="text-primary mb-3" />
-                    <Card.Text className="fw-bold">Create New Deck</Card.Text>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-          ) : (
-            <p>
-              You have no available decks. Create a new deck or manage your existing groups.
-            </p>
-          )}
+
+
+
+
+
+
+
+
+
+
+
+<Row>
+  <Col>
+    <h4>
+      Your Decks <Badge bg="secondary">{availableDecks.length}</Badge>
+    </h4>
+    <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+      {availableDecks.map(([deckName, { numCards, description }]) => (
+        <Col key={deckName}>
+          {/* Existing Deck Card */}
+          <Card
+            className="h-100 shadow-sm"
+            onClick={() => {
+              if (!isEditMode) navigate(`/deck/${encodeURIComponent(deckName)}/flashcard-input`);
+            }}
+            style={{
+              cursor: isEditMode ? "default" : "pointer",
+              position: "relative",
+            }}
+          >
+            <Card.Body className="d-flex flex-column">
+              {isEditMode && (
+                <Form.Check
+                  type="checkbox"
+                  className="mb-3"
+                  checked={selectedDecks.includes(deckName)}
+                  onChange={() => handleSelectDeck(deckName)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+              <Card.Title>{deckName}</Card.Title>
+              <Card.Text className="flex-grow-1">{description}</Card.Text>
+              <div className="mt-auto">
+                {/* Additional actions can be added here */}
+              </div>
+            </Card.Body>
+          </Card>
         </Col>
-      </Row>
+      ))}
+      
+      {/* Always render the "Create New Deck" card */}
+      <Col>
+        <Card
+          className="h-100 d-flex align-items-center justify-content-center text-center border-dashed"
+          onClick={handleCreateNewDeck}
+          style={{ cursor: "pointer", borderStyle: "dashed" }}
+        >
+          <Card.Body>
+            <FaPlus size={40} className="text-primary mb-3" />
+            <Card.Text className="fw-bold">Create New Deck</Card.Text>
+          </Card.Body>
+        </Card>
+      </Col>
+    </Row>
+  </Col>
+</Row>
+
+
+
+
+
 
       {/* Edit Mode Actions */}
       {isEditMode && availableDecks.length > 0 && (

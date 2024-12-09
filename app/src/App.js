@@ -6,7 +6,6 @@ import {
   Navigate,
 } from 'react-router-dom';
 import Sidebar from './components/Home/Home';
-import LandingPage from './components/Landing/Landing';
 import Deck from './components/Quiz_ai/Deck/Deck';
 import FlashcardInput from './components/Quiz_ai/FlashcardInput/FlashcardInput';
 import TestYourself from './components/Quiz_ai/Test/Test';
@@ -14,7 +13,8 @@ import ScoreReport from './components/Quiz_ai/ScoreReport/ScoreReport';
 import QuizMaker from './components/Quiz_ai/QuizMaker/QuizMaker';
 import TestResults from './components/Quiz_ai/Test/TestResults';
 import { logFirebaseConfig } from './firebase/firebase';
-import { onAuthChange, AuthPage } from './firebase/auth';
+import { onAuthChange } from './firebase/firebase';
+import { AuthPage } from './firebase/auth';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
@@ -38,7 +38,6 @@ function App() {
           {/* Public Routes */}
           {!user ? (
             <>
-              <Route path="/welcome" element={<LandingPage />} />
               <Route path="/auth" element={<AuthPage setUser={setUser} />} />
               <Route path="*" element={<Navigate to="/welcome" replace />} />
             </>
